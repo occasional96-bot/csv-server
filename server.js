@@ -1,72 +1,87 @@
-const express = require("express");
-const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
+const express    = require("express");
+const multer     = require("multer");
+const path       = require("path");
+const fs         = require("fs");
 
-const app = express();
-const PORT = process.env.PORT || 3000;
-const UPLOAD_DIR = path.join(__dirname, "uploads");
+const app    = express();
+const PORT   = process.env.PORT || 3000;
+const UPLOAD = path.join(__dirname, "uploads");
+const META   = path.join(__dirname, "meta.json");
 
-// Make uploads folder if it doesn't exist
-if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR);
+// ensure uploads dir
+if (!fs.existsSync(UPLOAD)) fs.mkdirSync(UPLOAD);
 
-// Save files using their original name
+// helpers for meta.json (stores expo link etc)
+const readMeta  = () => { try { return JSON.parse(fs.readFileSync(META, "utf8")); } catch { return {}; } };
+const writeMeta = (data) => fs.writeFileSync(META, JSON.stringify(data, null, 2));
+
+app.use(express.json());
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,DELETE,PUT,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  if (req.method === "OPTIONS") return res.sendStatus(200);
+  next();
+});
+
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, UPLOAD_DIR),
-  filename: (req, file, cb) => cb(null, file.originalname),
+  destination: (_, __, cb) => cb(null, UPLOAD),
+  filename:    (_, file, cb) => cb(null, file.originalname),
 });
+const upload = multer({ storage });
 
-const upload = multer({
-  storage,
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype === "text/csv" || file.originalname.endsWith(".csv")) {
-      cb(null, true);
-    } else {
-      cb(new Error("Only CSV files allowed"));
-    }
-  },
-});
-
-// ── POST /upload ──────────────────────────────────────────────
-// Send a CSV file → server saves it by filename
-// Example: POST /upload  (form-data key: "file")
-app.post("/upload", upload.single("file"), (req, res) => {
-  if (!req.file) return res.status(400).json({ error: "No file received" });
-  res.json({
-    message: "Uploaded successfully",
-    filename: req.file.originalname,
-    url: `/file/${req.file.originalname}`,
-  });
-});
-
-// ── GET /file/:name ───────────────────────────────────────────
-// Fetch a CSV by filename
-// Example: GET /file/parts.csv
-app.get("/file/:name", (req, res) => {
-  const filePath = path.join(UPLOAD_DIR, req.params.name);
-  if (!fs.existsSync(filePath)) {
-    return res.status(404).json({ error: "File not found" });
-  }
-  res.setHeader("Content-Type", "text/csv");
-  res.sendFile(filePath);
-});
-
-// ── GET /files ────────────────────────────────────────────────
-// List all stored CSV files
+// ── CSV endpoints ──────────────────────────────────────────────
 app.get("/files", (req, res) => {
-  const files = fs.readdirSync(UPLOAD_DIR).filter((f) => f.endsWith(".csv"));
+  const files = fs.readdirSync(UPLOAD).filter(f => f.endsWith(".csv"));
   res.json({ files });
 });
 
-// ── DELETE /file/:name ────────────────────────────────────────
-// Delete a CSV by filename
-app.delete("/file/:name", (req, res) => {
-  const filePath = path.join(UPLOAD_DIR, req.params.name);
-  if (!fs.existsSync(filePath)) {
-    return res.status(404).json({ error: "File not found" });
-  }
-  fs.unlinkSync(filePath);
-  res.json({ message: `${req.params.name} deleted` });
+app.post("/upload", upload.single("file"), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: "No file" });
+  const meta = readMeta();
+  if (!meta.fileTimes) meta.fileTimes = {};
+  meta.fileTimes[req.file.originalname] = Date.now();
+  writeMeta(meta);
+  res.json({ message: "Uploaded successfully", filename: req.file.originalname });
 });
 
-app.listen(PORT, () => console.log(`CSV Server running on port ${PORT}`));
+// GET /file-meta/:filename — returns uploadedAt timestamp
+app.get("/file-meta/:filename", (req, res) => {
+  const meta = readMeta();
+  const uploadedAt = (meta.fileTimes || {})[req.params.filename] || null;
+  res.json({ filename: req.params.filename, uploadedAt });
+});
+
+app.get("/file/:filename", (req, res) => {
+  const fp = path.join(UPLOAD, req.params.filename);
+  if (!fs.existsSync(fp)) return res.status(404).json({ error: "Not found" });
+  res.sendFile(fp);
+});
+
+app.delete("/file/:filename", (req, res) => {
+  const fp = path.join(UPLOAD, req.params.filename);
+  if (!fs.existsSync(fp)) return res.status(404).json({ error: "Not found" });
+  fs.unlinkSync(fp);
+  res.json({ message: "Deleted" });
+});
+
+// ── Expo link endpoints ────────────────────────────────────────
+// GET  /expo-link        → returns { url: "..." }
+// POST /expo-link        → body { url: "..." } → saves & returns it
+app.get("/expo-link", (req, res) => {
+  const meta = readMeta();
+  res.json({ url: meta.expoLink || null });
+});
+
+app.post("/expo-link", (req, res) => {
+  const { url } = req.body;
+  if (!url) return res.status(400).json({ error: "url required" });
+  const meta = readMeta();
+  meta.expoLink = url;
+  writeMeta(meta);
+  res.json({ message: "Expo link updated", url });
+});
+
+app.get("/", (req, res) => res.json({ status: "ok", version: "2.0" }));
+
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
