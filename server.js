@@ -87,6 +87,16 @@ app.delete("/file/:filename", (req, res) => {
   res.json({ message: "Deleted" });
 });
 
+// ── Watch-status endpoint (single fast call for app dot indicator) ────────────
+app.get("/watch-status", (req, res) => {
+  const meta = readMeta();
+  const times = meta.fileTimes || {};
+  res.json({
+    stdpartski: times["stdpartski.csv"] || null,
+    stdpartshy: times["stdpartshy.csv"] || null,
+  });
+});
+
 // ── Expo link endpoints ────────────────────────────────────────────────────
 app.get("/expo-link", (req, res) => {
   const meta = readMeta();
