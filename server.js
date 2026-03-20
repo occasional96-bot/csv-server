@@ -2,19 +2,40 @@ const express    = require("express");
 const multer     = require("multer");
 const path       = require("path");
 const fs         = require("fs");
+const http       = require("http");
+const { WebSocketServer } = require("ws");
 
 const app    = express();
+const server = http.createServer(app);
+const wss    = new WebSocketServer({ server });
+
 const PORT   = process.env.PORT || 3000;
 const UPLOAD = path.join(__dirname, "uploads");
 const META   = path.join(__dirname, "meta.json");
 
-// ensure uploads dir
 if (!fs.existsSync(UPLOAD)) fs.mkdirSync(UPLOAD);
 
-// helpers for meta.json (stores expo link etc)
 const readMeta  = () => { try { return JSON.parse(fs.readFileSync(META, "utf8")); } catch { return {}; } };
 const writeMeta = (data) => fs.writeFileSync(META, JSON.stringify(data, null, 2));
 
+// ── WebSocket clients + broadcast ──────────────────────────────────────────
+const broadcast = (msg) => {
+  const str = JSON.stringify(msg);
+  wss.clients.forEach(client => {
+    if (client.readyState === 1) client.send(str);
+  });
+};
+
+wss.on("connection", (ws) => {
+  console.log("WS client connected. Total:", wss.clients.size);
+  ws.send(JSON.stringify({ type: "connected" }));
+  ws.on("close", () => console.log("WS client disconnected. Total:", wss.clients.size));
+});
+
+// Heartbeat ping every 30s to keep Railway connection alive + update "just now" label
+setInterval(() => broadcast({ type: "ping" }), 30000);
+
+// ── Middleware ─────────────────────────────────────────────────────────────
 app.use(express.json());
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -30,7 +51,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// ── CSV endpoints ──────────────────────────────────────────────
+// ── CSV endpoints ──────────────────────────────────────────────────────────
 app.get("/files", (req, res) => {
   const files = fs.readdirSync(UPLOAD).filter(f => f.endsWith(".csv"));
   res.json({ files });
@@ -42,10 +63,11 @@ app.post("/upload", upload.single("file"), (req, res) => {
   if (!meta.fileTimes) meta.fileTimes = {};
   meta.fileTimes[req.file.originalname] = Date.now();
   writeMeta(meta);
+  // Push to all connected apps instantly
+  broadcast({ type: "new_file", filename: req.file.originalname, uploadedAt: Date.now() });
   res.json({ message: "Uploaded successfully", filename: req.file.originalname });
 });
 
-// GET /file-meta/:filename — returns uploadedAt timestamp
 app.get("/file-meta/:filename", (req, res) => {
   const meta = readMeta();
   const uploadedAt = (meta.fileTimes || {})[req.params.filename] || null;
@@ -65,9 +87,7 @@ app.delete("/file/:filename", (req, res) => {
   res.json({ message: "Deleted" });
 });
 
-// ── Expo link endpoints ────────────────────────────────────────
-// GET  /expo-link        → returns { url: "..." }
-// POST /expo-link        → body { url: "..." } → saves & returns it
+// ── Expo link endpoints ────────────────────────────────────────────────────
 app.get("/expo-link", (req, res) => {
   const meta = readMeta();
   res.json({ url: meta.expoLink || null });
@@ -82,6 +102,7 @@ app.post("/expo-link", (req, res) => {
   res.json({ message: "Expo link updated", url });
 });
 
-app.get("/", (req, res) => res.json({ status: "ok", version: "2.0" }));
+app.get("/", (req, res) => res.json({ status: "ok", version: "3.0-ws" }));
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// ── Start (use server.listen, not app.listen, so WS shares the same port) ──
+server.listen(PORT, () => console.log(`Server + WebSocket running on port ${PORT}`));
