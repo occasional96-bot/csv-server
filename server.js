@@ -90,7 +90,8 @@ wss.on("connection", (ws) => {
           name: msg.roomName,
           hostId: msg.userId,
           members: [{ id: msg.userId, initials: msg.initials, color: msg.color, name: msg.name, lastSeen: Date.now() }],
-          invoiceUpdates: {}, // invId → { parts: {partNumber: {confirmed, short, confirmedBy, confirmedAt}}, complete, completedAt }
+          invoiceUpdates: {},
+          invoices: msg.invoices || [],
           focusList: msg.focusList || [],
           pinnedIds: msg.pinnedIds || [],
           createdAt: Date.now(),
@@ -118,17 +119,18 @@ wss.on("connection", (ws) => {
           roomId: msg.roomId,
           roomName: room.name,
           hostId: room.hostId,
-          members: getRoomPresence(msg.roomId),
+          members: getRoomPresence(msg.roomId).map(m => ({ ...m, isHost: m.id === room.hostId })),
           invoiceUpdates: room.invoiceUpdates,
+          invoices: room.invoices || [],
           focusList: room.focusList,
           pinnedIds: room.pinnedIds,
-          mergeMode: msg.mergeMode, // echo back so client knows
+          mergeMode: msg.mergeMode,
         });
         // Notify others
         broadcastToRoom(msg.roomId, {
           type: "member_joined",
           member: { id: msg.userId, initials: msg.initials, color: msg.color, name: msg.name },
-          presence: getRoomPresence(msg.roomId),
+          presence: getRoomPresence(msg.roomId).map(m => ({ ...m, isHost: m.id === room.hostId })),
         }, msg.userId);
         console.log(`${msg.initials} joined room ${msg.roomId}`);
         return;
@@ -200,6 +202,16 @@ wss.on("connection", (ws) => {
         return;
       }
 
+      // ── Host pushes board invoices to room ────────────────────────────
+      if (msg.type === "sync_invoices") {
+        const roomId = clientInfo.roomId;
+        const room = rooms[roomId];
+        if (!room) return;
+        room.invoices = msg.invoices || [];
+        broadcastToRoom(roomId, { type: "invoices_synced", invoices: room.invoices }, msg.userId);
+        return;
+      }
+
       // ── Focus list updated ─────────────────────────────────────────────
       if (msg.type === "focuslist_update") {
         const roomId = clientInfo.roomId;
@@ -266,8 +278,8 @@ wss.on("connection", (ws) => {
   });
 });
 
-// Heartbeat ping every 30s
-setInterval(() => broadcast({ type: "ping" }), 30000);
+// Heartbeat ping every 5s to keep Railway WS alive
+setInterval(() => broadcast({ type: "ping" }), 5000);
 
 // ── Middleware ─────────────────────────────────────────────────────────────
 app.use(express.json());
@@ -339,6 +351,18 @@ app.get("/room/:roomId", (req, res) => {
   const room = rooms[req.params.roomId];
   if (!room) return res.status(404).json({ error: "Room not found or expired" });
   res.json({ roomId: req.params.roomId, roomName: room.name, memberCount: room.members.length });
+});
+
+// Pull full board state — used by swipe-down refresh
+app.get("/room/:roomId/updates", (req, res) => {
+  const room = rooms[req.params.roomId];
+  if (!room) return res.status(404).json({ error: "Room not found or expired" });
+  res.json({
+    invoiceUpdates: room.invoiceUpdates || {},
+    invoices: room.invoices || [],
+    focusList: room.focusList || [],
+    pinnedIds: room.pinnedIds || [],
+  });
 });
 
 app.get("/", (req, res) => res.json({ status: "ok", version: "4.0-rooms" }));
