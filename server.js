@@ -91,7 +91,7 @@ wss.on("connection", (ws) => {
           hostId: msg.userId,
           members: [{ id: msg.userId, initials: msg.initials, color: msg.color, name: msg.name, lastSeen: Date.now() }],
           invoiceUpdates: {}, // invId → { parts: {partNumber: {confirmed, short, confirmedBy, confirmedAt}}, complete, completedAt }
-          invoices: (msg.invoices || []).filter(inv => (msg.focusList || []).includes(inv.id)),
+          invoices: msg.invoices || [], // host's board invoices
           focusList: msg.focusList || [],
           pinnedIds: msg.pinnedIds || [],
           createdAt: Date.now(),
@@ -202,12 +202,12 @@ wss.on("connection", (ws) => {
         return;
       }
 
-      // ── Host syncs full invoice list ──────────────────────────────────
+      // ── Host can push updated invoice list to room ────────────────────
       if (msg.type === "sync_invoices") {
         const roomId = clientInfo.roomId;
         const room = rooms[roomId];
         if (!room) return;
-        room.invoices = (msg.invoices || []).filter(inv => (room.focusList || []).includes(inv.id));
+        room.invoices = msg.invoices || [];
         broadcastToRoom(roomId, { type: "invoices_synced", invoices: room.invoices }, msg.userId);
         return;
       }
@@ -255,10 +255,9 @@ wss.on("connection", (ws) => {
         if (!room) return;
         const member = room.members.find(m => m.id === msg.userId);
         if (member) member.lastSeen = Date.now();
-        const _room = rooms[roomId];
         broadcastToRoom(roomId, {
           type: "presence_update",
-          presence: getRoomPresence(roomId).map(m => ({ ...m, isHost: _room ? m.id === _room.hostId : false })),
+          presence: getRoomPresence(roomId),
         }, msg.userId);
         return;
       }
@@ -279,7 +278,7 @@ wss.on("connection", (ws) => {
   });
 });
 
-// Heartbeat ping every 5s to keep Railway WS connections alive
+// Heartbeat ping every 5s to keep Railway WS alive
 setInterval(() => broadcast({ type: "ping" }), 5000);
 
 // ── Middleware ─────────────────────────────────────────────────────────────
