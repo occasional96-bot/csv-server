@@ -91,7 +91,7 @@ wss.on("connection", (ws) => {
           hostId: msg.userId,
           members: [{ id: msg.userId, initials: msg.initials, color: msg.color, name: msg.name, lastSeen: Date.now() }],
           invoiceUpdates: {}, // invId → { parts: {partNumber: {confirmed, short, confirmedBy, confirmedAt}}, complete, completedAt }
-          invoices: msg.invoices || [],
+          invoices: (msg.invoices || []).filter(inv => (msg.focusList || []).includes(inv.id)),
           focusList: msg.focusList || [],
           pinnedIds: msg.pinnedIds || [],
           createdAt: Date.now(),
@@ -119,7 +119,7 @@ wss.on("connection", (ws) => {
           roomId: msg.roomId,
           roomName: room.name,
           hostId: room.hostId,
-          members: getRoomPresence(msg.roomId),
+          members: getRoomPresence(msg.roomId).map(m => ({ ...m, isHost: m.id === room.hostId })),
           invoiceUpdates: room.invoiceUpdates,
           invoices: room.invoices || [],
           focusList: room.focusList,
@@ -130,7 +130,7 @@ wss.on("connection", (ws) => {
         broadcastToRoom(msg.roomId, {
           type: "member_joined",
           member: { id: msg.userId, initials: msg.initials, color: msg.color, name: msg.name },
-          presence: getRoomPresence(msg.roomId),
+          presence: getRoomPresence(msg.roomId).map(m => ({ ...m, isHost: m.id === room.hostId })),
         }, msg.userId);
         console.log(`${msg.initials} joined room ${msg.roomId}`);
         return;
@@ -207,7 +207,7 @@ wss.on("connection", (ws) => {
         const roomId = clientInfo.roomId;
         const room = rooms[roomId];
         if (!room) return;
-        room.invoices = msg.invoices || [];
+        room.invoices = (msg.invoices || []).filter(inv => (room.focusList || []).includes(inv.id));
         broadcastToRoom(roomId, { type: "invoices_synced", invoices: room.invoices }, msg.userId);
         return;
       }
@@ -255,9 +255,10 @@ wss.on("connection", (ws) => {
         if (!room) return;
         const member = room.members.find(m => m.id === msg.userId);
         if (member) member.lastSeen = Date.now();
+        const _room = rooms[roomId];
         broadcastToRoom(roomId, {
           type: "presence_update",
-          presence: getRoomPresence(roomId),
+          presence: getRoomPresence(roomId).map(m => ({ ...m, isHost: _room ? m.id === _room.hostId : false })),
         }, msg.userId);
         return;
       }
@@ -353,7 +354,6 @@ app.get("/room/:roomId", (req, res) => {
   res.json({ roomId: req.params.roomId, roomName: room.name, memberCount: room.members.length });
 });
 
-// Pull latest room confirms for swipe-to-refresh
 app.get("/room/:roomId/updates", (req, res) => {
   const room = rooms[req.params.roomId];
   if (!room) return res.status(404).json({ error: "Room not found or expired" });
