@@ -85,6 +85,7 @@ wss.on("connection", (ws) => {
       // ── Register identity ──────────────────────────────────────────────
       if (msg.type === "identify") {
         clients.set(ws, { id: msg.id, initials: msg.initials, color: msg.color, name: msg.name, roomId: null });
+        console.log(`[identify] ${msg.initials} id=${msg.id} totalClients=${clients.size}`);
         return;
       }
 
@@ -138,7 +139,7 @@ wss.on("connection", (ws) => {
           member: { id: msg.userId, initials: msg.initials, color: msg.color, name: msg.name },
           presence: getRoomPresence(msg.roomId).map(m => ({ ...m, isHost: m.id === room.hostId })),
         }, msg.userId);
-        console.log(`${msg.initials} joined room ${msg.roomId}`);
+        console.log(`[join_room] ${msg.initials} joined room ${msg.roomId}. Room now has ${getRoomPresence(msg.roomId).length} members`);
         return;
       }
 
@@ -182,7 +183,11 @@ wss.on("connection", (ws) => {
       if (msg.type === "part_update") {
         const roomId = getRoomIdForClient(clientInfo, msg.userId);
         const room = rooms[roomId];
-        if (!room) return;
+        console.log(`[part_update] from=${msg.userId} initials=${msg.initials} roomId=${roomId} clientRoomId=${clientInfo.roomId} hasRoom=${!!room} totalClients=${clients.size}`);
+        if (!room) {
+          console.log(`[part_update] DROPPED - rooms available:`, Object.keys(rooms));
+          return;
+        }
         // Heal clientInfo.roomId if missing (reconnect race)
         if (!clientInfo.roomId && roomId) clients.set(ws, { ...clientInfo, roomId });
         // Store in invoiceUpdates (for request_sync / late joiners)
@@ -210,6 +215,12 @@ wss.on("connection", (ws) => {
               completedAt: (done && !inv.complete) ? msg.timestamp : (inv.completedAt || 0) };
           });
         }
+        // Count recipients before broadcast
+        let broadcastCount = 0;
+        for (const [bws, info] of clients.entries()) {
+          if (info.roomId === roomId && bws.readyState === 1 && info.id !== msg.userId) broadcastCount++;
+        }
+        console.log(`[part_update] sending to ${broadcastCount} other clients. Room members:`, rooms[roomId]?.members?.map(m => m.initials));
         // Broadcast to ALL others in room (exclude sender by userId)
         broadcastToRoom(roomId, {
           type: "part_update",
