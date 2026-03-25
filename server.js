@@ -91,6 +91,7 @@ wss.on("connection", (ws) => {
           hostId: msg.userId,
           members: [{ id: msg.userId, initials: msg.initials, color: msg.color, name: msg.name, lastSeen: Date.now() }],
           invoiceUpdates: {}, // invId → { parts: {partNumber: {confirmed, short, confirmedBy, confirmedAt}}, complete, completedAt }
+          invoices: msg.invoices || [],
           focusList: msg.focusList || [],
           pinnedIds: msg.pinnedIds || [],
           createdAt: Date.now(),
@@ -120,9 +121,10 @@ wss.on("connection", (ws) => {
           hostId: room.hostId,
           members: getRoomPresence(msg.roomId),
           invoiceUpdates: room.invoiceUpdates,
+          invoices: room.invoices || [],
           focusList: room.focusList,
           pinnedIds: room.pinnedIds,
-          mergeMode: msg.mergeMode, // echo back so client knows
+          mergeMode: msg.mergeMode,
         });
         // Notify others
         broadcastToRoom(msg.roomId, {
@@ -197,6 +199,16 @@ wss.on("connection", (ws) => {
           color: msg.color,
           timestamp: msg.timestamp,
         }, msg.userId);
+        return;
+      }
+
+      // ── Host syncs full invoice list ──────────────────────────────────
+      if (msg.type === "sync_invoices") {
+        const roomId = clientInfo.roomId;
+        const room = rooms[roomId];
+        if (!room) return;
+        room.invoices = msg.invoices || [];
+        broadcastToRoom(roomId, { type: "invoices_synced", invoices: room.invoices }, msg.userId);
         return;
       }
 
