@@ -202,7 +202,7 @@ wss.on("connection", (ws) => {
         return;
       }
 
-      // ── Host pushes board invoices to room ────────────────────────────
+      // ── Host pushes invoices ───────────────────────────────────────────
       if (msg.type === "sync_invoices") {
         const roomId = clientInfo.roomId;
         const room = rooms[roomId];
@@ -353,16 +353,10 @@ app.get("/room/:roomId", (req, res) => {
   res.json({ roomId: req.params.roomId, roomName: room.name, memberCount: room.members.length });
 });
 
-// Pull full board state — used by swipe-down refresh
 app.get("/room/:roomId/updates", (req, res) => {
   const room = rooms[req.params.roomId];
   if (!room) return res.status(404).json({ error: "Room not found or expired" });
-  res.json({
-    invoiceUpdates: room.invoiceUpdates || {},
-    invoices: room.invoices || [],
-    focusList: room.focusList || [],
-    pinnedIds: room.pinnedIds || [],
-  });
+  res.json({ invoiceUpdates: room.invoiceUpdates || {}, invoices: room.invoices || [], focusList: room.focusList || [], pinnedIds: room.pinnedIds || [] });
 });
 
 app.get("/", (req, res) => res.json({ status: "ok", version: "4.0-rooms" }));
