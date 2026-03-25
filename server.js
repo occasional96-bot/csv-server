@@ -278,8 +278,8 @@ wss.on("connection", (ws) => {
   });
 });
 
-// Heartbeat ping every 30s
-setInterval(() => broadcast({ type: "ping" }), 30000);
+// Heartbeat ping every 5s to keep Railway WS connections alive
+setInterval(() => broadcast({ type: "ping" }), 5000);
 
 // ── Middleware ─────────────────────────────────────────────────────────────
 app.use(express.json());
@@ -351,6 +351,13 @@ app.get("/room/:roomId", (req, res) => {
   const room = rooms[req.params.roomId];
   if (!room) return res.status(404).json({ error: "Room not found or expired" });
   res.json({ roomId: req.params.roomId, roomName: room.name, memberCount: room.members.length });
+});
+
+// Pull latest room confirms for swipe-to-refresh
+app.get("/room/:roomId/updates", (req, res) => {
+  const room = rooms[req.params.roomId];
+  if (!room) return res.status(404).json({ error: "Room not found or expired" });
+  res.json({ invoiceUpdates: room.invoiceUpdates || {}, focusList: room.focusList || [], pinnedIds: room.pinnedIds || [] });
 });
 
 app.get("/", (req, res) => res.json({ status: "ok", version: "4.0-rooms" }));
