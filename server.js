@@ -212,6 +212,48 @@ wss.on("connection", (ws) => {
         return;
       }
 
+      // ── Any member requests full room sync ─────────────────────────────
+      // Merges all stored invoiceUpdates onto stored invoices and broadcasts to ALL members
+      if (msg.type === "request_sync") {
+        const roomId = clientInfo.roomId;
+        const room = rooms[roomId];
+        if (!room) return;
+
+        // Merge invoiceUpdates into room.invoices so everyone gets the freshest state
+        const mergedInvoices = (room.invoices || []).map(inv => {
+          const upd = room.invoiceUpdates[inv.id];
+          if (!upd) return inv;
+          return {
+            ...inv,
+            complete: upd.complete || inv.complete,
+            completedAt: upd.completedAt || inv.completedAt,
+            completedBy: upd.completedBy || inv.completedBy,
+            parts: inv.parts.map(p => {
+              const key = p.partNumber + "_" + (p.lineNo || "0");
+              const pu = upd.parts?.[key];
+              if (!pu) return p;
+              return { ...p, confirmed: pu.confirmed, short: pu.short, shortQty: pu.shortQty,
+                confirmedBy: pu.confirmedBy, confirmedColor: pu.confirmedColor, confirmedAt: pu.confirmedAt };
+            }),
+          };
+        });
+
+        // Save merged back so future joiners get it too
+        room.invoices = mergedInvoices;
+
+        // Broadcast merged state to EVERYONE in the room (including requester)
+        const str = JSON.stringify({
+          type: "full_sync",
+          invoices: mergedInvoices,
+          invoiceUpdates: room.invoiceUpdates,
+        });
+        for (const [ws, info] of clients.entries()) {
+          if (info.roomId === roomId && ws.readyState === 1) ws.send(str);
+        }
+        console.log(`Full sync triggered by ${msg.userId} in room ${roomId}`);
+        return;
+      }
+
       // ── Focus list updated ─────────────────────────────────────────────
       if (msg.type === "focuslist_update") {
         const roomId = clientInfo.roomId;
@@ -278,7 +320,7 @@ wss.on("connection", (ws) => {
   });
 });
 
-// Heartbeat ping every 5s to keep Railway WS alive
+// Heartbeat ping every 5s
 setInterval(() => broadcast({ type: "ping" }), 5000);
 
 // ── Middleware ─────────────────────────────────────────────────────────────
