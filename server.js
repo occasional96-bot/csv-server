@@ -67,6 +67,12 @@ function getRoomPresence(roomId) {
   });
 }
 
+// Helper: get roomId for a client, falling back to member lookup on reconnect race
+function getRoomIdForClient(clientInfo, userId) {
+  if (clientInfo.roomId) return clientInfo.roomId;
+  return Object.keys(rooms).find(rid => rooms[rid].members.some(m => m.id === userId)) || null;
+}
+
 wss.on("connection", (ws) => {
   console.log("WS client connected. Total:", wss.clients.size);
   ws.send(JSON.stringify({ type: "connected" }));
@@ -157,7 +163,7 @@ wss.on("connection", (ws) => {
 
       // ── Kick member (host only) ────────────────────────────────────────
       if (msg.type === "kick_member") {
-        const roomId = clientInfo.roomId;
+        const roomId = getRoomIdForClient(clientInfo, msg.userId);
         const room = rooms[roomId];
         if (!room || room.hostId !== msg.userId) return;
         room.members = room.members.filter(m => m.id !== msg.targetId);
@@ -174,10 +180,12 @@ wss.on("connection", (ws) => {
 
       // ── Part confirmed / updated ───────────────────────────────────────
       if (msg.type === "part_update") {
-        const roomId = clientInfo.roomId;
+        const roomId = getRoomIdForClient(clientInfo, msg.userId);
         const room = rooms[roomId];
         if (!room) return;
-        // Store in room state
+        // Heal clientInfo.roomId if missing (reconnect race)
+        if (!clientInfo.roomId && roomId) clients.set(ws, { ...clientInfo, roomId });
+        // Store in invoiceUpdates (for request_sync / late joiners)
         if (!room.invoiceUpdates[msg.invId]) room.invoiceUpdates[msg.invId] = { parts: {} };
         room.invoiceUpdates[msg.invId].parts[msg.partKey] = {
           confirmed: msg.confirmed,
@@ -187,7 +195,22 @@ wss.on("connection", (ws) => {
           confirmedColor: msg.color,
           confirmedAt: msg.timestamp,
         };
-        // Broadcast to others in room
+        // Also apply directly to room.invoices so it persists for future syncs
+        if (room.invoices && room.invoices.length > 0) {
+          room.invoices = room.invoices.map(inv => {
+            if (inv.id !== msg.invId) return inv;
+            const parts = inv.parts.map(p => {
+              const key = p.partNumber + "_" + (p.lineNo || "0");
+              if (key !== msg.partKey) return p;
+              return { ...p, confirmed: msg.confirmed, short: msg.short, shortQty: msg.shortQty,
+                confirmedBy: msg.initials, confirmedColor: msg.color, confirmedAt: msg.timestamp };
+            });
+            const done = parts.every(p => p.short || p.confirmed >= p.qty);
+            return { ...inv, parts, complete: done || inv.complete,
+              completedAt: (done && !inv.complete) ? msg.timestamp : (inv.completedAt || 0) };
+          });
+        }
+        // Broadcast to ALL others in room (exclude sender by userId)
         broadcastToRoom(roomId, {
           type: "part_update",
           invId: msg.invId,
@@ -204,7 +227,7 @@ wss.on("connection", (ws) => {
 
       // ── Host pushes invoices ───────────────────────────────────────────
       if (msg.type === "sync_invoices") {
-        const roomId = clientInfo.roomId;
+        const roomId = getRoomIdForClient(clientInfo, msg.userId);
         const room = rooms[roomId];
         if (!room) return;
         room.invoices = msg.invoices || [];
@@ -215,7 +238,7 @@ wss.on("connection", (ws) => {
       // ── Any member requests full room sync ─────────────────────────────
       // Merges all stored invoiceUpdates onto stored invoices and broadcasts to ALL members
       if (msg.type === "request_sync") {
-        const roomId = clientInfo.roomId;
+        const roomId = getRoomIdForClient(clientInfo, msg.userId);
         const room = rooms[roomId];
         if (!room) return;
 
@@ -256,7 +279,7 @@ wss.on("connection", (ws) => {
 
       // ── Focus list updated ─────────────────────────────────────────────
       if (msg.type === "focuslist_update") {
-        const roomId = clientInfo.roomId;
+        const roomId = getRoomIdForClient(clientInfo, msg.userId);
         const room = rooms[roomId];
         if (!room) return;
         room.focusList = msg.focusList;
@@ -272,13 +295,21 @@ wss.on("connection", (ws) => {
 
       // ── Invoice complete ───────────────────────────────────────────────
       if (msg.type === "invoice_complete") {
-        const roomId = clientInfo.roomId;
+        const roomId = getRoomIdForClient(clientInfo, msg.userId);
         const room = rooms[roomId];
         if (!room) return;
+        if (!clientInfo.roomId && roomId) clients.set(ws, { ...clientInfo, roomId });
         if (!room.invoiceUpdates[msg.invId]) room.invoiceUpdates[msg.invId] = { parts: {} };
         room.invoiceUpdates[msg.invId].complete = true;
         room.invoiceUpdates[msg.invId].completedAt = msg.timestamp;
         room.invoiceUpdates[msg.invId].completedBy = msg.initials;
+        // Also update room.invoices directly so future syncs/joiners get it
+        if (room.invoices && room.invoices.length > 0) {
+          room.invoices = room.invoices.map(inv =>
+            inv.id !== msg.invId ? inv :
+            { ...inv, complete: true, completedAt: msg.timestamp, completedBy: msg.initials }
+          );
+        }
         broadcastToRoom(roomId, {
           type: "invoice_complete",
           invId: msg.invId,
@@ -291,7 +322,7 @@ wss.on("connection", (ws) => {
 
       // ── Presence ping ─────────────────────────────────────────────────
       if (msg.type === "presence_ping") {
-        const roomId = clientInfo.roomId;
+        const roomId = getRoomIdForClient(clientInfo, msg.userId);
         if (!roomId) return;
         const room = rooms[roomId];
         if (!room) return;
