@@ -98,6 +98,45 @@ wss.on("connection", (ws) => {
       // Ignore client pong responses to our ping
       if (msg.type === "pong") return;
 
+      // ── Join request (non-host asks to join) ────────────────────────────
+      if (msg.type === "join_request") {
+        const room = rooms[msg.roomId];
+        if (!room) { sendToClient(ws, { type: "join_response", approved: false, reason: "Room not found" }); return; }
+        // Forward request to the host
+        for (const [hostWs, info] of clients.entries()) {
+          if (info.id === room.hostId && hostWs.readyState === 1) {
+            hostWs.send(JSON.stringify({
+              type: "join_request",
+              roomId: msg.roomId,
+              requesterId: msg.userId,
+              requesterInitials: msg.initials,
+              requesterColor: msg.color,
+              requesterName: msg.name,
+            }));
+            break;
+          }
+        }
+        return;
+      }
+
+      // ── Host responds to join request ───────────────────────────────────
+      if (msg.type === "join_response") {
+        // Find requester ws and notify them
+        for (const [reqWs, info] of clients.entries()) {
+          if (info.id === msg.requesterId && reqWs.readyState === 1) {
+            reqWs.send(JSON.stringify({
+              type: "join_response",
+              approved: msg.approved,
+              roomId: msg.roomId,
+              roomName: msg.roomName,
+              reason: msg.reason || "",
+            }));
+            break;
+          }
+        }
+        return;
+      }
+
       // ── Register identity ──────────────────────────────────────────────
       if (msg.type === "identify") {
         clients.set(ws, { id: msg.id, initials: msg.initials, color: msg.color, name: msg.name, roomId: null });
@@ -488,6 +527,22 @@ app.post("/expo-link", (req, res) => {
 });
 
 // ── Room info endpoint (for QR deep link fallback) ─────────────────────────
+app.get("/rooms", (req, res) => {
+  const midnight = new Date(); midnight.setHours(0,0,0,0);
+  const active = Object.entries(rooms)
+    .filter(([, room]) => room.createdAt >= midnight.getTime())
+    .map(([roomId, room]) => ({
+      roomId,
+      roomName: room.name,
+      hostId: room.hostId,
+      hostInitials: room.members.find(m => m.id === room.hostId)?.initials || "?",
+      hostColor: room.members.find(m => m.id === room.hostId)?.color || "#00E676",
+      memberCount: room.members.length,
+      memberInitials: room.members.map(m => ({ initials: m.initials, color: m.color, id: m.id })),
+    }));
+  res.json({ rooms: active });
+});
+
 app.get("/room/:roomId", (req, res) => {
   const room = rooms[req.params.roomId];
   if (!room) return res.status(404).json({ error: "Room not found or expired" });

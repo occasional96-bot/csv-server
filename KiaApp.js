@@ -1520,7 +1520,7 @@ function DispatchPreCountScreen({ invoice, onBack, onComplete, setDispatchInvoic
 }
 
 // ─── KIA HOME SCREEN ──────────────────────────────────────────────────────────
-function KiaHomeScreen({ invoices, onImportCSV, onFetchFromServer, onClearAll, onOpenList, onFindPart, onManualInvoice, torchEnabled, setTorchEnabled, onScanFindPart, appMode, setAppMode, kiaPartResult, setKiaPartResult, onOpenInvoice, focusList, onOpenBoard, setFocusList, onAddToPending, wsStatus, wsLastSync, onSilentSync, onDispatchSync, hideOrderRefs, setHideOrderRefs, suppressNewInvAlert, setSuppressNewInvAlert, dimOtherCards, setDimOtherCards, onExportEmail, hideFindBtn, setHideFindBtn, onFindPartLookup, partLookupResult, setPartLookupResult, hideClosedInvoices, setHideClosedInvoices, onOpenDispatchPrecount, hideBackorderColProp, setHideBackorderColProp }) {
+function KiaHomeScreen({ invoices, onImportCSV, onFetchFromServer, onClearAll, onOpenList, onFindPart, onManualInvoice, torchEnabled, setTorchEnabled, onScanFindPart, appMode, setAppMode, kiaPartResult, setKiaPartResult, onOpenInvoice, focusList, onOpenBoard, setFocusList, onAddToPending, wsStatus, wsLastSync, onSilentSync, onDispatchSync, hideOrderRefs, setHideOrderRefs, suppressNewInvAlert, setSuppressNewInvAlert, dimOtherCards, setDimOtherCards, onExportEmail, hideFindBtn, setHideFindBtn, onFindPartLookup, partLookupResult, setPartLookupResult, hideClosedInvoices, setHideClosedInvoices, onOpenDispatchPrecount, hideBackorderColProp, setHideBackorderColProp, activeBoards, userIdentity, wsRef, currentRoomId, onRequestJoin }) {
   const [showManual, setShowManual]         = useState(false);
   const [manualText, setManualText]         = useState("");
   const [settingsMenu, setSettingsMenu]     = useState(false);
@@ -1682,6 +1682,53 @@ function KiaHomeScreen({ invoices, onImportCSV, onFetchFromServer, onClearAll, o
         </View>
 
         <View style={{ marginBottom: 40 }} />
+
+        {/* ── Active Boards Strip — tap avatar to request join ── */}
+        {activeBoards.filter(b => b.roomId !== currentRoomId).length > 0 && (
+          <View style={{ width: "100%", marginBottom: 10 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 6 }}>
+              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: C.green }} />
+              <Text style={{ color: C.t3, fontSize: 11, fontWeight: "800", letterSpacing: 0.5 }}>ACTIVE BOARDS</Text>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={{ flexDirection: "row", gap: 10, paddingBottom: 2 }}>
+                {activeBoards.filter(b => b.roomId !== currentRoomId).map(board => (
+                  <TouchableOpacity
+                    key={board.roomId}
+                    activeOpacity={0.75}
+                    onPress={() => {
+                      if (!userIdentity) { Alert.alert("Set up your identity first"); return; }
+                      Alert.alert(
+                        `Join "${board.roomName}"?`,
+                        `Hosted by ${board.hostInitials} · ${board.memberCount} member${board.memberCount !== 1 ? "s" : ""}`,
+                        [
+                          { text: "Cancel", style: "cancel" },
+                          { text: "Send Request", onPress: () => onRequestJoin(board) },
+                        ]
+                      );
+                    }}
+                    style={{ alignItems: "center", gap: 5 }}>
+                    <View style={{ width: 52, height: 52, borderRadius: 26,
+                      backgroundColor: board.hostColor + "22",
+                      borderWidth: 2, borderColor: board.hostColor,
+                      alignItems: "center", justifyContent: "center" }}>
+                      <Text style={{ color: board.hostColor, fontSize: 16, fontWeight: "900" }}>
+                        {board.hostInitials}
+                      </Text>
+                    </View>
+                    <Text style={{ color: C.t2, fontSize: 10, fontWeight: "700", maxWidth: 60, textAlign: "center" }} numberOfLines={1}>
+                      {board.roomName}
+                    </Text>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+                      <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: C.green }} />
+                      <Text style={{ color: C.t3, fontSize: 9 }}>{board.memberCount}</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+          </View>
+        )}
 
         {/* FOCUS BOARD + SCAN INVOICES icon */}
         <View style={{ width: "100%", flexDirection: "row", gap: 10, marginBottom: 10 }}>
@@ -3261,7 +3308,7 @@ function PresenceBar({ members, userIdentity, currentRoomId, roomName, isHost, o
 
 // ─── KIA FOCUS BOARD ─────────────────────────────────────────────────────────
 function KiaFocusBoard({ invoices, allInvoices, focusList, onSelect, onBack, torchEnabled, setKiaInvoices, lastScanned, setLastScanned, pinnedIds, setPinnedIds, activeInvId, setActiveInvId, pileCount, setPileCount, hideOrderRefs, setHideOrderRefs, suppressNewInvAlert, setSuppressNewInvAlert, dimOtherCards, setDimOtherCards, lastVisitedId, setLastVisitedId, onFindPart, onFindPartOcr, onFindPartKeyboard, hideFindBtn,
-  userIdentity, wsRef, currentRoomId, roomName, roomMembers, setRoomMembers, isRoomHost, onOpenSession }) {
+  userIdentity, wsRef, currentRoomId, roomName, roomMembers, setRoomMembers, isRoomHost, onOpenSession, incomingJoinReq, onRespondJoinReq }) {
   const insets = useSafeAreaInsets();
   const [boardRefreshing, setBoardRefreshing] = React.useState(false);
 
@@ -4190,6 +4237,46 @@ function KiaFocusBoard({ invoices, allInvoices, focusList, onSelect, onBack, tor
           </View>
         </View>
       ) : null}
+
+      {/* ── Incoming join request popup (host only) ── */}
+      {incomingJoinReq && isRoomHost && (
+        <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, alignItems: "center", justifyContent: "center", backgroundColor: "#00000077" }}>
+          <View style={{ backgroundColor: C.s1, borderRadius: 24, padding: 24, marginHorizontal: 24, width: "90%", borderWidth: 1, borderColor: incomingJoinReq.requesterColor + "66" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 14, marginBottom: 18 }}>
+              <View style={{ width: 52, height: 52, borderRadius: 26,
+                backgroundColor: incomingJoinReq.requesterColor + "22",
+                borderWidth: 2, borderColor: incomingJoinReq.requesterColor,
+                alignItems: "center", justifyContent: "center" }}>
+                <Text style={{ color: incomingJoinReq.requesterColor, fontSize: 18, fontWeight: "900" }}>
+                  {incomingJoinReq.requesterInitials}
+                </Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: C.t1, fontSize: 16, fontWeight: "900" }}>
+                  {incomingJoinReq.requesterName || incomingJoinReq.requesterInitials} wants to join
+                </Text>
+                <Text style={{ color: C.t3, fontSize: 13, marginTop: 2 }}>
+                  Requesting access to your board
+                </Text>
+              </View>
+            </View>
+            <View style={{ flexDirection: "row", gap: 10 }}>
+              <TouchableOpacity
+                onPress={() => onRespondJoinReq(true)}
+                activeOpacity={0.8}
+                style={{ flex: 1, backgroundColor: C.green + "22", borderRadius: 14, paddingVertical: 16, alignItems: "center", borderWidth: 1, borderColor: C.green + "55" }}>
+                <Text style={{ color: C.green, fontSize: 15, fontWeight: "900" }}>ALLOW</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => onRespondJoinReq(false)}
+                activeOpacity={0.8}
+                style={{ flex: 1, backgroundColor: C.red + "22", borderRadius: 14, paddingVertical: 16, alignItems: "center", borderWidth: 1, borderColor: C.red + "55" }}>
+                <Text style={{ color: C.red, fontSize: 15, fontWeight: "900" }}>DECLINE</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -4451,6 +4538,8 @@ export default function App() {
   const wsRef                                 = useRef(null);
   const wsReconnectRef                        = useRef(null);
   const wsRetryDelayRef                       = useRef(5000); // exponential backoff delay
+  const [activeBoards, setActiveBoards]       = useState([]); // rooms available to join
+  const [incomingJoinReq, setIncomingJoinReq] = useState(null); // { requesterId, requesterInitials, requesterColor, requesterName, roomId }
   const [pendingLocalImport, setPendingLocalImport] = useState(false);
 
   // ── Board sync state ─────────────────────────────────────────────────────
@@ -4770,6 +4859,39 @@ export default function App() {
         // Respond to server keepalive ping so Railway doesn't close idle connections
         if (msg.type === "ping") { if (ws.readyState === 1) ws.send(JSON.stringify({ type: "pong" })); return; }
 
+        // Host receives a join request from another phone
+        if (msg.type === "join_request") {
+          setIncomingJoinReq({
+            requesterId: msg.requesterId,
+            requesterInitials: msg.requesterInitials,
+            requesterColor: msg.requesterColor,
+            requesterName: msg.requesterName,
+            roomId: msg.roomId,
+          });
+          return;
+        }
+
+        // Phone 2 receives response to their join request
+        if (msg.type === "join_response") {
+          if (msg.approved) {
+            // Auto-join the room
+            ws.send(JSON.stringify({
+              type: "join_room",
+              roomId: msg.roomId,
+              userId: userIdentityRef.current?.id,
+              initials: userIdentityRef.current?.initials,
+              color: userIdentityRef.current?.color,
+              name: userIdentityRef.current?.name,
+              mergeMode: "merge",
+            }));
+            setCurrentRoomId(msg.roomId);
+            setRoomName(msg.roomName);
+          } else {
+            Alert.alert("Join Declined", "The host declined your request to join.");
+          }
+          return;
+        }
+
         // CSV file sync (existing)
         if (msg.type === "new_file" && msg.filename) { autoImportFile(msg.filename); return; }
 
@@ -4956,6 +5078,21 @@ export default function App() {
       clearTimeout(wsReconnectRef.current);
       if (wsRef.current) wsRef.current.close();
     };
+  }, []);
+
+  // ── Poll active boards every 8s for the avatar join strip ──────────────
+  useEffect(() => {
+    const poll = async () => {
+      try {
+        const res = await fetch(`${HTTP_SERVER}/rooms`);
+        if (!res.ok) return;
+        const json = await res.json();
+        setActiveBoards(json.rooms || []);
+      } catch(e) { console.error("activeBoards poll:", e); }
+    };
+    poll();
+    const interval = setInterval(poll, 8000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
@@ -5298,6 +5435,22 @@ export default function App() {
           setFocusList={setKiaFocusList}
           wsStatus={wsStatus}
           wsLastSync={wsLastSync}
+          activeBoards={activeBoards}
+          userIdentity={userIdentity}
+          wsRef={wsRef}
+          currentRoomId={currentRoomId}
+          onRequestJoin={(board) => {
+            if (!wsRef.current || wsRef.current.readyState !== 1 || !userIdentity) return;
+            wsRef.current.send(JSON.stringify({
+              type: "join_request",
+              roomId: board.roomId,
+              userId: userIdentity.id,
+              initials: userIdentity.initials,
+              color: userIdentity.color,
+              name: userIdentity.name,
+            }));
+            Alert.alert("Request Sent", `Asked to join ${board.roomName}. Waiting for host to approve.`);
+          }}
           hideOrderRefs={kiaHideOrderRefs}
           setHideOrderRefs={setKiaHideOrderRefs}
           suppressNewInvAlert={kiaSuppressNewInv}
@@ -5437,6 +5590,18 @@ export default function App() {
           setRoomMembers={setRoomMembers}
           isRoomHost={isRoomHost}
           onOpenSession={() => setShowSessionModal(true)}
+          incomingJoinReq={incomingJoinReq}
+          onRespondJoinReq={(approved) => {
+            if (!incomingJoinReq || !wsRef.current || wsRef.current.readyState !== 1) return;
+            wsRef.current.send(JSON.stringify({
+              type: "join_response",
+              requesterId: incomingJoinReq.requesterId,
+              roomId: incomingJoinReq.roomId,
+              roomName: roomName,
+              approved,
+            }));
+            setIncomingJoinReq(null);
+          }}
         />
       ) : kiaScreen === "detail" && kiaInvoices.find(i => i.id === activeKiaId) ? (
         <KiaDetailScreen
