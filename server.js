@@ -120,7 +120,25 @@ wss.on("connection", (ws) => {
         }
         const info = clients.get(ws) || {};
         clients.set(ws, { ...info, id: msg.userId, initials: msg.initials, color: msg.color, name: msg.name, roomId: msg.roomId });
-        // Send current room state to joiner
+        // Merge invoiceUpdates INTO room.invoices before sending so joiner gets ONE fully confirmed snapshot
+        const mergedForJoiner = (room.invoices || []).map(inv => {
+          const upd = room.invoiceUpdates[inv.id];
+          if (!upd) return inv;
+          const parts = inv.parts.map(p => {
+            const key = p.partNumber + "_" + (p.lineNo || "0");
+            const pu = upd.parts?.[key];
+            if (!pu) return p;
+            return { ...p, confirmed: pu.confirmed, short: pu.short, shortQty: pu.shortQty,
+              confirmedBy: pu.confirmedBy, confirmedColor: pu.confirmedColor, confirmedAt: pu.confirmedAt };
+          });
+          const done = parts.every(p => p.short || p.confirmed >= p.qty);
+          return { ...inv, parts, complete: upd.complete || done || inv.complete,
+            completedAt: upd.completedAt || inv.completedAt, completedBy: upd.completedBy || inv.completedBy };
+        });
+        // Also save merged back so it stays fresh
+        room.invoices = mergedForJoiner;
+        console.log(`[join_room] ${msg.initials} joined room ${msg.roomId}. Sending ${mergedForJoiner.length} invoices. Room now has ${getRoomPresence(msg.roomId).length} members`);
+        // Send current room state to joiner - single merged snapshot, no separate invoiceUpdates needed
         sendToClient(ws, {
           type: "room_joined",
           roomId: msg.roomId,
@@ -128,7 +146,7 @@ wss.on("connection", (ws) => {
           hostId: room.hostId,
           members: getRoomPresence(msg.roomId).map(m => ({ ...m, isHost: m.id === room.hostId })),
           invoiceUpdates: room.invoiceUpdates,
-          invoices: room.invoices || [],
+          invoices: mergedForJoiner,
           focusList: room.focusList,
           pinnedIds: room.pinnedIds,
           mergeMode: msg.mergeMode,
@@ -139,7 +157,6 @@ wss.on("connection", (ws) => {
           member: { id: msg.userId, initials: msg.initials, color: msg.color, name: msg.name },
           presence: getRoomPresence(msg.roomId).map(m => ({ ...m, isHost: m.id === room.hostId })),
         }, msg.userId);
-        console.log(`[join_room] ${msg.initials} joined room ${msg.roomId}. Room now has ${getRoomPresence(msg.roomId).length} members`);
         return;
       }
 
@@ -241,8 +258,26 @@ wss.on("connection", (ws) => {
         const roomId = getRoomIdForClient(clientInfo, msg.userId);
         const room = rooms[roomId];
         if (!room) return;
-        room.invoices = msg.invoices || [];
-        broadcastToRoom(roomId, { type: "invoices_synced", invoices: room.invoices }, msg.userId);
+        // Merge incoming invoices with existing invoiceUpdates so confirms from other phones aren't lost
+        const incoming = msg.invoices || [];
+        const merged = incoming.map(inv => {
+          const upd = room.invoiceUpdates[inv.id];
+          if (!upd) return inv;
+          const parts = inv.parts.map(p => {
+            const key = p.partNumber + "_" + (p.lineNo || "0");
+            const pu = upd.parts?.[key];
+            if (!pu) return p;
+            return pu.confirmed >= p.confirmed
+              ? { ...p, confirmed: pu.confirmed, short: pu.short, shortQty: pu.shortQty,
+                  confirmedBy: pu.confirmedBy, confirmedColor: pu.confirmedColor, confirmedAt: pu.confirmedAt }
+              : p;
+          });
+          const done = parts.every(p => p.short || p.confirmed >= p.qty);
+          return { ...inv, parts, complete: upd.complete || done || inv.complete,
+            completedAt: upd.completedAt || inv.completedAt, completedBy: upd.completedBy || inv.completedBy };
+        });
+        room.invoices = merged;
+        // Don't broadcast back — only host sends this, others get updates via part_update
         return;
       }
 
