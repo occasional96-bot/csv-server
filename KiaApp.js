@@ -15,6 +15,7 @@ const KIA_STORAGE_KEY = "@kia_receiving_v1";
 const USER_IDENTITY_KEY = "@kia_user_identity_v1";
 const BOARD_SESSION_KEY = "@kia_board_session_v1";
 const WS_SERVER = "wss://csv-server-production-efc6.up.railway.app";
+const DEBUG = false; // Set true to enable verbose logging
 const HTTP_SERVER = "https://csv-server-production-efc6.up.railway.app";
 
 const USER_COLORS = ["#00E676","#29B6F6","#FFB300","#FF6D00","#E040FB","#F44336","#00BCD4","#CDDC39"];
@@ -202,7 +203,7 @@ function resolveIsuzuFromBuffer(buffer, partsDB) {
     }
   }
 
-  console.log(`Isuzu resolve: ${gmCandidates.length} GM#, ${partCandidates.length} part scans`);
+  DEBUG && console.log(`Isuzu resolve: ${gmCandidates.length} GM#, ${partCandidates.length} part scans`);
 
   const scores = new Map();
   const addScore = (pn, points, method) => {
@@ -286,15 +287,15 @@ function resolveIsuzuFromBuffer(buffer, partsDB) {
   }
 
   if (bestPN) {
-    console.log(`Isuzu resolved: ${bestPN} (score:${bestScore}, ${Date.now() - t0}ms)`);
-    console.log(`  Methods: ${bestMethods.join(' | ')}`);
+    DEBUG && console.log(`Isuzu resolved: ${bestPN} (score:${bestScore}, ${Date.now() - t0}ms)`);
+    DEBUG && console.log(`  Methods: ${bestMethods.join(' | ')}`);
     return { partNumber: bestPN, confidence: bestScore, methods: bestMethods };
   }
 
   // Last resort: best-effort even without DB match
   for (const ps of partCandidates) {
     if (/^\d{10}$/.test(ps.corrected)) {
-      console.log(`Isuzu last-resort (corrected, no DB): ${ps.corrected}`);
+      DEBUG && console.log(`Isuzu last-resort (corrected, no DB): ${ps.corrected}`);
       return { partNumber: ps.corrected, confidence: 15, methods: ['last-resort-corrected'] };
     }
   }
@@ -303,14 +304,14 @@ function resolveIsuzuFromBuffer(buffer, partsDB) {
       for (let d = 0; d <= 9; d++) {
         const candidate = '8' + gm.digits + d;
         if (dbDigitsMap.has(candidate)) {
-          console.log(`Isuzu last-resort (GM#+check): ${candidate}`);
+          DEBUG && console.log(`Isuzu last-resort (GM#+check): ${candidate}`);
           return { partNumber: candidate, confidence: 30, methods: ['gm-checkdigit-bruteforce'] };
         }
       }
     }
   }
 
-  console.log(`Isuzu: no resolution found (${Date.now() - t0}ms)`);
+  DEBUG && console.log(`Isuzu: no resolution found (${Date.now() - t0}ms)`);
   return null;
 }
 
@@ -357,12 +358,12 @@ function parsePartNumber(scannedData, partsDB) {
 
   // CRITICAL FIX 0: Strip special characters from the START
   cleaned = cleaned.replace(/^[&@#!$%^*()+=[\\]{}\|\\:;"'<>,.?\/~`]+/, '');
-  console.log(`After stripping special chars: ${scannedData} → ${cleaned}`);
+  DEBUG && console.log(`After stripping special chars: ${scannedData} → ${cleaned}`);
 
   // CRITICAL FIX 0.5: Strip & and everything after it (common in Kia parts)
   if (cleaned.includes('&')) {
     cleaned = cleaned.split('&')[0];
-    console.log(`Stripped & and after: ${scannedData} → ${cleaned}`);
+    DEBUG && console.log(`Stripped & and after: ${scannedData} → ${cleaned}`);
   }
 
   // CRITICAL FIX 0.6: Strip 2-letter make prefixes unconditionally (KI=KIA, HY=HYUNDAI, IS=ISUZU, BY=BYD etc)
@@ -376,7 +377,7 @@ function parsePartNumber(scannedData, partsDB) {
         /^\d{5,}/.test(stripped) ||
         /^[A-Z0-9]{6,}/.test(stripped)
       ) {
-        console.log(`Stripped make prefix "${prefix}": ${cleaned} → ${stripped}`);
+        DEBUG && console.log(`Stripped make prefix "${prefix}": ${cleaned} → ${stripped}`);
         cleaned = stripped;
         break;
       }
@@ -388,13 +389,13 @@ function parsePartNumber(scannedData, partsDB) {
   if (kiaWithSpaceMatch) {
     const combined = kiaWithSpaceMatch[1] + kiaWithSpaceMatch[2];
     if (combined.length >= 8 && /\d/.test(combined)) {
-      console.log(`Kia format with space detected: ${cleaned} → ${combined}`);
+      DEBUG && console.log(`Kia format with space detected: ${cleaned} → ${combined}`);
       cleaned = combined;
     }
   } else {
     const spaceSplit = cleaned.split(/\s+/);
     if (spaceSplit.length > 1) {
-      console.log(`Split by space: ${cleaned} → Taking first element: ${spaceSplit[0]}`);
+      DEBUG && console.log(`Split by space: ${cleaned} → Taking first element: ${spaceSplit[0]}`);
       cleaned = spaceSplit[0];
     }
   }
@@ -407,14 +408,14 @@ function parsePartNumber(scannedData, partsDB) {
     if (productionCodePattern.test(cleaned)) {
       const withoutCode = cleaned.replace(productionCodePattern, '');
       if (withoutCode.length >= 8) {
-        console.log(`Stripped production code: ${cleaned} → ${withoutCode}`);
+        DEBUG && console.log(`Stripped production code: ${cleaned} → ${withoutCode}`);
         cleaned = withoutCode;
       }
     }
   }
 
   if (cleaned.length < 6) {
-    console.log(`Rejected: Too short (${cleaned})`);
+    DEBUG && console.log(`Rejected: Too short (${cleaned})`);
     return null;
   }
 
@@ -429,7 +430,7 @@ function parsePartNumber(scannedData, partsDB) {
   ];
   for (const pattern of invalidPatterns) {
     if (pattern.test(cleaned)) {
-      console.log(`Rejected: Invalid pattern (${cleaned})`);
+      DEBUG && console.log(`Rejected: Invalid pattern (${cleaned})`);
       return null;
     }
   }
@@ -438,7 +439,7 @@ function parsePartNumber(scannedData, partsDB) {
   const kiaMatchA = cleaned.match(/^(\d{5,6})([A-Z0-9]{4,8}[A-Z]+[A-Z0-9]*)$/);
   if (kiaMatchA) {
     const partNumber = kiaMatchA[1] + kiaMatchA[2];
-    console.log(`Kia format A detected: ${partNumber}`);
+    DEBUG && console.log(`Kia format A detected: ${partNumber}`);
     return partNumber;
   }
 
@@ -446,7 +447,7 @@ function parsePartNumber(scannedData, partsDB) {
   const kiaMatchB = cleaned.match(/^(\d{7,10})([A-Z][A-Z0-9]{0,3})$/);
   if (kiaMatchB) {
     const partNumber = kiaMatchB[1] + kiaMatchB[2];
-    console.log(`Kia format B detected: ${partNumber}`);
+    DEBUG && console.log(`Kia format B detected: ${partNumber}`);
     return partNumber;
   }
 
@@ -457,7 +458,7 @@ function parsePartNumber(scannedData, partsDB) {
     if (letterCount >= 1 && letterCount <= 2 && digitCount >= 8) {
       const hasEmbeddedLetter = /\d[A-Z]\d/.test(cleaned) || /\d[A-Z]$/.test(cleaned);
       if (hasEmbeddedLetter) {
-        console.log(`Kia format C (embedded letter) detected: ${cleaned}`);
+        DEBUG && console.log(`Kia format C (embedded letter) detected: ${cleaned}`);
         return cleaned;
       }
     }
@@ -480,10 +481,10 @@ function parsePartNumber(scannedData, partsDB) {
       const corrected = correctIsuzuMisreads(cleaned);
       if (/^\d{10}$/.test(corrected)) {
         if (partsDB && partsDB.some(p => p.partNumber === cleaned)) {
-          console.log(`Isuzu correction blocked — "${cleaned}" exists in DB as Kia/Hyundai`);
+          DEBUG && console.log(`Isuzu correction blocked — "${cleaned}" exists in DB as Kia/Hyundai`);
           return cleaned;
         }
-        console.log(`Isuzu misread in parsePartNumber: "${cleaned}" → "${corrected}"`);
+        DEBUG && console.log(`Isuzu misread in parsePartNumber: "${cleaned}" → "${corrected}"`);
         return corrected;
       }
     }
@@ -492,7 +493,7 @@ function parsePartNumber(scannedData, partsDB) {
   // 7-digit codes (Kia accessories/fluids)
   if (cleaned.length === 7 && /^\d{7}$/.test(cleaned)) {
     if (partsDB && partsDB.some(p => p.partNumber === cleaned)) {
-      console.log(`7-digit DB match: ${cleaned}`);
+      DEBUG && console.log(`7-digit DB match: ${cleaned}`);
       return cleaned;
     }
     return { partial: true, digits: cleaned };
@@ -501,7 +502,7 @@ function parsePartNumber(scannedData, partsDB) {
   // 8-digit codes
   if (cleaned.length === 8 && /^\d{8}$/.test(cleaned)) {
     if (/^[7-9]\d{7}$/.test(cleaned)) {
-      console.log(`Rejected: 8-digit Isuzu partial (${cleaned})`);
+      DEBUG && console.log(`Rejected: 8-digit Isuzu partial (${cleaned})`);
       return null;
     }
     return { partial: true, digits: cleaned };
@@ -717,11 +718,11 @@ function BarcodeScanner({ visible, onScanned, onClose, title, partsDB, invoiceMo
     isuzuBufferRef.current = [];
     isuzuTimerRef.current = null;
     if (buffer.length === 0) return;
-    console.log(`Isuzu buffer processing: ${buffer.length} barcodes`);
-    buffer.forEach(s => console.log(`  "${s.data}" Y=${s.y}`));
+    DEBUG && console.log(`Isuzu buffer processing: ${buffer.length} barcodes`);
+    buffer.forEach(s => DEBUG && console.log(`  "${s.data}" Y=${s.y}`));
     const result = resolveIsuzuFromBuffer(buffer, partsDB || []);
     if (result) {
-      console.log(`Isuzu resolved → ${result.partNumber} (confidence:${result.confidence})`);
+      DEBUG && console.log(`Isuzu resolved → ${result.partNumber} (confidence:${result.confidence})`);
       lastScanTimeRef.current = Date.now();
       lastScannedDataRef.current = result.partNumber;
       deliver(result.partNumber);
@@ -730,7 +731,7 @@ function BarcodeScanner({ visible, onScanned, onClose, title, partsDB, invoiceMo
     // Last resort: fuzzy fallback on any 8-digit scan — just deliver it and let caller handle
     const any8 = buffer.find(s => s.data.length === 8 && (s.data.match(/\d/g) || []).length >= 6);
     if (any8) deliver(correctIsuzuMisreads(any8.data));
-    else console.log('Isuzu: no resolution possible');
+    else DEBUG && console.log('Isuzu: no resolution possible');
   };
 
   const handleBarCodeScanned = (event) => {
@@ -823,7 +824,7 @@ function BarcodeScanner({ visible, onScanned, onClose, title, partsDB, invoiceMo
         isuzuBufferRef.current.push({ data: trimmedData, y: yPosition, timestamp: now });
       }
 
-      console.log(`Isuzu buffer add: "${trimmedData}" Y=${yPosition} (${isuzuBufferRef.current.length} in buffer)`);
+      DEBUG && console.log(`Isuzu buffer add: "${trimmedData}" Y=${yPosition} (${isuzuBufferRef.current.length} in buffer)`);
 
       if (isuzuTimerRef.current) clearTimeout(isuzuTimerRef.current);
       const hasGM = isuzuBufferRef.current.some(s => s.data.length === 8);
@@ -1647,8 +1648,8 @@ function KiaHomeScreen({ invoices, onImportCSV, onFetchFromServer, onClearAll, o
 
   const handlePullRefresh = async () => {
     setRefreshing(true);
-    try { await onSilentSync(); } catch (_) {}
-    try { await onDispatchSync(); } catch (_) {}
+    try { await onSilentSync(); } catch (e) { console.error("silentSync:", e); }
+    try { await onDispatchSync(); } catch (e) { console.error("dispatchSync:", e); }
     setRefreshing(false);
     setShowUpdated(true);
     setTimeout(() => setShowUpdated(false), 1500);
@@ -4449,6 +4450,7 @@ export default function App() {
   const [wsLastSync, setWsLastSync]           = useState(null); // timestamp ms
   const wsRef                                 = useRef(null);
   const wsReconnectRef                        = useRef(null);
+  const wsRetryDelayRef                       = useRef(5000); // exponential backoff delay
   const [pendingLocalImport, setPendingLocalImport] = useState(false);
 
   // ── Board sync state ─────────────────────────────────────────────────────
@@ -4531,8 +4533,9 @@ export default function App() {
 
   // ── Auto-push full invoice state to server when in a room (debounced 2s) ──
   // This keeps room.invoices fresh so late joiners always get the full picture
+  // Gated on currentRoomId so it only runs when actually in a room
   useEffect(() => {
-    if (!currentRoomIdRef.current || !userIdentityRef.current) return;
+    if (!currentRoomId || !currentRoomIdRef.current || !userIdentityRef.current) return;
     if (!wsRef.current || wsRef.current.readyState !== 1) return;
     clearTimeout(invoiceSyncRef.current);
     invoiceSyncRef.current = setTimeout(() => {
@@ -4543,7 +4546,7 @@ export default function App() {
         userId: userIdentityRef.current.id,
       }));
     }, 2000);
-  }, [kiaInvoices]);
+  }, [kiaInvoices, currentRoomId]);
 
   useEffect(() => {
     if (userIdentity) AsyncStorage.setItem(USER_IDENTITY_KEY, JSON.stringify(userIdentity)).catch(() => {});
@@ -4576,20 +4579,21 @@ export default function App() {
 
   useEffect(() => {
     AsyncStorage.setItem("@kia_focuslist_v1", JSON.stringify(kiaFocusList)).catch(() => {});
-    // Broadcast focusList changes to room (debounced 500ms)
-    if (currentRoomIdRef.current && userIdentityRef.current && wsRef.current?.readyState === 1) {
-      clearTimeout(focusListSyncRef.current);
-      focusListSyncRef.current = setTimeout(() => {
-        wsRef.current?.send(JSON.stringify({
-          type: "focuslist_update",
-          focusList: kiaFocusList,
-          pinnedIds: kiaPinnedIds,
-          initials: userIdentityRef.current?.initials,
-          userId: userIdentityRef.current?.id,
-        }));
-      }, 500);
-    }
-  }, [kiaFocusList]);
+    // Only broadcast to room if actually in one
+    if (!currentRoomId || !currentRoomIdRef.current || !userIdentityRef.current) return;
+    if (!wsRef.current || wsRef.current.readyState !== 1) return;
+    clearTimeout(focusListSyncRef.current);
+    focusListSyncRef.current = setTimeout(() => {
+      if (!wsRef.current || wsRef.current.readyState !== 1) return;
+      wsRef.current.send(JSON.stringify({
+        type: "focuslist_update",
+        focusList: kiaFocusList,
+        pinnedIds: kiaPinnedIds,
+        initials: userIdentityRef.current?.initials,
+        userId: userIdentityRef.current?.id,
+      }));
+    }, 500);
+  }, [kiaFocusList, currentRoomId]);
 
   useEffect(() => {
     AsyncStorage.setItem("@kia_pinnedids_v1", JSON.stringify(kiaPinnedIds)).catch(() => {});
@@ -4743,6 +4747,7 @@ export default function App() {
     const ws = new WebSocket(WS_SERVER);
     wsRef.current = ws;
     ws.onopen = () => {
+      wsRetryDelayRef.current = 5000; // Reset backoff on successful connect
       checkWatchStatus();
       // Identify ourselves to server
       const identity = userIdentityRef.current;
@@ -4762,6 +4767,9 @@ export default function App() {
       try {
         const msg = JSON.parse(e.data);
 
+        // Respond to server keepalive ping so Railway doesn't close idle connections
+        if (msg.type === "ping") { if (ws.readyState === 1) ws.send(JSON.stringify({ type: "pong" })); return; }
+
         // CSV file sync (existing)
         if (msg.type === "new_file" && msg.filename) { autoImportFile(msg.filename); return; }
 
@@ -4773,20 +4781,22 @@ export default function App() {
           setRoomName(msg.roomName);
           setRoomMembers(msg.members || []);
           setIsRoomHost(msg.hostId === userIdentityRef.current?.id);
+          // focusList from host — used to decide which invoices get manuallyAdded
+          const remoteFocusList = msg.focusList || [];
+          const remotePinnedIds = msg.pinnedIds || [];
           if (msg.invoices && msg.invoices.length > 0) {
             setKiaInvoices(prev => {
               const next = [...prev];
               msg.invoices.forEach(ri => {
                 const ei = next.findIndex(e => e.id === ri.id);
                 if (ei === -1) {
-                  // New invoice — take it fully from remote (it has all confirms baked in)
-                  next.push({ ...ri, manuallyAdded: true, removedFromBoard: false });
+                  // Invoice not local — take it fully from remote including its manuallyAdded state
+                  next.push({ ...ri, removedFromBoard: false });
                 } else {
-                  // Existing invoice — merge parts, ALWAYS trusting remote confirmed over local zero
+                  // Existing invoice — merge parts trusting remote confirmed over local zero
                   const mergedParts = ri.parts.map(rp => {
                     const lp = next[ei].parts.find(p => p.partNumber === rp.partNumber && p.lineNo === rp.lineNo);
                     if (!lp) return rp;
-                    // Trust whichever has MORE confirmed (remote wins ties since it's the source of truth)
                     const remoteWins = rp.confirmed > lp.confirmed || rp.short;
                     return remoteWins
                       ? { ...rp }
@@ -4794,7 +4804,10 @@ export default function App() {
                           confirmedBy: lp.confirmedBy, confirmedColor: lp.confirmedColor, confirmedAt: lp.confirmedAt };
                   });
                   const done = mergedParts.every(p => p.short || p.confirmed >= p.qty);
-                  next[ei] = { ...next[ei], ...ri, manuallyAdded: true, removedFromBoard: false,
+                  next[ei] = { ...next[ei], ...ri,
+                    // Trust host's manuallyAdded — they control the board layout
+                    manuallyAdded: ri.manuallyAdded || next[ei].manuallyAdded,
+                    removedFromBoard: false,
                     parts: mergedParts, complete: ri.complete || done || next[ei].complete,
                     completedAt: ri.completedAt || next[ei].completedAt };
                 }
@@ -4802,12 +4815,13 @@ export default function App() {
               return next;
             });
           }
-          // Apply any remaining invoiceUpdates (catches parts not in room.invoices yet)
+          // Apply any remaining invoiceUpdates (catches parts confirmed after last room.invoices save)
           if (msg.invoiceUpdates && Object.keys(msg.invoiceUpdates).length > 0) {
             setKiaInvoices(prev => applyInvoiceUpdates(prev, msg.invoiceUpdates));
           }
-          if (msg.mergeMode === "replace") { setKiaFocusList(msg.focusList || []); setKiaPinnedIds(msg.pinnedIds || []); }
-          else { setKiaFocusList(prev => [...new Set([...prev, ...(msg.focusList || [])])]); setKiaPinnedIds(prev => [...new Set([...prev, ...(msg.pinnedIds || [])])]); }
+          // Always replace focusList/pinnedIds from host — they are the source of truth for board layout
+          setKiaFocusList(remoteFocusList);
+          setKiaPinnedIds(remotePinnedIds);
           return;
         }
 
@@ -4850,19 +4864,23 @@ export default function App() {
               const next = [...prev];
               msg.invoices.forEach(ri => {
                 const ei = next.findIndex(e => e.id === ri.id);
-                if (ei === -1) { next.push({ ...ri, manuallyAdded: true, removedFromBoard: false }); }
-                else {
+                if (ei === -1) {
+                  // New invoice — trust host's manuallyAdded state
+                  next.push({ ...ri, removedFromBoard: false });
+                } else {
                   const mergedParts = ri.parts.map(rp => {
                     const lp = next[ei].parts.find(p => p.partNumber === rp.partNumber && p.lineNo === rp.lineNo);
                     if (!lp) return rp;
-                    // Keep whichever has MORE confirmed — remote wins on tie (source of truth)
                     return (rp.confirmed >= lp.confirmed || rp.short)
                       ? { ...rp }
                       : { ...rp, confirmed: lp.confirmed, short: lp.short, shortQty: lp.shortQty,
                           confirmedBy: lp.confirmedBy, confirmedColor: lp.confirmedColor, confirmedAt: lp.confirmedAt };
                   });
                   const done = mergedParts.every(p => p.short || p.confirmed >= p.qty);
-                  next[ei] = { ...next[ei], ...ri, manuallyAdded: true, removedFromBoard: false,
+                  // Preserve existing manuallyAdded — don't force all invoices onto board
+                  next[ei] = { ...next[ei], ...ri,
+                    manuallyAdded: next[ei].manuallyAdded,
+                    removedFromBoard: next[ei].removedFromBoard,
                     parts: mergedParts, complete: ri.complete || done || next[ei].complete,
                     completedAt: ri.completedAt || next[ei].completedAt };
                 }
@@ -4882,7 +4900,7 @@ export default function App() {
               const next = [...prev];
               msg.invoices.forEach(ri => {
                 const ei = next.findIndex(e => e.id === ri.id);
-                if (ei === -1) { next.push({ ...ri, manuallyAdded: true, removedFromBoard: false }); }
+                if (ei === -1) { next.push({ ...ri, removedFromBoard: false }); }
                 else {
                   const mergedParts = ri.parts.map(rp => {
                     const lp = next[ei].parts.find(p => p.partNumber === rp.partNumber && p.lineNo === rp.lineNo);
@@ -4893,7 +4911,9 @@ export default function App() {
                           confirmedBy: lp.confirmedBy, confirmedColor: lp.confirmedColor, confirmedAt: lp.confirmedAt };
                   });
                   const done = mergedParts.every(p => p.short || p.confirmed >= p.qty);
-                  next[ei] = { ...next[ei], ...ri, manuallyAdded: true, removedFromBoard: false,
+                  next[ei] = { ...next[ei], ...ri,
+                    manuallyAdded: next[ei].manuallyAdded,
+                    removedFromBoard: next[ei].removedFromBoard,
                     parts: mergedParts, complete: ri.complete || done || next[ei].complete,
                     completedAt: ri.completedAt || next[ei].completedAt };
                 }
@@ -4918,12 +4938,15 @@ export default function App() {
           return;
         }
 
-      } catch {}
+      } catch(e) { console.error("WS message parse error:", e); }
     };
     ws.onerror = () => { setWsStatus("offline"); };
     ws.onclose = () => {
       setWsStatus("connecting");
-      wsReconnectRef.current = setTimeout(() => connectWebSocket(), 5000);
+      // Exponential backoff: 5s → 10s → 20s → 40s → max 60s
+      const delay = wsRetryDelayRef.current;
+      wsRetryDelayRef.current = Math.min(delay * 2, 60000);
+      wsReconnectRef.current = setTimeout(() => connectWebSocket(), delay);
     };
   };
 

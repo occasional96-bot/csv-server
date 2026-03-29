@@ -20,7 +20,20 @@ const writeMeta = (data) => fs.writeFileSync(META, JSON.stringify(data, null, 2)
 
 // ── Board rooms ─────────────────────────────────────────────────────────────
 // rooms[roomId] = { name, hostId, members: [{ id, initials, color, name, lastSeen }], invoices: {...}, focusList: [], pinnedIds: [], createdAt }
-const rooms = {};
+const ROOMS_FILE = path.join(__dirname, "rooms.json");
+const readRooms  = () => { try { return JSON.parse(fs.readFileSync(ROOMS_FILE, "utf8")); } catch { return {}; } };
+const saveRooms  = () => {
+  try {
+    // Strip member ws references before saving (can't serialize those)
+    const toSave = {};
+    for (const [id, room] of Object.entries(rooms)) {
+      toSave[id] = { ...room, members: room.members.map(m => ({ ...m })) };
+    }
+    fs.writeFileSync(ROOMS_FILE, JSON.stringify(toSave, null, 2));
+  } catch(e) { console.error("saveRooms error:", e); }
+};
+const rooms = readRooms(); // Load persisted rooms on startup
+console.log(`Loaded ${Object.keys(rooms).length} persisted rooms`);
 
 function getRoomByClient(clientId) {
   return Object.values(rooms).find(r => r.members.some(m => m.id === clientId)) || null;
@@ -82,6 +95,9 @@ wss.on("connection", (ws) => {
       const msg = JSON.parse(raw.toString());
       const clientInfo = clients.get(ws) || {};
 
+      // Ignore client pong responses to our ping
+      if (msg.type === "pong") return;
+
       // ── Register identity ──────────────────────────────────────────────
       if (msg.type === "identify") {
         clients.set(ws, { id: msg.id, initials: msg.initials, color: msg.color, name: msg.name, roomId: null });
@@ -106,6 +122,7 @@ wss.on("connection", (ws) => {
         const info = clients.get(ws) || {};
         clients.set(ws, { ...info, id: msg.userId, initials: msg.initials, color: msg.color, name: msg.name, roomId });
         sendToClient(ws, { type: "room_created", roomId, roomName: msg.roomName });
+        saveRooms();
         console.log(`Room created: ${roomId} (${msg.roomName})`);
         return;
       }
@@ -137,6 +154,7 @@ wss.on("connection", (ws) => {
         });
         // Also save merged back so it stays fresh
         room.invoices = mergedForJoiner;
+        saveRooms();
         console.log(`[join_room] ${msg.initials} joined room ${msg.roomId}. Sending ${mergedForJoiner.length} invoices. Room now has ${getRoomPresence(msg.roomId).length} members`);
         // Send current room state to joiner - single merged snapshot, no separate invoiceUpdates needed
         sendToClient(ws, {
@@ -237,6 +255,7 @@ wss.on("connection", (ws) => {
         for (const [bws, info] of clients.entries()) {
           if (info.roomId === roomId && bws.readyState === 1 && info.id !== msg.userId) broadcastCount++;
         }
+        saveRooms();
         console.log(`[part_update] sending to ${broadcastCount} other clients. Room members:`, rooms[roomId]?.members?.map(m => m.initials));
         // Broadcast to ALL others in room (exclude sender by userId)
         broadcastToRoom(roomId, {
@@ -277,6 +296,7 @@ wss.on("connection", (ws) => {
             completedAt: upd.completedAt || inv.completedAt, completedBy: upd.completedBy || inv.completedBy };
         });
         room.invoices = merged;
+        saveRooms();
         // Don't broadcast back — only host sends this, others get updates via part_update
         return;
       }
@@ -319,6 +339,7 @@ wss.on("connection", (ws) => {
         for (const [ws, info] of clients.entries()) {
           if (info.roomId === roomId && ws.readyState === 1) ws.send(str);
         }
+        saveRooms();
         console.log(`Full sync triggered by ${msg.userId} in room ${roomId}`);
         return;
       }
@@ -356,6 +377,7 @@ wss.on("connection", (ws) => {
             { ...inv, complete: true, completedAt: msg.timestamp, completedBy: msg.initials }
           );
         }
+        saveRooms();
         broadcastToRoom(roomId, {
           type: "invoice_complete",
           invId: msg.invId,
