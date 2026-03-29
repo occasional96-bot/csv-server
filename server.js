@@ -399,6 +399,27 @@ wss.on("connection", (ws) => {
         return;
       }
 
+      // ── Invoice reset (all parts cleared) ─────────────────────────────
+      if (msg.type === "invoice_reset") {
+        const roomId = getRoomIdForClient(clientInfo, msg.userId);
+        const room = rooms[roomId];
+        if (!room) return;
+        // Clear server-side invoiceUpdates for this invoice
+        if (room.invoiceUpdates[msg.invId]) delete room.invoiceUpdates[msg.invId];
+        // Clear in room.invoices too
+        if (room.invoices) {
+          room.invoices = room.invoices.map(inv =>
+            inv.id !== msg.invId ? inv : {
+              ...inv, complete: false, completedAt: 0, completedBy: "",
+              parts: inv.parts.map(p => ({ ...p, confirmed: 0, short: false, shortQty: null, confirmedBy: "", confirmedColor: "", confirmedAt: 0 }))
+            }
+          );
+        }
+        saveRooms();
+        broadcastToRoom(roomId, { type: "invoice_reset", invId: msg.invId, timestamp: msg.timestamp }, msg.userId);
+        return;
+      }
+
       // ── Invoice complete ───────────────────────────────────────────────
       if (msg.type === "invoice_complete") {
         const roomId = getRoomIdForClient(clientInfo, msg.userId);

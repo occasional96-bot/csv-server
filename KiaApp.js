@@ -2624,14 +2624,37 @@ function KiaDetailScreen({ invoice, onBack, setKiaInvoices, torchEnabled, initia
               Alert.alert("Reset Invoice?", "This will clear all confirmed parts on this invoice.", [
                 { text: "Cancel", style: "cancel" },
                 { text: "Reset", style: "destructive", onPress: () => {
+                  const ts = Date.now();
                   setKiaInvoices(prev => prev.map(inv =>
                     inv.id !== invoice.id ? inv : {
                       ...inv,
                       complete: false,
                       completedAt: 0,
-                      parts: inv.parts.map(p => ({ ...p, confirmed: 0, short: false, shortQty: undefined }))
+                      parts: inv.parts.map(p => ({ ...p, confirmed: 0, short: false, shortQty: undefined, confirmedBy: "", confirmedColor: "", confirmedAt: 0 }))
                     }
                   ));
+                  // Broadcast reset for every part + explicit invoice_reset to clear complete flag
+                  if (wsRef?.current?.readyState === 1 && currentRoomId && userIdentity) {
+                    invoice.parts.forEach(p => {
+                      wsRef.current.send(JSON.stringify({
+                        type: "part_update",
+                        invId: invoice.id,
+                        partKey: p.partNumber + "_" + (p.lineNo || "0"),
+                        confirmed: 0, short: false, shortQty: 0,
+                        initials: userIdentity.initials,
+                        color: userIdentity.color,
+                        userId: userIdentity.id,
+                        timestamp: ts,
+                      }));
+                    });
+                    // Send explicit reset so other phones clear the complete flag
+                    wsRef.current.send(JSON.stringify({
+                      type: "invoice_reset",
+                      invId: invoice.id,
+                      userId: userIdentity.id,
+                      timestamp: ts,
+                    }));
+                  }
                   setLastScanned(null);
                 }}
               ]);
@@ -2870,12 +2893,29 @@ function KiaDetailScreen({ invoice, onBack, setKiaInvoices, torchEnabled, initia
                 const { idx } = overrideModal;
                 setOverrideModal(null);
                 Vibration.vibrate([0, 60, 60, 60]);
+                const _mts = Date.now();
+                const _mpart = invoice.parts[idx];
+                const _mupdated = { ..._mpart, short: true, shortQty: 0, confirmed: 0,
+                  confirmedAt: _mts, confirmedBy: userIdentity?.initials || "", confirmedColor: userIdentity?.color || C.red };
                 setKiaInvoices(prev => prev.map(inv => {
                   if (inv.id !== invoice.id) return inv;
-                  const parts = inv.parts.map((p, i) => i !== idx ? p : { ...p, short: true, shortQty: 0, confirmed: 0 });
+                  const parts = inv.parts.map((p, i) => i !== idx ? p : _mupdated);
                   const done  = parts.every(p => p.short || p.confirmed >= p.qty);
-                  return { ...inv, parts, complete: done, completedAt: done && !inv.complete ? Date.now() : (inv.completedAt || 0) };
+                  return { ...inv, parts, complete: done, completedAt: done && !inv.complete ? _mts : (inv.completedAt || 0) };
                 }));
+                // Broadcast mark-missing to all room members
+                if (wsRef?.current?.readyState === 1 && currentRoomId && userIdentity) {
+                  wsRef.current.send(JSON.stringify({
+                    type: "part_update",
+                    invId: invoice.id,
+                    partKey: _mpart.partNumber + "_" + (_mpart.lineNo || "0"),
+                    confirmed: 0, short: true, shortQty: 0,
+                    initials: userIdentity.initials,
+                    color: userIdentity.color,
+                    userId: userIdentity.id,
+                    timestamp: _mts,
+                  }));
+                }
                 showFeedback("✕ Marked as missing", C.red);
               }}
               style={{ backgroundColor: C.red + "22", borderRadius: 14, padding: 18, marginBottom: 10, flexDirection: "row", alignItems: "center", gap: 14, borderWidth: 1.5, borderColor: C.red + "66" }}
@@ -2892,11 +2932,26 @@ function KiaDetailScreen({ invoice, onBack, setKiaInvoices, torchEnabled, initia
                 onPress={() => {
                   const { idx } = overrideModal;
                   setOverrideModal(null);
+                  const _uts = Date.now();
+                  const _upart = invoice.parts[idx];
                   setKiaInvoices(prev => prev.map(inv => {
                     if (inv.id !== invoice.id) return inv;
-                    const parts = inv.parts.map((p, i) => i !== idx ? p : { ...p, confirmed: 0, short: false, shortQty: null });
+                    const parts = inv.parts.map((p, i) => i !== idx ? p : { ...p, confirmed: 0, short: false, shortQty: null, confirmedBy: "", confirmedColor: "", confirmedAt: 0 });
                     return { ...inv, parts, complete: false };
                   }));
+                  // Broadcast undo to all room members
+                  if (wsRef?.current?.readyState === 1 && currentRoomId && userIdentity) {
+                    wsRef.current.send(JSON.stringify({
+                      type: "part_update",
+                      invId: invoice.id,
+                      partKey: _upart.partNumber + "_" + (_upart.lineNo || "0"),
+                      confirmed: 0, short: false, shortQty: 0,
+                      initials: userIdentity.initials,
+                      color: userIdentity.color,
+                      userId: userIdentity.id,
+                      timestamp: _uts,
+                    }));
+                  }
                   showFeedback("↩ Reset to uncounted", C.amber);
                 }}
                 style={{ backgroundColor: C.s2, borderRadius: 14, padding: 18, marginBottom: 10, flexDirection: "row", alignItems: "center", gap: 14, borderWidth: 1.5, borderColor: C.b1 }}
@@ -4973,8 +5028,9 @@ export default function App() {
                 confirmedBy: msg.initials, confirmedColor: msg.color, confirmedAt: msg.timestamp };
             });
             const done = parts.every(p => p.short || p.confirmed >= p.qty);
-            return { ...inv, parts, complete: done || inv.complete,
-              completedAt: (done && !inv.complete) ? msg.timestamp : (inv.completedAt || 0) };
+            // Do NOT use "done || inv.complete" — that prevents complete from going back to false on reset
+            return { ...inv, parts, complete: done,
+              completedAt: done ? (inv.completedAt || msg.timestamp) : 0 };
           }));
           return;
         }
@@ -5056,6 +5112,17 @@ export default function App() {
         if (msg.type === "invoice_complete") {
           setKiaInvoices(prev => prev.map(inv =>
             inv.id === msg.invId ? { ...inv, complete: true, completedAt: msg.timestamp, completedBy: msg.initials } : inv
+          ));
+          return;
+        }
+
+        // Invoice reset by someone else — clear complete flag and all part confirms
+        if (msg.type === "invoice_reset") {
+          setKiaInvoices(prev => prev.map(inv =>
+            inv.id !== msg.invId ? inv : {
+              ...inv, complete: false, completedAt: 0, completedBy: "",
+              parts: inv.parts.map(p => ({ ...p, confirmed: 0, short: false, shortQty: null, confirmedBy: "", confirmedColor: "", confirmedAt: 0 }))
+            }
           ));
           return;
         }
