@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
   View, Text, TouchableOpacity, ScrollView, TextInput,
-  StyleSheet, StatusBar, Modal, Vibration, Dimensions, Alert, Linking, Image, RefreshControl,
+  StyleSheet, StatusBar, Modal, Vibration, Dimensions, Alert, Linking, Image, RefreshControl, Share, AppState,
 } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { CameraView, useCameraPermissions } from "expo-camera";
@@ -12,6 +12,7 @@ import * as ImageManipulator from "expo-image-manipulator";
 
 const { width } = Dimensions.get("window");
 const KIA_STORAGE_KEY = "@kia_receiving_v1";
+const OCR_CAPTURE_KEY  = "@kia_ocr_capture_v1";
 const USER_IDENTITY_KEY = "@kia_user_identity_v1";
 const BOARD_SESSION_KEY = "@kia_board_session_v1";
 const WS_SERVER = "wss://csv-server-production-efc6.up.railway.app";
@@ -956,7 +957,7 @@ function BarcodeScanner({ visible, onScanned, onClose, title, partsDB, invoiceMo
         {/* Bottom-left: keyboard manual entry */}
         {/* Bottom-left: keyboard */}
         <TouchableOpacity
-          onPress={() => { setOcrMode(false); setKeyboardInput(""); setKeyboardVisible(true); }}
+          onPress={() => { if (onInvoiceKeyboard) { onInvoiceKeyboard(); } else { setOcrMode(false); setKeyboardInput(""); setKeyboardVisible(true); } }}
           activeOpacity={0.8}
           style={{ position: "absolute", bottom: 220, left: 20, backgroundColor: "#000000CC", borderRadius: 18, padding: 18, borderWidth: 1.5, borderColor: accentColor + "66", width: 64, height: 64, alignItems: "center", justifyContent: "center" }}
         >
@@ -1013,7 +1014,7 @@ function BarcodeScanner({ visible, onScanned, onClose, title, partsDB, invoiceMo
         {/* Keyboard input modal */}
         <Modal visible={keyboardVisible} transparent animationType="fade">
           <TouchableOpacity style={{ flex: 1, backgroundColor: "#00000088" }} activeOpacity={1} onPress={() => setKeyboardVisible(false)} />
-          <View style={{ backgroundColor: C.s1, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 36 }}>
+          <View style={{ backgroundColor: C.s1, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 48 }}>
             <View style={{ alignSelf: "center", width: 40, height: 4, backgroundColor: C.b1, borderRadius: 2, marginBottom: 20 }} />
             <Text style={{ color: C.t2, fontSize: 12, fontWeight: "900", letterSpacing: 1.5, marginBottom: 8 }}>PART OR ORDER NUMBER LOOKUP</Text>
             <TextInput
@@ -1166,6 +1167,7 @@ function DispatchPreCountScreen({ invoice, onBack, onComplete, setDispatchInvoic
   const [showScanner, setShowScanner]   = useState(false);
   const [scanPopup, setScanPopup]       = useState(null);
   const [noteModal, setNoteModal]       = useState(null);
+  const noteInputRef = useRef(null);
   const [noteText, setNoteText]         = useState("");
   const [qtyModal, setQtyModal]         = useState(null);
   const [qtyInput, setQtyInput]         = useState("");
@@ -1175,6 +1177,12 @@ function DispatchPreCountScreen({ invoice, onBack, onComplete, setDispatchInvoic
 
   const activeParts    = invoice.parts.filter(p => !p.backorder);
   const backorderParts = invoice.parts.filter(p => p.backorder);
+
+  // Auto-show/hide backorder column based on whether invoice has any backorders
+  useEffect(() => {
+    const hasBackorders = invoice.parts.some(p => p.backorder);
+    setHideBackorderCol(!hasBackorders);
+  }, [invoice.id]);
   const confirmedCount = activeParts.filter(p => (p.precounted || 0) >= p.expected).length;
   const allDone        = confirmedCount === activeParts.length && activeParts.length > 0;
   const pendingParts   = activeParts.filter(p => (p.precounted || 0) < p.expected);
@@ -1419,7 +1427,7 @@ function DispatchPreCountScreen({ invoice, onBack, onComplete, setDispatchInvoic
           <View style={{ backgroundColor: C.s1, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 28 }}>
             <View style={{ alignSelf: "center", width: 40, height: 4, backgroundColor: C.b1, borderRadius: 2, marginBottom: 20 }} />
             <Text style={{ color: C.t2, fontSize: 12, fontWeight: "700", letterSpacing: 1, marginBottom: 4 }}>OVERRIDE</Text>
-            <Text style={{ color: C.t1, fontSize: 18, fontWeight: "900", marginBottom: 20 }}>{overrideModal?.partNumber}</Text>
+            <Text style={{ color: C.t1, fontSize: 18, fontWeight: "900", marginBottom: 20 }} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.4}>{overrideModal?.partNumber}</Text>
             <TouchableOpacity onPress={handleManualConfirm} activeOpacity={0.8}
               style={{ backgroundColor: C.green+"22", borderRadius: 14, padding: 18, marginBottom: 10, flexDirection: "row", alignItems: "center", gap: 14, borderWidth: 1.5, borderColor: C.green+"66" }}>
               <MaterialCommunityIcons name="check-bold" size={24} color={C.green} />
@@ -1454,14 +1462,14 @@ function DispatchPreCountScreen({ invoice, onBack, onComplete, setDispatchInvoic
       </Modal>
 
       {/* Note modal */}
-      <Modal visible={!!noteModal} transparent animationType="slide">
+      <Modal visible={!!noteModal} transparent animationType="slide" onShow={() => setTimeout(() => noteInputRef.current?.focus(), 100)}>
         <TouchableOpacity style={{ flex: 1, backgroundColor: "#00000088", justifyContent: "flex-end" }} activeOpacity={1} onPress={() => { setNoteModal(null); setNoteText(""); }}>
           <View style={{ backgroundColor: C.s1, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 28 }}>
             <View style={{ alignSelf: "center", width: 40, height: 4, backgroundColor: C.b1, borderRadius: 2, marginBottom: 20 }} />
             <Text style={{ color: C.green, fontSize: 16, fontWeight: "900", marginBottom: 4 }}>Add Note</Text>
             <Text style={{ color: C.t3, fontSize: 13, marginBottom: 16 }}>{noteModal?.partNumber}</Text>
-            <TextInput style={{ backgroundColor: C.s2, borderRadius: 14, borderWidth: 1, borderColor: C.green+"66", color: C.t1, fontSize: 16, padding: 16, marginBottom: 16, minHeight: 80, textAlignVertical: "top" }}
-              placeholder="e.g. short 1, damaged..." placeholderTextColor={C.t3} value={noteText} onChangeText={setNoteText} multiline autoFocus />
+            <TextInput ref={noteInputRef} style={{ backgroundColor: C.s2, borderRadius: 14, borderWidth: 1, borderColor: C.green+"66", color: C.t1, fontSize: 16, padding: 16, marginBottom: 16, minHeight: 80, textAlignVertical: "top" }}
+              placeholder="e.g. short 1, damaged..." placeholderTextColor={C.t3} value={noteText} onChangeText={setNoteText} multiline />
             <TouchableOpacity onPress={() => { if(!noteModal)return; setDispatchInvoices(prev=>prev.map(inv=>{if(inv.id!==invoice.id)return inv;return{...inv,parts:inv.parts.map((p,i)=>i!==noteModal.idx?p:{...p,precountNote:noteText.trim()})}})); setNoteModal(null); setNoteText(""); }}
               style={{ backgroundColor: C.green, borderRadius: 14, padding: 18, alignItems: "center", marginBottom: 12 }}>
               <Text style={{ color: C.bg, fontSize: 18, fontWeight: "900" }}>Save Note</Text>
@@ -1476,9 +1484,9 @@ function DispatchPreCountScreen({ invoice, onBack, onComplete, setDispatchInvoic
       {/* Qty pad */}
       <Modal visible={!!qtyModal} transparent animationType="slide">
         <TouchableOpacity style={{ flex: 1, backgroundColor: "#00000088", justifyContent: "flex-end" }} activeOpacity={1} onPress={() => { setQtyModal(null); setQtyInput(""); }}>
-          <View style={{ backgroundColor: C.s1, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 36 }}>
+          <View style={{ backgroundColor: C.s1, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 48 }}>
             <View style={{ alignSelf: "center", width: 40, height: 4, backgroundColor: C.b1, borderRadius: 2, marginBottom: 20 }} />
-            <Text style={{ color: C.t1, fontSize: 18, fontWeight: "900", marginBottom: 4 }}>{qtyModal?.partNumber}</Text>
+            <Text style={{ color: C.t1, fontSize: 18, fontWeight: "900", marginBottom: 4 }} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.4}>{qtyModal?.partNumber}</Text>
             <Text style={{ color: C.t3, fontSize: 13, marginBottom: 20 }}>Expected: {qtyModal?.expected}</Text>
             <View style={{ backgroundColor: C.s2, borderRadius: 16, borderWidth: 2, borderColor: C.green+"66", padding: 20, alignItems: "center", marginBottom: 16 }}>
               <Text style={{ color: C.t3, fontSize: 12, fontWeight: "700", marginBottom: 4 }}>CONFIRMING QTY</Text>
@@ -1532,6 +1540,18 @@ function KiaHomeScreen({ invoices, onImportCSV, onFetchFromServer, onClearAll, o
   const [ocrCamMode, setOcrCamMode]         = useState(false);
   const [ocrProcessing, setOcrProcessing]   = useState(false);
   const [ocrFound, setOcrFound]             = useState([]);
+
+  // Load persisted OCR capture list on mount
+  useEffect(() => {
+    AsyncStorage.getItem(OCR_CAPTURE_KEY).then(raw => {
+      if (raw) { try { setOcrFound(JSON.parse(raw)); } catch {} }
+    });
+  }, []);
+
+  // Save ocrFound whenever it changes
+  useEffect(() => {
+    AsyncStorage.setItem(OCR_CAPTURE_KEY, JSON.stringify(ocrFound)).catch(() => {});
+  }, [ocrFound]);
   const [ocrFlash, setOcrFlash]             = useState(false);
   const [lastCapturedUri, setLastCapturedUri] = useState(null); // Option C: show last photo
   const [cameraActive, setCameraActive]       = useState(true);
@@ -1676,12 +1696,9 @@ function KiaHomeScreen({ invoices, onImportCSV, onFetchFromServer, onClearAll, o
         onTouchStart={(e) => { swipeStartY.current = e.nativeEvent.pageY; }}
         onTouchEnd={(e) => { const dy = swipeStartY.current - e.nativeEvent.pageY; if (dy > 40) setSettingsMenu(true); }}
       >
-        <View style={{ alignItems: "center", marginBottom: 60 }}>
-          <MaterialCommunityIcons name="truck-delivery-outline" size={72} color={C.green} style={{ marginBottom: 16 }} />
-          <Text style={{ color: C.t1, fontSize: 32, fontWeight: "900", letterSpacing: 1 }}>Receiving</Text>
+        <View style={{ alignItems: "center", marginBottom: 20 }}>
+          <MaterialCommunityIcons name="truck-delivery-outline" size={72} color={C.green} style={{ marginBottom: 0 }} />
         </View>
-
-        <View style={{ marginBottom: 40 }} />
 
         {/* ── Active Boards Strip — tap avatar to request join ── */}
         {activeBoards.filter(b => b.roomId !== currentRoomId).length > 0 && (
@@ -1730,30 +1747,50 @@ function KiaHomeScreen({ invoices, onImportCSV, onFetchFromServer, onClearAll, o
           </View>
         )}
 
-        {/* FOCUS BOARD + SCAN INVOICES icon */}
+        {/* Receiving divider */}
+        <View style={{ width: "100%", flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 10 }}>
+          <View style={{ flex: 1, height: 1, backgroundColor: C.b1 }} />
+          <Text style={{ color: C.t3, fontSize: 18, fontWeight: "900", letterSpacing: 1 }}>Receiving</Text>
+          <View style={{ flex: 1, height: 1, backgroundColor: C.b1 }} />
+        </View>
+
+        {/* AUDOS INVOICE BOARD + SCAN INVOICES icon */}
         <View style={{ width: "100%", flexDirection: "row", gap: 10, marginBottom: 10 }}>
           <TouchableOpacity
             onPress={onOpenBoard}
             activeOpacity={0.85}
-            style={{ flex: 1, backgroundColor: C.s2, borderRadius: 20, paddingVertical: 20, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 12, borderWidth: 2, borderColor: C.green + "88" }}>
+            style={{ flex: 1, backgroundColor: C.s2, borderRadius: 20, paddingVertical: 16, paddingHorizontal: 18, justifyContent: "center", flexDirection: "row", gap: 12, borderWidth: 2, borderColor: C.green + "88", alignItems: "center" }}>
             <MaterialCommunityIcons name="view-dashboard-outline" size={28} color={C.green} />
-            <Text style={{ color: C.green, fontSize: 20, fontWeight: "900" }}>FOCUS BOARD</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: C.green, fontSize: 18, fontWeight: "900", lineHeight: 22 }}>AUDOS INVOICE BOARD</Text>
+              <Text style={{ color: C.green + "66", fontSize: 11, fontWeight: "600", marginTop: 3 }}>scan part numbers for Kia {"&"} Hyundai Audos invoices</Text>
+            </View>
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={async () => { if (!cameraPermission?.granted) await requestCameraPermission(); setOcrFound([]); setLastCapturedUri(null); setCameraActive(true); setOcrCamMode(true); }}
+            onPress={async () => { if (!cameraPermission?.granted) await requestCameraPermission(); setLastCapturedUri(null); setCameraActive(true); setOcrCamMode(true); }}
             activeOpacity={0.85}
             style={{ width: 72, backgroundColor: C.s2, borderRadius: 20, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: C.b1 }}>
             <Ionicons name="camera-outline" size={28} color={C.t2} />
           </TouchableOpacity>
         </View>
 
-        {/* FIND PART button */}
+        {/* Dispatch divider */}
+        <View style={{ width: "100%", flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 10, marginTop: 4 }}>
+          <View style={{ flex: 1, height: 1, backgroundColor: C.b1 }} />
+          <Text style={{ color: C.t3, fontSize: 18, fontWeight: "900", letterSpacing: 1 }}>Dispatch</Text>
+          <View style={{ flex: 1, height: 1, backgroundColor: C.b1 }} />
+        </View>
+
+        {/* TRACE TO INVOICE button */}
         <TouchableOpacity
           onPress={() => onFindPartLookup && onFindPartLookup("camera")}
           activeOpacity={0.85}
-          style={{ width: "100%", backgroundColor: C.s2, borderRadius: 20, paddingVertical: 20, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 12, marginBottom: 10, borderWidth: 2, borderColor: C.blue + "88" }}>
+          style={{ width: "100%", backgroundColor: C.s2, borderRadius: 20, paddingVertical: 16, paddingHorizontal: 22, justifyContent: "center", flexDirection: "row", gap: 14, marginBottom: 10, borderWidth: 2, borderColor: C.blue + "88", alignItems: "center" }}>
           <MaterialCommunityIcons name="magnify-scan" size={28} color={C.blue} />
-          <Text style={{ color: C.blue, fontSize: 20, fontWeight: "900" }}>FIND PART</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: C.blue, fontSize: 20, fontWeight: "900", lineHeight: 22 }}>TRACE TO INVOICE</Text>
+            <Text style={{ color: C.blue + "66", fontSize: 11, fontWeight: "600", marginTop: 3 }}>scans a part number to find its panel shop invoice · or open pre count screen</Text>
+          </View>
         </TouchableOpacity>
 
 
@@ -1765,14 +1802,18 @@ function KiaHomeScreen({ invoices, onImportCSV, onFetchFromServer, onClearAll, o
       {/* ── Settings bottom sheet — swipe up anywhere to open ── */}
       <Modal visible={settingsMenu} transparent animationType="slide" onRequestClose={() => setSettingsMenu(false)}>
         <TouchableOpacity style={{ flex: 1, backgroundColor: "#00000088" }} activeOpacity={1} onPress={() => setSettingsMenu(false)} />
-        <View style={{ backgroundColor: C.s1, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 36 }}>
+        <View style={{ backgroundColor: C.s1, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 48 }}>
           <View style={{ alignSelf: "center", width: 40, height: 4, backgroundColor: C.b1, borderRadius: 2, marginBottom: 16 }} />
           <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 14 }}>
             <TouchableOpacity onPress={() => setSettingsMenu(false)} activeOpacity={0.7}
               style={{ backgroundColor: C.s2, borderRadius: 10, padding: 8, borderWidth: 1, borderColor: C.b1, marginRight: 12 }}>
               <Ionicons name="arrow-back" size={20} color={C.t2} />
             </TouchableOpacity>
-            <Text style={{ color: C.t1, fontSize: 17, fontWeight: "900" }}>Settings</Text>
+            <Text style={{ color: C.t1, fontSize: 17, fontWeight: "900", flex: 1 }}>Settings</Text>
+            <TouchableOpacity onPress={() => setSettingsMenu(false)} activeOpacity={0.7}
+              style={{ backgroundColor: C.s2, borderRadius: 10, padding: 8, borderWidth: 1, borderColor: C.b1 }}>
+              <Ionicons name="close" size={20} color={C.t2} />
+            </TouchableOpacity>
           </View>
           <TouchableOpacity onPress={() => { setSettingsMenu(false); onClearAll(); }} activeOpacity={0.8}
             style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 14, borderRadius: 12, backgroundColor: C.red + "18", marginBottom: 6 }}>
@@ -2072,7 +2113,7 @@ function KiaHomeScreen({ invoices, onImportCSV, onFetchFromServer, onClearAll, o
 
           {/* Header — always on top, never hidden */}
           <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingTop: 44, paddingBottom: 12, gap: 10, backgroundColor: C.s2, borderBottomWidth: 1, borderBottomColor: C.b1, zIndex: 10 }}>
-            <TouchableOpacity onPress={() => { setOcrCamMode(false); setOcrFound([]); setAutoFire(false); setLastCapturedUri(null); setCameraActive(true); }} activeOpacity={0.7}
+            <TouchableOpacity onPress={() => { setOcrCamMode(false); setAutoFire(false); setCameraActive(true); }} activeOpacity={0.7}
               style={{ backgroundColor: C.s3, borderRadius: 10, padding: 8, borderWidth: 1, borderColor: C.b1 }}>
               <Ionicons name="arrow-back" size={20} color={C.t2} />
             </TouchableOpacity>
@@ -2115,7 +2156,28 @@ function KiaHomeScreen({ invoices, onImportCSV, onFetchFromServer, onClearAll, o
 
           {/* Captured list */}
           <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: 14 }}>
-            <Text style={{ color: C.t3, fontSize: 14, fontWeight: "900", letterSpacing: 1, marginBottom: 8 }}>CAPTURED SO FAR</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+              <Text style={{ color: C.t3, fontSize: 14, fontWeight: "900", letterSpacing: 1 }}>CAPTURED SO FAR</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  if (ocrFound.length === 0) return;
+                  Alert.alert("Clear Captured?", "This will reset your captured invoice list.", [
+                    { text: "Cancel", style: "cancel" },
+                    { text: "Clear", style: "destructive", onPress: () => {
+                      setOcrFound([]);
+                      setLastCapturedUri(null);
+                    }},
+                  ]);
+                }}
+                disabled={ocrFound.length === 0}
+                activeOpacity={0.7}
+                style={{ flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: ocrFound.length > 0 ? C.red + "22" : C.s3,
+                  borderRadius: 8, paddingHorizontal: 8, paddingVertical: 5, borderWidth: 1,
+                  borderColor: ocrFound.length > 0 ? C.red + "55" : C.b1, opacity: ocrFound.length === 0 ? 0.4 : 1 }}>
+                <MaterialCommunityIcons name="refresh" size={13} color={ocrFound.length > 0 ? C.red : C.t3} />
+                <Text style={{ color: ocrFound.length > 0 ? C.red : C.t3, fontSize: 11, fontWeight: "800" }}>CLEAR</Text>
+              </TouchableOpacity>
+            </View>
             <ScrollView showsVerticalScrollIndicator={false}>
               {ocrFound.length === 0 && (
                 <Text style={{ color: C.t3, fontSize: 20, textAlign: "center", marginTop: 24 }}>tap capture for next invoice</Text>
@@ -2142,7 +2204,7 @@ function KiaHomeScreen({ invoices, onImportCSV, onFetchFromServer, onClearAll, o
           </View>
 
           {/* Bottom — ADD TO PENDING (smaller, top) + CAPTURE (bigger, bottom) */}
-          <View style={{ paddingHorizontal: 16, paddingBottom: 16, paddingTop: 10, borderTopWidth: 1, borderTopColor: C.b1, backgroundColor: C.bg, gap: 10 }}>
+          <View style={{ paddingHorizontal: 16, paddingBottom: 64, paddingTop: 10, borderTopWidth: 1, borderTopColor: C.b1, backgroundColor: C.bg, gap: 10 }}>
             {(() => {
               const matchCount = ocrFound.filter(x => invoices.some(inv => inv.id.toUpperCase() === x.id)).length;
               const hasMatches = matchCount > 0;
@@ -2182,7 +2244,7 @@ function KiaHomeScreen({ invoices, onImportCSV, onFetchFromServer, onClearAll, o
           {/* Manual invoice entry modal */}
           <Modal visible={showOcrManual} transparent animationType="slide" onRequestClose={() => setShowOcrManual(false)}>
             <TouchableOpacity style={{ flex: 1, backgroundColor: "#00000088" }} activeOpacity={1} onPress={() => setShowOcrManual(false)} />
-            <View style={{ backgroundColor: C.s1, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 36 }}>
+            <View style={{ backgroundColor: C.s1, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 48 }}>
               <View style={{ alignSelf: "center", width: 40, height: 4, backgroundColor: C.b1, borderRadius: 2, marginBottom: 20 }} />
               <Text style={{ color: C.t1, fontSize: 20, fontWeight: "900", marginBottom: 16 }}>Add Invoice Manually</Text>
               <TextInput
@@ -2233,7 +2295,7 @@ function KiaHomeScreen({ invoices, onImportCSV, onFetchFromServer, onClearAll, o
       {/* ── FOCUS LIST MODAL ── */}
       <Modal visible={showFocusModal} transparent animationType="slide">
         <View style={{ flex: 1, backgroundColor: "#00000088", justifyContent: "flex-end" }}>
-          <View style={{ backgroundColor: C.s1, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 36 }}>
+          <View style={{ backgroundColor: C.s1, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 48 }}>
             <View style={{ alignSelf: "center", width: 40, height: 4, backgroundColor: C.b1, borderRadius: 2, marginBottom: 20 }} />
 
             {/* Header row */}
@@ -2241,14 +2303,14 @@ function KiaHomeScreen({ invoices, onImportCSV, onFetchFromServer, onClearAll, o
               <MaterialCommunityIcons name="format-list-checks" size={20} color={C.green} style={{ marginRight: 10 }} />
               <Text style={{ color: C.t1, fontSize: 18, fontWeight: "900", flex: 1 }}>Focus List</Text>
               <TouchableOpacity
-                onPress={async () => { if (!cameraPermission?.granted) await requestCameraPermission(); setOcrFound([]); setLastCapturedUri(null); setCameraActive(true); setOcrCamMode(true); }}
+                onPress={async () => { if (!cameraPermission?.granted) await requestCameraPermission(); setLastCapturedUri(null); setCameraActive(true); setOcrCamMode(true); }}
                 activeOpacity={0.8}
                 style={{ backgroundColor: C.blue + "22", borderRadius: 12, padding: 10, borderWidth: 1.5, borderColor: C.blue + "66", flexDirection: "row", alignItems: "center", gap: 6, marginRight: 8 }}>
                 <Ionicons name="camera-outline" size={20} color={C.blue} />
                 <Text style={{ color: C.blue, fontSize: 13, fontWeight: "900" }}>OCR</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={async () => { if (!cameraPermission?.granted) await requestCameraPermission(); setOcrFound([]); setLastCapturedUri(null); setCameraActive(true); setOcrCamMode(true); }}
+                onPress={async () => { if (!cameraPermission?.granted) await requestCameraPermission(); setLastCapturedUri(null); setCameraActive(true); setOcrCamMode(true); }}
                 activeOpacity={0.8}
                 style={{ backgroundColor: C.green + "22", borderRadius: 12, padding: 10, borderWidth: 1.5, borderColor: C.green + "66", flexDirection: "row", alignItems: "center", gap: 6 }}>
                 <MaterialCommunityIcons name="barcode-scan" size={20} color={C.green} />
@@ -2374,7 +2436,7 @@ function FocusBatchScanner({ visible, torchEnabled, scannedIds, onScan, onDone, 
         </View>
 
         {/* Bottom panel */}
-        <View style={{ position: "absolute", bottom: 0, left: 0, right: 0, backgroundColor: "#000000EE", paddingBottom: 40, paddingTop: 16, paddingHorizontal: 20 }}>
+        <View style={{ position: "absolute", bottom: 0, left: 0, right: 0, backgroundColor: "#000000EE", paddingBottom: 64, paddingTop: 16, paddingHorizontal: 20 }}>
           {/* Scanned chips */}
           {scannedIds.length > 0 ? (
             <>
@@ -2775,7 +2837,7 @@ function KiaDetailScreen({ invoice, onBack, setKiaInvoices, torchEnabled, initia
                       ...(part.short ? { backgroundColor: (part.shortQty === 0 ? C.red : C.amber) + "18" } : (!part.short && part.confirmed > 0 && part.confirmed < part.qty) ? { backgroundColor: C.amber + "18" } : {}),
                     }}>
                     <View style={{ flexDirection: "row", alignItems: "center" }}>
-                      <Text style={{ color: part.short ? (part.shortQty === 0 ? C.red : C.amber) : (!part.short && part.confirmed > 0 && part.confirmed < part.qty) ? C.amber : col.accent, fontWeight: "900", fontSize: 18, letterSpacing: 0.3, flex: 1 }} numberOfLines={1}>{part.partNumber}</Text>
+                      <Text style={{ color: part.short ? (part.shortQty === 0 ? C.red : C.amber) : (!part.short && part.confirmed > 0 && part.confirmed < part.qty) ? C.amber : col.accent, fontWeight: "900", fontSize: 18, letterSpacing: 0.3, flex: 1 }} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.4}>{part.partNumber}</Text>
                       <Ionicons name="chevron-forward" size={12} color={C.t3} />
                     </View>
                     {part.description ? <Text style={{ color: C.t3, fontSize: 11, marginTop: 2 }} numberOfLines={1}>{part.description}</Text> : null}
@@ -2852,7 +2914,7 @@ function KiaDetailScreen({ invoice, onBack, setKiaInvoices, torchEnabled, initia
             </View>
             <View style={{ marginBottom: 2 }}>
               <Text style={{ color: C.t2, fontSize: 12, fontWeight: "700", letterSpacing: 1, marginBottom: 4 }}>PART</Text>
-              <Text style={{ color: C.t1, fontSize: 19, fontWeight: "900", marginBottom: 2 }}>{overrideModal?.partNumber}</Text>
+              <Text style={{ color: C.t1, fontSize: 19, fontWeight: "900", marginBottom: 2 }} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.4}>{overrideModal?.partNumber}</Text>
             </View>
             <Text style={{ color: C.t3, fontSize: 13, marginBottom: 24 }}>Hold-down override — barcode not working?</Text>
 
@@ -2974,10 +3036,10 @@ function KiaDetailScreen({ invoice, onBack, setKiaInvoices, torchEnabled, initia
       {/* Qty pad modal — also handles short supply */}
       <Modal visible={!!qtyModal} transparent animationType="slide">
         <View style={{ flex: 1, backgroundColor: "#00000088", justifyContent: "flex-end" }}>
-          <View style={{ backgroundColor: C.s1, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 36 }}>
+          <View style={{ backgroundColor: C.s1, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 48 }}>
             <View style={{ alignSelf: "center", width: 40, height: 4, backgroundColor: C.b1, borderRadius: 2, marginBottom: 20 }} />
             <Text style={{ color: C.t2, fontSize: 13, fontWeight: "700", letterSpacing: 1, marginBottom: 4 }}>PART NUMBER</Text>
-            <Text style={{ color: C.t1, fontSize: 20, fontWeight: "900", marginBottom: 4 }}>{qtyModal?.partNumber}</Text>
+            <Text style={{ color: C.t1, fontSize: 20, fontWeight: "900", marginBottom: 4 }} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.4}>{qtyModal?.partNumber}</Text>
             <Text style={{ color: C.t3, fontSize: 14, marginBottom: 20 }}>{qtyModal?.isShort ? "Qty received (short):" : `Expected qty: ${qtyModal?.expected}`}</Text>
             <View style={{ backgroundColor: C.s2, borderRadius: 16, borderWidth: 2, borderColor: (qtyModal?.isShort ? C.amber : C.green) + "66", padding: 20, alignItems: "center", marginBottom: 16 }}>
               <Text style={{ color: C.t3, fontSize: 13, fontWeight: "700", marginBottom: 4 }}>{qtyModal?.isShort ? "RECEIVED QTY" : "CONFIRMING QTY"}</Text>
@@ -3022,10 +3084,10 @@ function KiaDetailScreen({ invoice, onBack, setKiaInvoices, torchEnabled, initia
       {confirmPopup && (
         <Modal visible transparent animationType="slide">
           <TouchableOpacity style={{ flex: 1, backgroundColor: "#00000088" }} activeOpacity={1} onPress={() => setConfirmPopup(null)} />
-          <View style={{ backgroundColor: C.s1, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 36 }}>
+          <View style={{ backgroundColor: C.s1, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 48 }}>
             <View style={{ alignSelf: "center", width: 40, height: 4, backgroundColor: C.b1, borderRadius: 2, marginBottom: 20 }} />
             <Text style={{ color: C.t3, fontSize: 10, fontWeight: "900", letterSpacing: 1.5, marginBottom: 6 }}>CONFIRM PART</Text>
-            <Text style={{ color: C.t1, fontSize: 22, fontWeight: "900", marginBottom: 4 }}>{confirmPopup.partNumber}</Text>
+            <Text style={{ color: C.t1, fontSize: 22, fontWeight: "900", marginBottom: 4 }} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.4}>{confirmPopup.partNumber}</Text>
             <Text style={{ color: C.t3, fontSize: 13, marginBottom: 16 }}>{confirmPopup.confirmed}/{confirmPopup.qty} confirmed</Text>
             <View style={{ flexDirection: "row", gap: 12 }}>
               <TouchableOpacity onPress={() => setConfirmPopup(null)} activeOpacity={0.8}
@@ -4184,7 +4246,7 @@ function KiaFocusBoard({ invoices, allInvoices, focusList, onSelect, onBack, tor
           <Text style={{ color: C.t3, fontSize: 10, fontWeight: "900", letterSpacing: 1.5, marginBottom: 4 }}>
             {multiMatch?.outsideBoard ? "NOT IN FOCUS BOARD" : "MULTIPLE INVOICES"}
           </Text>
-          <Text style={{ color: C.t1, fontSize: 18, fontWeight: "900", marginBottom: 4 }}>{multiMatch?.partNumber}</Text>
+          <Text style={{ color: C.t1, fontSize: 18, fontWeight: "900", marginBottom: 4 }} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.4}>{multiMatch?.partNumber}</Text>
           <Text style={{ color: C.t3, fontSize: 12, marginBottom: 16 }}>
             {multiMatch?.outsideBoard ? "Found outside focus board — tap to confirm anyway" : "Which invoice is this part for?"}
           </Text>
@@ -4245,9 +4307,9 @@ function KiaFocusBoard({ invoices, allInvoices, focusList, onSelect, onBack, tor
             {/* Qty modal for multi-qty parts */}
       <Modal visible={!!qtyModal} transparent animationType="slide">
         <View style={{ flex: 1, backgroundColor: "#000000AA", justifyContent: "flex-end" }}>
-          <View style={{ backgroundColor: C.s1, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 28, paddingBottom: 40 }}>
+          <View style={{ backgroundColor: C.s1, borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 28, paddingBottom: 48 }}>
             <Text style={{ color: C.t3, fontSize: 11, fontWeight: "900", letterSpacing: 1.5, marginBottom: 4 }}>AUTO CONFIRM — MULTI QTY</Text>
-            <Text style={{ color: C.t1, fontSize: 20, fontWeight: "900", marginBottom: 4 }}>{qtyModal?.partNumber}</Text>
+            <Text style={{ color: C.t1, fontSize: 20, fontWeight: "900", marginBottom: 4 }} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.4}>{qtyModal?.partNumber}</Text>
             <Text style={{ color: C.t3, fontSize: 14, marginBottom: 20 }}>Expected qty: {qtyModal?.expected}</Text>
             <View style={{ backgroundColor: C.s2, borderRadius: 16, borderWidth: 2, borderColor: C.green + "66", padding: 20, alignItems: "center", marginBottom: 16 }}>
               <Text style={{ color: C.t3, fontSize: 13, fontWeight: "700", marginBottom: 4 }}>CONFIRMING QTY</Text>
@@ -4577,6 +4639,9 @@ export default function App() {
   const [kiaHideClosedInvoices, setKiaHideClosedInvoices] = useState(true);
   const [kiaPartLookupResult, setKiaPartLookupResult] = useState(null);
   const kiaPartLookupRawRef = useRef(null);
+  const [invoiceLookupVisible, setInvoiceLookupVisible] = useState(false);
+  const [invoiceLookupText, setInvoiceLookupText]       = useState("");
+  const invoiceLookupInputRef = useRef(null);
   const [dispatchInvoices, setDispatchInvoices]   = useState([]);
   const [activeDispatchId, setActiveDispatchId]   = useState(null);
   const [showDispatchPrecount, setShowDispatchPrecount] = useState(false);
@@ -4589,6 +4654,7 @@ export default function App() {
   const [syncPopover, setSyncPopover]         = useState(null); // filename string
   const [serverFetching, setServerFetching]   = useState(false);
   const [wsStatus, setWsStatus]               = useState(null); // null | "updated" | "pending" | "missing" | "offline"
+  const [exportFilterVisible, setExportFilterVisible] = useState(false);
   const [wsLastSync, setWsLastSync]           = useState(null); // timestamp ms
   const wsRef                                 = useRef(null);
   const wsReconnectRef                        = useRef(null);
@@ -5141,7 +5207,18 @@ export default function App() {
 
   useEffect(() => {
     connectWebSocket();
+    // Reconnect WS when app comes back to foreground (e.g. returning from Outlook)
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        const ws = wsRef.current;
+        if (!ws || ws.readyState === 3 /* CLOSED */) {
+          clearTimeout(wsReconnectRef.current);
+          connectWebSocket();
+        }
+      }
+    });
     return () => {
+      sub.remove();
       clearTimeout(wsReconnectRef.current);
       if (wsRef.current) wsRef.current.close();
     };
@@ -5358,6 +5435,7 @@ export default function App() {
     if (String(input).startsWith('__RAW__')) { kiaPartLookupRawRef.current = String(input).slice(7); return; }
     setKiaPartLookupCamera(false);
     const raw = String(input).trim().toUpperCase();
+
     const extraRaw = (kiaPartLookupRawRef.current || '').toUpperCase();
     kiaPartLookupRawRef.current = null;
     const allParts = [];
@@ -5534,7 +5612,10 @@ export default function App() {
           hideBackorderColProp={hideBackorderCol}
           setHideBackorderColProp={setHideBackorderCol}
           onOpenDispatchPrecount={(invId) => { setActiveDispatchId(invId); setShowDispatchPrecount(true); }}
-          onExportEmail={() => { const allBoard = [...kiaInvoices]; if (!allBoard.length) { Alert.alert("Nothing to export", "No invoices loaded."); return; } const lines = ["Type,Invoice ID,Order Ref,Part Number,Qty,Status,Missing,Short Supply"]; allBoard.forEach(inv => { const invStatus = inv.complete ? "Complete" : inv.parts.some(p => p.confirmed > 0 || p.short) ? "In Progress" : "Pending"; lines.push(`INVOICE,${inv.id},${inv.orderRef || ""},,,${invStatus},,`); inv.parts.forEach(p => { const partStatus = p.confirmed >= p.qty ? "Confirmed" : p.short ? (p.shortQty === 0 ? "Missing" : "Short Supply") : "Not Confirmed"; const missing = (p.short && p.shortQty === 0) ? p.qty : (!p.short && p.confirmed < p.qty) ? (p.qty - p.confirmed) : 0; const shortSupply = (p.short && p.shortQty > 0) ? (p.qty - p.shortQty) : 0; lines.push(`,,,${p.partNumber},${p.qty},${partStatus},${missing || ""},${shortSupply || ""}`); }); lines.push(""); }); const csv = lines.join("\n"); const subject = encodeURIComponent("Focus Board — " + new Date().toLocaleDateString()); const body = encodeURIComponent(csv); Linking.openURL(`mailto:?subject=${subject}&body=${body}`); }}
+          onExportEmail={() => {
+            if (!kiaInvoices.length) { Alert.alert("Nothing to export", "No invoices loaded."); return; }
+            setExportFilterVisible(true);
+          }}
           onSilentSync={async () => {
             const FILES = ["stdpartski.csv", "stdpartshy.csv"];
             for (const filename of FILES) {
@@ -5742,7 +5823,51 @@ export default function App() {
         partsDB={dispatchInvoices.flatMap(inv => inv.parts.map(p => ({ partNumber: p.partNumber })))}
         deliverRaw
         torchEnabled={torchEnabled}
+        onInvoiceKeyboard={() => { setKiaPartLookupCamera(false); setInvoiceLookupText(""); setTimeout(() => setInvoiceLookupVisible(true), 350); }}
       />
+
+      {/* ── Invoice number keyboard lookup — Trace to Invoice screen only ── */}
+      <Modal visible={invoiceLookupVisible} transparent animationType="slide" onRequestClose={() => setInvoiceLookupVisible(false)} onShow={() => setTimeout(() => invoiceLookupInputRef.current?.focus(), 100)}>
+        <TouchableOpacity style={{ flex: 1, backgroundColor: "#00000088" }} activeOpacity={1} onPress={() => setInvoiceLookupVisible(false)} />
+        <View style={{ backgroundColor: C.s1, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 48 }}>
+          <View style={{ alignSelf: "center", width: 40, height: 4, backgroundColor: C.b1, borderRadius: 2, marginBottom: 20 }} />
+          <Text style={{ color: C.t2, fontSize: 12, fontWeight: "900", letterSpacing: 1.5, marginBottom: 8 }}>PANEL SHOP INVOICE LOOKUP</Text>
+          <TextInput
+            ref={invoiceLookupInputRef}
+            value={invoiceLookupText}
+            onChangeText={setInvoiceLookupText}
+            placeholder="Invoice number e.g. 16XXXXX"
+            placeholderTextColor={C.t3}
+            autoCapitalize="characters"
+            returnKeyType="done"
+            onSubmitEditing={() => {
+              const val = invoiceLookupText.trim().toUpperCase();
+              if (!val) return;
+              setInvoiceLookupVisible(false);
+              const inv = dispatchInvoices.find(i => i.id.toUpperCase() === val) || dispatchInvoices.find(i => i.id.toUpperCase().startsWith("16") && i.id.toUpperCase().includes(val));
+              if (inv) { setActiveDispatchId(inv.id); setShowDispatchPrecount(true); }
+              else Alert.alert("Not Found", `Invoice "${val}" not found in Dispatch CSV.`);
+            }}
+            style={{ backgroundColor: C.s2, borderRadius: 14, padding: 18, color: C.t1, fontSize: 20, fontWeight: "900", borderWidth: 1.5, borderColor: C.blue + "66", letterSpacing: 1, marginBottom: 14 }}
+          />
+          <TouchableOpacity
+            onPress={() => {
+              const val = invoiceLookupText.trim().toUpperCase();
+              if (!val) return;
+              setInvoiceLookupVisible(false);
+              const inv = dispatchInvoices.find(i => i.id.toUpperCase() === val) || dispatchInvoices.find(i => i.id.toUpperCase().startsWith("16") && i.id.toUpperCase().includes(val));
+              if (inv) { setActiveDispatchId(inv.id); setShowDispatchPrecount(true); }
+              else Alert.alert("Not Found", `Invoice "${val}" not found in Dispatch CSV.`);
+            }}
+            style={{ backgroundColor: C.blue, borderRadius: 16, paddingVertical: 18, alignItems: "center" }}
+            activeOpacity={0.85}>
+            <Text style={{ color: C.bg, fontSize: 18, fontWeight: "900" }}>Open Invoice</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => { setInvoiceLookupVisible(false); setKiaPartLookupCamera(true); }} style={{ paddingVertical: 14, alignItems: "center" }}>
+            <Text style={{ color: C.t3, fontSize: 15 }}>Back to Scanner</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
 
       {/* Import result modal */}
       <Modal visible={!!importResult} transparent animationType="fade">
@@ -5884,6 +6009,98 @@ export default function App() {
         kiaInvoices={kiaInvoices}
         setIsRoomHost={setIsRoomHost}
       />
+
+      {/* ── Export Filter Modal ── */}
+      <Modal visible={exportFilterVisible} transparent animationType="slide" onRequestClose={() => setExportFilterVisible(false)}>
+        <TouchableOpacity style={{ flex: 1, backgroundColor: "#00000088" }} activeOpacity={1} onPress={() => setExportFilterVisible(false)} />
+        <View style={{ backgroundColor: C.s1, borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: "hidden" }}>
+          {(() => {
+            const pendingCutoff = new Date(); pendingCutoff.setHours(0,0,0,0);
+            const isOnBoard = inv => !inv.removedFromBoard && (inv.manuallyAdded || inv.complete || (inv.parts && inv.parts.some(p => p.confirmed > 0)));
+            const boardInvoices = kiaInvoices.filter(isOnBoard);
+            let missingCount = 0, notScannedCount = 0, shortCount = 0, affectedInvoices = new Set();
+            boardInvoices.forEach(inv => {
+              (inv.parts || []).forEach(p => {
+                const isMissing     = !!p.short && Number(p.shortQty) === 0;
+                const isShort       = !!p.short && Number(p.shortQty) > 0;
+                const isNotScanned  = !p.short && Number(p.confirmed) === 0;
+                if (isMissing)    { missingCount++;    affectedInvoices.add(inv.id); }
+                if (isShort)      { shortCount++;      affectedInvoices.add(inv.id); }
+                if (isNotScanned) { notScannedCount++; affectedInvoices.add(inv.id); }
+              });
+            });
+            const hasProblems = missingCount + notScannedCount + shortCount > 0;
+            return (
+              <>
+                <View style={{ padding: 18, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: C.b1 }}>
+                  <Text style={{ color: C.t1, fontSize: 17, fontWeight: "900" }}>Problems Report</Text>
+                  <Text style={{ color: C.t3, fontSize: 12, marginTop: 2 }}>Focus Board only</Text>
+                </View>
+                <View style={{ padding: 14, paddingHorizontal: 18, gap: 8 }}>
+                  <View style={{ backgroundColor: C.s2, borderRadius: 10, padding: 12, paddingHorizontal: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                      <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: C.red }} />
+                      <Text style={{ color: C.t1, fontSize: 13, fontWeight: "700" }}>Marked missing</Text>
+                    </View>
+                    <Text style={{ color: C.red, fontSize: 14, fontWeight: "900" }}>{missingCount} part{missingCount !== 1 ? "s" : ""}</Text>
+                  </View>
+                  <View style={{ backgroundColor: C.s2, borderRadius: 10, padding: 12, paddingHorizontal: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                      <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: C.t3 }} />
+                      <Text style={{ color: C.t1, fontSize: 13, fontWeight: "700" }}>Not scanned</Text>
+                    </View>
+                    <Text style={{ color: C.t2, fontSize: 14, fontWeight: "900" }}>{notScannedCount} part{notScannedCount !== 1 ? "s" : ""}</Text>
+                  </View>
+                  <View style={{ backgroundColor: C.s2, borderRadius: 10, padding: 12, paddingHorizontal: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                      <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: C.amber }} />
+                      <Text style={{ color: C.t1, fontSize: 13, fontWeight: "700" }}>Short supply</Text>
+                    </View>
+                    <Text style={{ color: C.amber, fontSize: 14, fontWeight: "900" }}>{shortCount} part{shortCount !== 1 ? "s" : ""}</Text>
+                  </View>
+                  <View style={{ backgroundColor: C.s3, borderRadius: 10, padding: 10, paddingHorizontal: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderWidth: 1, borderColor: C.b1 }}>
+                    <Text style={{ color: C.t3, fontSize: 12 }}>Across invoices</Text>
+                    <Text style={{ color: C.t3, fontSize: 12, fontWeight: "700" }}>{affectedInvoices.size} invoice{affectedInvoices.size !== 1 ? "s" : ""}</Text>
+                  </View>
+                </View>
+                <View style={{ flexDirection: "row", gap: 10, padding: 18, paddingBottom: 48, borderTopWidth: 1, borderTopColor: C.b1 }}>
+                  <TouchableOpacity onPress={() => setExportFilterVisible(false)} activeOpacity={0.8}
+                    style={{ flex: 1, backgroundColor: C.s3, borderRadius: 12, paddingVertical: 16, alignItems: "center", borderWidth: 1, borderColor: C.b1 }}>
+                    <Text style={{ color: C.t2, fontSize: 14, fontWeight: "700" }}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    disabled={!hasProblems}
+                    onPress={() => {
+                      setExportFilterVisible(false);
+                      const lines = ["Invoice ID,Order Ref,Part Number,Qty,Status,Short Qty Received"];
+                      boardInvoices.forEach(inv => {
+                        (inv.parts || []).forEach(p => {
+                          if (!p || !p.partNumber) return;
+                          const isMissing    = !!p.short && Number(p.shortQty) === 0;
+                          const isShort      = !!p.short && Number(p.shortQty) > 0;
+                          const isNotScanned = !p.short && Number(p.confirmed) === 0;
+                          if (!isMissing && !isShort && !isNotScanned) return;
+                          const status = isMissing ? "Missing" : isShort ? "Short Supply" : "Not Scanned";
+                          const shortReceived = isShort ? Number(p.shortQty) : "";
+                          lines.push(`${inv.id},${inv.orderRef || ""},${p.partNumber},${Number(p.qty) || 1},${status},${shortReceived}`);
+                        });
+                      });
+                      const csv = lines.join("\n");
+                      Share.share({
+                        title: "Problems Report — " + new Date().toLocaleDateString(),
+                        message: csv,
+                      }).catch(e => console.error("Share error:", e));
+                    }}
+                    activeOpacity={0.85}
+                    style={{ flex: 2, backgroundColor: hasProblems ? C.green : C.s3, borderRadius: 12, paddingVertical: 16, alignItems: "center" }}>
+                    <Text style={{ color: hasProblems ? C.bg : C.t3, fontSize: 14, fontWeight: "900" }}>Send Report</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            );
+          })()}
+        </View>
+      </Modal>
 
     </SafeAreaProvider>
   );

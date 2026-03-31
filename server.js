@@ -21,15 +21,26 @@ const writeMeta = (data) => fs.writeFileSync(META, JSON.stringify(data, null, 2)
 // ── Board rooms ─────────────────────────────────────────────────────────────
 // rooms[roomId] = { name, hostId, members: [{ id, initials, color, name, lastSeen }], invoices: {...}, focusList: [], pinnedIds: [], createdAt }
 const ROOMS_FILE = path.join(__dirname, "rooms.json");
-const readRooms  = () => { try { return JSON.parse(fs.readFileSync(ROOMS_FILE, "utf8")); } catch { return {}; } };
+const ROOMS_TMP  = path.join(__dirname, "rooms.tmp.json");
+const readRooms  = () => {
+  // Try main file first, then temp (in case of interrupted write)
+  for (const f of [ROOMS_FILE, ROOMS_TMP]) {
+    try { const d = JSON.parse(fs.readFileSync(f, "utf8")); if (d) return d; } catch {}
+  }
+  return {};
+};
 const saveRooms  = () => {
   try {
-    // Strip member ws references before saving (can't serialize those)
     const toSave = {};
+    const midnight = new Date(); midnight.setHours(0,0,0,0);
     for (const [id, room] of Object.entries(rooms)) {
+      // Only persist today's rooms
+      if (room.createdAt < midnight.getTime()) continue;
       toSave[id] = { ...room, members: room.members.map(m => ({ ...m })) };
     }
-    fs.writeFileSync(ROOMS_FILE, JSON.stringify(toSave, null, 2));
+    // Write to temp then rename for atomic write
+    fs.writeFileSync(ROOMS_TMP, JSON.stringify(toSave, null, 2));
+    fs.renameSync(ROOMS_TMP, ROOMS_FILE);
   } catch(e) { console.error("saveRooms error:", e); }
 };
 const rooms = readRooms(); // Load persisted rooms on startup
