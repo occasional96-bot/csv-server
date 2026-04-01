@@ -123,6 +123,7 @@ wss.on("connection", (ws) => {
               requesterInitials: msg.initials,
               requesterColor: msg.color,
               requesterName: msg.name,
+              mergeMode: msg.mergeMode || "merge",
             }));
             break;
           }
@@ -140,6 +141,7 @@ wss.on("connection", (ws) => {
               approved: msg.approved,
               roomId: msg.roomId,
               roomName: msg.roomName,
+              mergeMode: msg.mergeMode || "merge",
               reason: msg.reason || "",
             }));
             break;

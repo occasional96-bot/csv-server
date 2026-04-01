@@ -669,7 +669,7 @@ function extractPartNumbersFromOCR(extractedText, partsDB, wordData) {
 }
 // ─────────────────────────────────────────────────────────────────────────────
 // ─── BARCODE SCANNER ─────────────────────────────────────────────────────────
-function BarcodeScanner({ visible, onScanned, onClose, title, partsDB, invoiceMode, deliverRaw, torchEnabled, initialKeyboard, initialOcr }) {
+function BarcodeScanner({ visible, onScanned, onClose, title, partsDB, invoiceMode, deliverRaw, torchEnabled, initialKeyboard, initialOcr, keyboardLabel, keyboardPlaceholder, onKeyboardConfirm, onKeyboardIconPress, hideIcons }) {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(!!initialKeyboard);
@@ -930,51 +930,104 @@ function BarcodeScanner({ visible, onScanned, onClose, title, partsDB, invoiceMo
             <Text style={{ fontSize: 28 }}>{scanIcon}</Text>
             <View style={{ flex: 1 }}>
               <Text style={{ color: "#00000088", fontSize: 10, fontWeight: "900", letterSpacing: 3 }}>{scannerLabel}</Text>
-              <Text style={{ color: "#000", fontSize: 20, fontWeight: "900", letterSpacing: 0.3 }}>{title || "Scan Barcode"}</Text>
+              <Text style={{ color: "#000", fontSize: 20, fontWeight: "900", letterSpacing: 0.3 }}>{hideIcons && ocrMode ? "Take Photo to Find Part" : (title || "Scan Barcode")}</Text>
             </View>
           </View>
         </View>
+
+        {/* Back + X buttons at bottom of camera view — OCR mode only */}
+        {hideIcons && ocrMode && (
+          <View style={{ position: "absolute", bottom: 140, left: 0, right: 0, flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 20 }}>
+            <TouchableOpacity onPress={onClose} activeOpacity={0.8}
+              style={{ width: 56, height: 56, backgroundColor: "#000000CC", borderRadius: 16, borderWidth: 1.5, borderColor: accentColor + "66", alignItems: "center", justifyContent: "center" }}>
+              <Ionicons name="arrow-back" size={24} color={accentColor} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={onClose} activeOpacity={0.8}
+              style={{ width: 56, height: 56, backgroundColor: "#000000CC", borderRadius: 16, borderWidth: 1.5, borderColor: accentColor + "66", alignItems: "center", justifyContent: "center" }}>
+              <Ionicons name="close" size={24} color={accentColor} />
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Bottom panel — premium slim */}
         <View style={{ position: "absolute", bottom: 0, left: 0, right: 0 }}>
           <View style={{ height: 2, backgroundColor: accentColor }} />
           <View style={{ backgroundColor: "#000000F2", paddingTop: 20, paddingBottom: 32, paddingHorizontal: 28, alignItems: "center" }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: accentColor + "18", borderRadius: 20, paddingHorizontal: 18, paddingVertical: 8, borderWidth: 1, borderColor: accentColor + "44", marginBottom: 18 }}>
-              <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: accentColor }} />
-              <Text style={{ color: accentColor, fontSize: 12, fontWeight: "900", letterSpacing: 1.5 }}>READY TO SCAN</Text>
-              <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: accentColor }} />
-            </View>
-            <TouchableOpacity
-              onPress={onClose}
-              style={{ backgroundColor: "#1A1A1A", borderRadius: 16, paddingHorizontal: 48, paddingVertical: 16, borderWidth: 1.5, borderColor: accentColor + "44" }}
-              activeOpacity={0.7}
-            >
-              <Text style={{ color: C.t1, fontSize: 16, fontWeight: "700", letterSpacing: 0.5 }}>Cancel</Text>
-            </TouchableOpacity>
+            {(!hideIcons || !ocrMode) && (
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: accentColor + "18", borderRadius: 20, paddingHorizontal: 18, paddingVertical: 8, borderWidth: 1, borderColor: accentColor + "44", marginBottom: 18 }}>
+                <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: accentColor }} />
+                <Text style={{ color: accentColor, fontSize: 12, fontWeight: "900", letterSpacing: 1.5 }}>READY TO SCAN</Text>
+                <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: accentColor }} />
+              </View>
+            )}
+            {hideIcons && ocrMode ? (
+              <TouchableOpacity
+                onPress={async () => {
+                  if (ocrProcessing || !cameraRef.current) return;
+                  setOcrProcessing(true);
+                  try {
+                    const photo = await cameraRef.current.takePictureAsync({ base64: false, quality: 0.8 });
+                    const imgW = photo.width || 1080, imgH = photo.height || 1920;
+                    const cropH = Math.round(imgH * 0.4), cropY = Math.round((imgH - cropH) / 2);
+                    let base64Data;
+                    try {
+                      const cropped = await ImageManipulator.manipulateAsync(photo.uri, [{ crop: { originX: 0, originY: cropY, width: imgW, height: cropH } }], { base64: true, compress: 0.85, format: ImageManipulator.SaveFormat.JPEG });
+                      base64Data = cropped.base64;
+                    } catch {
+                      const fallback = await ImageManipulator.manipulateAsync(photo.uri, [], { base64: true, compress: 0.85, format: ImageManipulator.SaveFormat.JPEG });
+                      base64Data = fallback.base64;
+                    }
+                    const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${VISION_KEY}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ requests: [{ image: { content: base64Data }, features: [{ type: "DOCUMENT_TEXT_DETECTION", maxResults: 1 }] }] }) });
+                    const json = await res.json();
+                    const annotation = json.responses?.[0]?.fullTextAnnotation;
+                    const text = annotation?.text || "";
+                    const wordData = extractWordLevelData(annotation);
+                    const found = extractPartNumbersFromOCR(text, partsDB || [], wordData);
+                    if (found.length > 0) { Vibration.vibrate(80); setOcrMode(false); deliver(found[0]); }
+                    else { Alert.alert("No Part Found", "Could not read a part number.\nTry better lighting or the keyboard."); }
+                  } catch (e) { Alert.alert("OCR Error", e.message || "Failed"); }
+                  setOcrProcessing(false);
+                }}
+                activeOpacity={0.85}
+                style={{ backgroundColor: accentColor, borderRadius: 18, paddingVertical: 20, alignItems: "center", justifyContent: "center", alignSelf: "stretch", flexDirection: "row", gap: 12 }}
+              >
+                {ocrProcessing
+                  ? <MaterialCommunityIcons name="loading" size={32} color="#000" />
+                  : <MaterialCommunityIcons name="camera-outline" size={36} color="#000" />}
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                onPress={onClose}
+                style={{ backgroundColor: "#1A1A1A", borderRadius: 16, paddingHorizontal: 48, paddingVertical: 16, borderWidth: 1.5, borderColor: accentColor + "44" }}
+                activeOpacity={0.7}
+              >
+                <Text style={{ color: C.t1, fontSize: 16, fontWeight: "700", letterSpacing: 0.5 }}>Cancel</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
         {/* Bottom-left: keyboard manual entry */}
         {/* Bottom-left: keyboard */}
-        <TouchableOpacity
-          onPress={() => { if (onInvoiceKeyboard) { onInvoiceKeyboard(); } else { setOcrMode(false); setKeyboardInput(""); setKeyboardVisible(true); } }}
+        {!hideIcons && <TouchableOpacity
+          onPress={() => { if (onKeyboardIconPress) { onKeyboardIconPress(); } else { setOcrMode(false); setKeyboardInput(""); setKeyboardVisible(true); } }}
           activeOpacity={0.8}
           style={{ position: "absolute", bottom: 220, left: 20, backgroundColor: "#000000CC", borderRadius: 18, padding: 18, borderWidth: 1.5, borderColor: accentColor + "66", width: 64, height: 64, alignItems: "center", justifyContent: "center" }}
         >
           <MaterialCommunityIcons name="keyboard-outline" size={28} color={accentColor} />
-        </TouchableOpacity>
+        </TouchableOpacity>}
 
         {/* Bottom-right: OCR toggle */}
-        <TouchableOpacity
+        {!hideIcons && <TouchableOpacity
           onPress={() => setOcrMode(v => !v)}
           activeOpacity={0.8}
           style={{ position: "absolute", bottom: 220, right: 20, backgroundColor: ocrMode ? accentColor + "33" : "#000000CC", borderRadius: 18, borderWidth: 1.5, borderColor: accentColor + "66", width: 64, height: 64, alignItems: "center", justifyContent: "center" }}
         >
-          <Text style={{ color: accentColor, fontSize: 15, fontWeight: "900", letterSpacing: 1 }}>OCR</Text>
-        </TouchableOpacity>
+          <MaterialCommunityIcons name="camera-outline" size={28} color={accentColor} />
+        </TouchableOpacity>}
 
-        {/* OCR capture button — appears when ocrMode is on */}
-        {ocrMode && (
+        {/* OCR capture button — appears when ocrMode is on, non-board scanners only */}
+        {ocrMode && !hideIcons && (
           <TouchableOpacity
             onPress={async () => {
               if (ocrProcessing || !cameraRef.current) return;
@@ -1011,41 +1064,47 @@ function BarcodeScanner({ visible, onScanned, onClose, title, partsDB, invoiceMo
           </TouchableOpacity>
         )}
 
-        {/* Keyboard input modal */}
-        <Modal visible={keyboardVisible} transparent animationType="fade">
-          <TouchableOpacity style={{ flex: 1, backgroundColor: "#00000088" }} activeOpacity={1} onPress={() => setKeyboardVisible(false)} />
-          <View style={{ backgroundColor: C.s1, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 48 }}>
-            <View style={{ alignSelf: "center", width: 40, height: 4, backgroundColor: C.b1, borderRadius: 2, marginBottom: 20 }} />
-            <Text style={{ color: C.t2, fontSize: 12, fontWeight: "900", letterSpacing: 1.5, marginBottom: 8 }}>PART OR ORDER NUMBER LOOKUP</Text>
-            <TextInput
-              ref={keyboardInputRef}
-              value={keyboardInput}
-              onChangeText={setKeyboardInput}
-              placeholder="Part number or order number…"
-              placeholderTextColor={C.t3}
-              autoCapitalize="characters"
-              returnKeyType="done"
-              onSubmitEditing={() => {
-                const val = keyboardInput.trim().toUpperCase();
-                if (val.length > 0) { setKeyboardVisible(false); deliver(val); }
-              }}
-              style={{ backgroundColor: C.s2, borderRadius: 14, padding: 18, color: C.t1, fontSize: 20, fontWeight: "900", borderWidth: 1.5, borderColor: accentColor + "66", letterSpacing: 1, marginBottom: 14 }}
-            />
-            <TouchableOpacity
-              onPress={() => {
-                const val = keyboardInput.trim().toUpperCase();
-                if (val.length > 0) { setKeyboardVisible(false); deliver(val); }
-              }}
-              style={{ backgroundColor: accentColor, borderRadius: 16, paddingVertical: 18, alignItems: "center" }}
-              activeOpacity={0.85}
-            >
-              <Text style={{ color: C.bg, fontSize: 18, fontWeight: "900" }}>Confirm</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => { setKeyboardVisible(false); if (initialKeyboard) onClose(); }} style={{ paddingVertical: 14, alignItems: "center" }}>
-              <Text style={{ color: C.t3, fontSize: 15 }}>Cancel</Text>
-            </TouchableOpacity>
+        {/* Keyboard input — inline overlay (no nested Modal, fixes Android crash) */}
+        {keyboardVisible && (
+          <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, justifyContent: "flex-end" }}>
+            <TouchableOpacity style={{ flex: 1, backgroundColor: "#00000088" }} activeOpacity={1} onPress={() => setKeyboardVisible(false)} />
+            <View style={{ backgroundColor: C.s1, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 48 }}>
+              <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 16 }}>
+              <TouchableOpacity onPress={() => setKeyboardVisible(false)} style={{ backgroundColor: C.s2, borderRadius: 10, padding: 8, borderWidth: 1, borderColor: C.b1, marginRight: 8 }}><Ionicons name="arrow-back" size={20} color={C.t2} /></TouchableOpacity>
+              <View style={{ flex: 1 }} />
+              <TouchableOpacity onPress={() => setKeyboardVisible(false)} style={{ backgroundColor: C.s2, borderRadius: 10, padding: 8, borderWidth: 1, borderColor: C.b1 }}><Ionicons name="close" size={20} color={C.t2} /></TouchableOpacity>
+            </View>
+              <Text style={{ color: C.t2, fontSize: 12, fontWeight: "900", letterSpacing: 1.5, marginBottom: 8 }}>{keyboardLabel || "PART OR ORDER NUMBER LOOKUP"}</Text>
+              <TextInput
+                ref={keyboardInputRef}
+                value={keyboardInput}
+                onChangeText={setKeyboardInput}
+                placeholder={keyboardPlaceholder || "Part number or order number…"}
+                placeholderTextColor={C.t3}
+                autoCapitalize="characters"
+                returnKeyType="done"
+                onSubmitEditing={() => {
+                  const val = keyboardInput.trim().toUpperCase();
+                  if (val.length > 0) { setKeyboardVisible(false); if (onKeyboardConfirm) { onKeyboardConfirm(val); } else { deliver(val); } }
+                }}
+                style={{ backgroundColor: C.s2, borderRadius: 14, padding: 18, color: C.t1, fontSize: 20, fontWeight: "900", borderWidth: 1.5, borderColor: accentColor + "66", letterSpacing: 1, marginBottom: 14 }}
+              />
+              <TouchableOpacity
+                onPress={() => {
+                  const val = keyboardInput.trim().toUpperCase();
+                  if (val.length > 0) { setKeyboardVisible(false); if (onKeyboardConfirm) { onKeyboardConfirm(val); } else { deliver(val); } }
+                }}
+                style={{ backgroundColor: accentColor, borderRadius: 16, paddingVertical: 18, alignItems: "center" }}
+                activeOpacity={0.85}
+              >
+                <Text style={{ color: C.bg, fontSize: 18, fontWeight: "900" }}>Confirm</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => { setKeyboardVisible(false); if (initialKeyboard) onClose(); }} style={{ paddingVertical: 14, alignItems: "center" }}>
+                <Text style={{ color: C.t3, fontSize: 15 }}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </Modal>
+        )}
 
       </View>
     </Modal>
@@ -1528,7 +1587,7 @@ function DispatchPreCountScreen({ invoice, onBack, onComplete, setDispatchInvoic
 }
 
 // ─── KIA HOME SCREEN ──────────────────────────────────────────────────────────
-function KiaHomeScreen({ invoices, onImportCSV, onFetchFromServer, onClearAll, onOpenList, onFindPart, onManualInvoice, torchEnabled, setTorchEnabled, onScanFindPart, appMode, setAppMode, kiaPartResult, setKiaPartResult, onOpenInvoice, focusList, onOpenBoard, setFocusList, onAddToPending, wsStatus, wsLastSync, onSilentSync, onDispatchSync, hideOrderRefs, setHideOrderRefs, suppressNewInvAlert, setSuppressNewInvAlert, dimOtherCards, setDimOtherCards, onExportEmail, hideFindBtn, setHideFindBtn, onFindPartLookup, partLookupResult, setPartLookupResult, hideClosedInvoices, setHideClosedInvoices, onOpenDispatchPrecount, hideBackorderColProp, setHideBackorderColProp, activeBoards, userIdentity, wsRef, currentRoomId, onRequestJoin }) {
+function KiaHomeScreen({ invoices, onImportCSV, onFetchFromServer, onClearAll, onOpenList, onFindPart, onManualInvoice, torchEnabled, setTorchEnabled, onScanFindPart, appMode, setAppMode, kiaPartResult, setKiaPartResult, onOpenInvoice, focusList, onOpenBoard, setFocusList, onAddToPending, wsStatus, wsLastSync, onSilentSync, onDispatchSync, hideOrderRefs, setHideOrderRefs, suppressNewInvAlert, setSuppressNewInvAlert, dimOtherCards, setDimOtherCards, onExportEmail, hideFindBtn, setHideFindBtn, onFindPartLookup, partLookupResult, setPartLookupResult, hideClosedInvoices, setHideClosedInvoices, onOpenDispatchPrecount, hideBackorderColProp, setHideBackorderColProp, activeBoards, userIdentity, wsRef, currentRoomId, onRequestJoin, onEditIdentity }) {
   const [showManual, setShowManual]         = useState(false);
   const [manualText, setManualText]         = useState("");
   const [settingsMenu, setSettingsMenu]     = useState(false);
@@ -1537,6 +1596,12 @@ function KiaHomeScreen({ invoices, onImportCSV, onFetchFromServer, onClearAll, o
   const swipeStartY = useRef(0);
   const [showFocusModal, setShowFocusModal] = useState(false);
   const [focusInput, setFocusInput]         = useState("");
+  const [joinModeModal, setJoinModeModal]   = useState(null); // { board } — pick merge/replace before requesting
+  const [joinModeChoice, setJoinModeChoice] = useState(null); // "merge" | "replace"
+  const [editIdentityVisible, setEditIdentityVisible] = useState(false);
+  const [editName, setEditName]             = useState("");
+  const [editInitials, setEditInitials]     = useState("");
+  const [editColor, setEditColor]           = useState(USER_COLORS[0]);
   const [ocrCamMode, setOcrCamMode]         = useState(false);
   const [ocrProcessing, setOcrProcessing]   = useState(false);
   const [ocrFound, setOcrFound]             = useState([]);
@@ -1689,6 +1754,49 @@ function KiaHomeScreen({ invoices, onImportCSV, onFetchFromServer, onClearAll, o
         </View>
       )}
 
+      {/* ── LIVE BOARDS STRIP — always at top ── */}
+      {activeBoards.filter(b => b.roomId !== currentRoomId).length > 0 && (
+        <View style={{ backgroundColor: C.s1, paddingHorizontal: 14, paddingTop: 10, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: C.b1 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 10 }}>
+            <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: C.green }} />
+            <Text style={{ color: C.green, fontSize: 10, fontWeight: "900", letterSpacing: 1.5 }}>LIVE BOARDS</Text>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={{ flexDirection: "row", gap: 20, paddingBottom: 2 }}>
+              {activeBoards.filter(b => b.roomId !== currentRoomId).map(board => (
+                <TouchableOpacity
+                  key={board.roomId}
+                  activeOpacity={0.75}
+                  onPress={() => {
+                    if (!userIdentity) { Alert.alert("Set up your identity first"); return; }
+                    setJoinModeChoice(null);
+                    setJoinModeModal({ board });
+                  }}
+                  style={{ alignItems: "center", gap: 5 }}>
+                  <View style={{ position: "relative" }}>
+                    <View style={{ width: 52, height: 52, borderRadius: 26,
+                      backgroundColor: board.hostColor,
+                      borderWidth: 2.5, borderColor: board.hostColor + "44",
+                      alignItems: "center", justifyContent: "center" }}>
+                      <Text style={{ color: "#07090F", fontSize: 15, fontWeight: "900" }}>
+                        {board.hostInitials}
+                      </Text>
+                    </View>
+                    <View style={{ position: "absolute", bottom: 1, right: 1, width: 12, height: 12, borderRadius: 6, backgroundColor: C.green, borderWidth: 2, borderColor: C.s1 }} />
+                  </View>
+                  <Text style={{ color: C.t2, fontSize: 11, fontWeight: "700", maxWidth: 64, textAlign: "center" }} numberOfLines={1}>
+                    {board.roomName}
+                  </Text>
+                  <Text style={{ color: C.t3, fontSize: 10 }}>
+                    {board.invoiceCount != null ? `${board.invoiceCount} invoices` : `${board.memberCount} online`}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </ScrollView>
+        </View>
+      )}
+
       {/* Centre */}
       <ScrollView
         contentContainerStyle={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 32 }}
@@ -1699,53 +1807,6 @@ function KiaHomeScreen({ invoices, onImportCSV, onFetchFromServer, onClearAll, o
         <View style={{ alignItems: "center", marginBottom: 20 }}>
           <MaterialCommunityIcons name="truck-delivery-outline" size={72} color={C.green} style={{ marginBottom: 0 }} />
         </View>
-
-        {/* ── Active Boards Strip — tap avatar to request join ── */}
-        {activeBoards.filter(b => b.roomId !== currentRoomId).length > 0 && (
-          <View style={{ width: "100%", marginBottom: 10 }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 6 }}>
-              <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: C.green }} />
-              <Text style={{ color: C.t3, fontSize: 11, fontWeight: "800", letterSpacing: 0.5 }}>ACTIVE BOARDS</Text>
-            </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View style={{ flexDirection: "row", gap: 10, paddingBottom: 2 }}>
-                {activeBoards.filter(b => b.roomId !== currentRoomId).map(board => (
-                  <TouchableOpacity
-                    key={board.roomId}
-                    activeOpacity={0.75}
-                    onPress={() => {
-                      if (!userIdentity) { Alert.alert("Set up your identity first"); return; }
-                      Alert.alert(
-                        `Join "${board.roomName}"?`,
-                        `Hosted by ${board.hostInitials} · ${board.memberCount} member${board.memberCount !== 1 ? "s" : ""}`,
-                        [
-                          { text: "Cancel", style: "cancel" },
-                          { text: "Send Request", onPress: () => onRequestJoin(board) },
-                        ]
-                      );
-                    }}
-                    style={{ alignItems: "center", gap: 5 }}>
-                    <View style={{ width: 52, height: 52, borderRadius: 26,
-                      backgroundColor: board.hostColor + "22",
-                      borderWidth: 2, borderColor: board.hostColor,
-                      alignItems: "center", justifyContent: "center" }}>
-                      <Text style={{ color: board.hostColor, fontSize: 16, fontWeight: "900" }}>
-                        {board.hostInitials}
-                      </Text>
-                    </View>
-                    <Text style={{ color: C.t2, fontSize: 10, fontWeight: "700", maxWidth: 60, textAlign: "center" }} numberOfLines={1}>
-                      {board.roomName}
-                    </Text>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
-                      <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: C.green }} />
-                      <Text style={{ color: C.t3, fontSize: 9 }}>{board.memberCount}</Text>
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </ScrollView>
-          </View>
-        )}
 
         {/* Receiving divider */}
         <View style={{ width: "100%", flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 10 }}>
@@ -1908,6 +1969,27 @@ function KiaHomeScreen({ invoices, onImportCSV, onFetchFromServer, onClearAll, o
             <View style={{ width: 42, height: 24, borderRadius: 12, backgroundColor: hideBackorderColProp ? C.orange + "44" : C.s3, borderWidth: 1, borderColor: hideBackorderColProp ? C.orange + "66" : C.b1, justifyContent: "center", paddingHorizontal: 3 }}>
               <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: hideBackorderColProp ? C.orange : C.t3, alignSelf: hideBackorderColProp ? "flex-end" : "flex-start" }} />
             </View>
+          </TouchableOpacity>
+          <View style={{ height: 1, backgroundColor: C.b1, marginVertical: 6 }} />
+          {/* Edit identity */}
+          <TouchableOpacity onPress={() => {
+            setEditName(userIdentity?.name || "");
+            setEditInitials(userIdentity?.initials || "");
+            setEditColor(userIdentity?.color || USER_COLORS[0]);
+            setSettingsMenu(false);
+            setEditIdentityVisible(true);
+          }} activeOpacity={0.8}
+            style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 14, borderRadius: 12, backgroundColor: C.blue + "18", marginBottom: 6 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+              <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: userIdentity?.color || C.blue, alignItems: "center", justifyContent: "center" }}>
+                <Text style={{ color: "#07090F", fontSize: 11, fontWeight: "900" }}>{userIdentity?.initials || "?"}</Text>
+              </View>
+              <View>
+                <Text style={{ color: C.blue, fontSize: 14, fontWeight: "700" }}>Edit identity</Text>
+                <Text style={{ color: C.t3, fontSize: 11, marginTop: 1 }}>{userIdentity?.name || "Not set"}</Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={C.blue} />
           </TouchableOpacity>
           <View style={{ height: 1, backgroundColor: C.b1, marginVertical: 6 }} />
           {/* Torch */}
@@ -2103,6 +2185,49 @@ function KiaHomeScreen({ invoices, onImportCSV, onFetchFromServer, onClearAll, o
               <Text style={{ color: C.t3, fontSize: 16, letterSpacing: 0.5 }}>Cancel</Text>
             </TouchableOpacity>
           </View>
+        </View>
+      </Modal>
+
+      {/* ── Join Mode Modal — pick Merge or Replace before sending request ── */}
+      <Modal visible={!!joinModeModal} transparent animationType="slide" onRequestClose={() => setJoinModeModal(null)}>
+        <TouchableOpacity style={{ flex: 1, backgroundColor: "#00000088" }} activeOpacity={1} onPress={() => setJoinModeModal(null)} />
+        <View style={{ backgroundColor: C.s1, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 48 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 16 }}>
+            <TouchableOpacity onPress={() => setJoinModeModal(null)} style={{ backgroundColor: C.s2, borderRadius: 10, padding: 8, borderWidth: 1, borderColor: C.b1, marginRight: 8 }}>
+              <Ionicons name="arrow-back" size={20} color={C.t2} />
+            </TouchableOpacity>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: C.t1, fontSize: 17, fontWeight: "900" }}>Join "{joinModeModal?.board?.roomName}"</Text>
+              <Text style={{ color: C.t3, fontSize: 12, marginTop: 2 }}>Hosted by {joinModeModal?.board?.hostInitials} · {joinModeModal?.board?.memberCount} member{joinModeModal?.board?.memberCount !== 1 ? "s" : ""}</Text>
+            </View>
+            <TouchableOpacity onPress={() => setJoinModeModal(null)} style={{ backgroundColor: C.s2, borderRadius: 10, padding: 8, borderWidth: 1, borderColor: C.b1 }}>
+              <Ionicons name="close" size={20} color={C.t2} />
+            </TouchableOpacity>
+          </View>
+
+          <Text style={{ color: C.t2, fontSize: 13, marginBottom: 10 }}>How do you want to join?</Text>
+          <View style={{ flexDirection: "row", gap: 10, marginBottom: 24 }}>
+            {[{ k: "merge", label: "Merge boards" }, { k: "replace", label: "Replace my board" }].map(opt => (
+              <TouchableOpacity key={opt.k} onPress={() => setJoinModeChoice(opt.k)}
+                style={{ flex: 1, padding: 14, borderRadius: 12, alignItems: "center",
+                  backgroundColor: joinModeChoice === opt.k ? C.green + "22" : C.s2,
+                  borderWidth: 1.5, borderColor: joinModeChoice === opt.k ? C.green : C.b1 }}>
+                <Text style={{ color: joinModeChoice === opt.k ? C.green : C.t2, fontSize: 14, fontWeight: "700" }}>{opt.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <TouchableOpacity
+            disabled={!joinModeChoice}
+            onPress={() => {
+              if (!joinModeChoice) return;
+              onRequestJoin({ ...joinModeModal.board, mergeMode: joinModeChoice });
+              setJoinModeModal(null);
+            }}
+            style={{ backgroundColor: joinModeChoice ? C.blue : C.s2, borderRadius: 16, paddingVertical: 18, alignItems: "center", opacity: joinModeChoice ? 1 : 0.5 }}
+            activeOpacity={0.85}>
+            <Text style={{ color: joinModeChoice ? C.bg : C.t3, fontSize: 17, fontWeight: "900" }}>Send Request</Text>
+          </TouchableOpacity>
         </View>
       </Modal>
 
@@ -2307,7 +2432,6 @@ function KiaHomeScreen({ invoices, onImportCSV, onFetchFromServer, onClearAll, o
                 activeOpacity={0.8}
                 style={{ backgroundColor: C.blue + "22", borderRadius: 12, padding: 10, borderWidth: 1.5, borderColor: C.blue + "66", flexDirection: "row", alignItems: "center", gap: 6, marginRight: 8 }}>
                 <Ionicons name="camera-outline" size={20} color={C.blue} />
-                <Text style={{ color: C.blue, fontSize: 13, fontWeight: "900" }}>OCR</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={async () => { if (!cameraPermission?.granted) await requestCameraPermission(); setLastCapturedUri(null); setCameraActive(true); setOcrCamMode(true); }}
@@ -2358,6 +2482,49 @@ function KiaHomeScreen({ invoices, onImportCSV, onFetchFromServer, onClearAll, o
           </View>
         </View>
       </Modal>
+
+      {/* ── Edit Identity Modal ── */}
+      <Modal visible={editIdentityVisible} transparent animationType="slide" onRequestClose={() => setEditIdentityVisible(false)}>
+        <TouchableOpacity style={{ flex: 1, backgroundColor: "#00000088" }} activeOpacity={1} onPress={() => setEditIdentityVisible(false)} />
+        <View style={{ backgroundColor: C.s1, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 48 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 20 }}>
+            <TouchableOpacity onPress={() => setEditIdentityVisible(false)} style={{ backgroundColor: C.s2, borderRadius: 10, padding: 8, borderWidth: 1, borderColor: C.b1, marginRight: 8 }}>
+              <Ionicons name="arrow-back" size={20} color={C.t2} />
+            </TouchableOpacity>
+            <Text style={{ color: C.t1, fontSize: 17, fontWeight: "900", flex: 1 }}>Edit Identity</Text>
+            <TouchableOpacity onPress={() => setEditIdentityVisible(false)} style={{ backgroundColor: C.s2, borderRadius: 10, padding: 8, borderWidth: 1, borderColor: C.b1 }}>
+              <Ionicons name="close" size={20} color={C.t2} />
+            </TouchableOpacity>
+          </View>
+          <Text style={{ color: C.t2, fontSize: 13, marginBottom: 6 }}>Your Name</Text>
+          <TextInput value={editName} onChangeText={setEditName} placeholder="e.g. Kaine" placeholderTextColor={C.t3}
+            style={{ backgroundColor: C.s2, color: C.t1, borderRadius: 10, padding: 14, fontSize: 16, marginBottom: 16, borderWidth: 1, borderColor: C.b1 }} />
+          <Text style={{ color: C.t2, fontSize: 13, marginBottom: 6 }}>Initials (2–3 letters)</Text>
+          <TextInput value={editInitials} onChangeText={v => setEditInitials(v.toUpperCase().slice(0,3))} placeholder="e.g. KL" placeholderTextColor={C.t3} maxLength={3}
+            style={{ backgroundColor: C.s2, color: C.t1, borderRadius: 10, padding: 14, fontSize: 22, fontWeight: "900", marginBottom: 16, borderWidth: 1, borderColor: C.b1 }} />
+          <Text style={{ color: C.t2, fontSize: 13, marginBottom: 10 }}>Colour</Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 24 }}>
+            {USER_COLORS.map(col => (
+              <TouchableOpacity key={col} onPress={() => setEditColor(col)}
+                style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: col, borderWidth: editColor === col ? 3 : 0, borderColor: "#fff" }} />
+            ))}
+          </View>
+          <TouchableOpacity
+            onPress={() => {
+              const name = editName.trim();
+              const initials = editInitials.trim().toUpperCase().slice(0,3);
+              if (!name || !initials) { Alert.alert("Fill in name and initials"); return; }
+              const updated = { ...userIdentity, name, initials, color: editColor };
+              onEditIdentity && onEditIdentity(updated);
+              setEditIdentityVisible(false);
+            }}
+            style={{ backgroundColor: C.green, borderRadius: 14, paddingVertical: 18, alignItems: "center" }}
+            activeOpacity={0.85}>
+            <Text style={{ color: C.bg, fontSize: 17, fontWeight: "900" }}>Save</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 }
@@ -2472,6 +2639,11 @@ function FocusBatchScanner({ visible, torchEnabled, scannedIds, onScan, onDone, 
 function KiaDetailScreen({ invoice, onBack, setKiaInvoices, torchEnabled, initialPartNumber, onClearInitialPart, userIdentity, wsRef, currentRoomId }) {
   const insets = useSafeAreaInsets();
   const [showScanner, setShowScanner]     = useState(false);
+  const [showScannerOcr, setShowScannerOcr] = useState(false);
+  const [showScannerKeyboard, setShowScannerKeyboard] = useState(false);
+  const [detailKbVisible, setDetailKbVisible] = useState(false);
+  const [detailKbInput, setDetailKbInput]     = useState("");
+  const detailKbRef = useRef(null);
   const [feedback, setFeedback]           = useState(null);
   const [scanPopup, setScanPopup]         = useState(null);
   const [qtyModal, setQtyModal]           = useState(null);
@@ -2882,11 +3054,18 @@ function KiaDetailScreen({ invoice, onBack, setKiaInvoices, torchEnabled, initia
           </TouchableOpacity>
         ) : (
           <View style={{ flexDirection: "row", gap: 10 }}>
-            <TouchableOpacity
-              onPress={() => setShowScanner(true)}
+            <TouchableOpacity onPress={() => { setDetailKbInput(""); setDetailKbVisible(true); setTimeout(() => detailKbRef.current?.focus(), 200); }} activeOpacity={0.75}
+              style={{ width: 64, backgroundColor: C.s2, borderRadius: 18, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: C.b1, paddingVertical: 28, alignSelf: "stretch" }}>
+              <MaterialCommunityIcons name="keyboard-outline" size={26} color={C.green} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => { setShowScannerOcr(false); setShowScannerKeyboard(false); setShowScanner(true); }}
               style={{ flex: 1, backgroundColor: C.green, borderRadius: 18, paddingVertical: 28, alignItems: "center", flexDirection: "row", justifyContent: "center", gap: 12, shadowColor: C.green, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.4, shadowRadius: 16, elevation: 10 }}
               activeOpacity={0.85}>
               <MaterialCommunityIcons name="barcode-scan" size={40} color={C.bg} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => { setShowScannerOcr(true); setShowScanner(true); }} activeOpacity={0.75}
+              style={{ width: 64, backgroundColor: C.s2, borderRadius: 18, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: C.b1, paddingVertical: 28, alignSelf: "stretch" }}>
+              <MaterialCommunityIcons name="camera-outline" size={26} color={C.green} />
             </TouchableOpacity>
           </View>
         )}
@@ -3108,7 +3287,35 @@ function KiaDetailScreen({ invoice, onBack, setKiaInvoices, torchEnabled, initia
         </Modal>
       )}
 
-      <BarcodeScanner visible={showScanner} title="Scan Part — KIA Receiving" onScanned={handlePartScanned} onClose={() => setShowScanner(false)} partsDB={invoice.parts.map(p => ({ partNumber: p.partNumber }))} torchEnabled={torchEnabled} />
+      <BarcodeScanner visible={showScanner} title="Scan Part — KIA Receiving" onScanned={handlePartScanned} onClose={() => { setShowScanner(false); setShowScannerOcr(false); setShowScannerKeyboard(false); }} partsDB={invoice.parts.map(p => ({ partNumber: p.partNumber }))} torchEnabled={torchEnabled} initialOcr={showScannerOcr} hideIcons />
+
+      {/* Standalone keyboard modal — no camera */}
+      <Modal visible={detailKbVisible} transparent animationType="slide" onRequestClose={() => setDetailKbVisible(false)}>
+        <TouchableOpacity style={{ flex: 1, backgroundColor: "#00000088" }} activeOpacity={1} onPress={() => setDetailKbVisible(false)} />
+        <View style={{ backgroundColor: C.s1, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 48 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 16 }}>
+            <TouchableOpacity onPress={() => setDetailKbVisible(false)} style={{ backgroundColor: C.s2, borderRadius: 10, padding: 8, borderWidth: 1, borderColor: C.b1, marginRight: 8 }}><Ionicons name="arrow-back" size={20} color={C.t2} /></TouchableOpacity>
+            <View style={{ flex: 1 }} />
+            <TouchableOpacity onPress={() => setDetailKbVisible(false)} style={{ backgroundColor: C.s2, borderRadius: 10, padding: 8, borderWidth: 1, borderColor: C.b1 }}><Ionicons name="close" size={20} color={C.t2} /></TouchableOpacity>
+          </View>
+          <Text style={{ color: C.t2, fontSize: 12, fontWeight: "900", letterSpacing: 1.5, marginBottom: 8 }}>PART NUMBER LOOKUP</Text>
+          <TextInput
+            ref={detailKbRef}
+            value={detailKbInput}
+            onChangeText={setDetailKbInput}
+            placeholder="Part number…"
+            placeholderTextColor={C.t3}
+            autoCapitalize="characters"
+            returnKeyType="done"
+            onSubmitEditing={() => { const v = detailKbInput.trim().toUpperCase(); if (v) { setDetailKbVisible(false); handlePartScanned(v); } }}
+            style={{ backgroundColor: C.s2, borderRadius: 14, padding: 18, color: C.t1, fontSize: 20, fontWeight: "900", borderWidth: 1.5, borderColor: C.green + "66", letterSpacing: 1, marginBottom: 14 }}
+          />
+          <TouchableOpacity onPress={() => { const v = detailKbInput.trim().toUpperCase(); if (v) { setDetailKbVisible(false); handlePartScanned(v); } }}
+            style={{ backgroundColor: C.green, borderRadius: 16, paddingVertical: 18, alignItems: "center" }} activeOpacity={0.85}>
+            <Text style={{ color: C.bg, fontSize: 18, fontWeight: "900" }}>Confirm</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
 
       {/* Scan popup — Style 1 square */}
       {scanPopup ? (
@@ -3190,7 +3397,7 @@ function BoardSessionModal({ visible, onClose, userIdentity, wsRef, currentRoomI
   const [tab, setTab] = useState("create"); // "create" | "join"
   const [roomNameInput, setRoomNameInput] = useState("");
   const [joinCode, setJoinCode] = useState("");
-  const [mergeMode, setMergeMode] = useState("merge"); // "merge" | "replace"
+  const [mergeMode, setMergeMode] = useState(null); // null | "merge" | "replace" — must pick before joining
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showQR, setShowQR] = useState(false);
@@ -3229,6 +3436,7 @@ function BoardSessionModal({ visible, onClose, userIdentity, wsRef, currentRoomI
   function handleJoin() {
     const code = joinCode.trim().toUpperCase();
     if (!code) { setError("Enter a board code"); return; }
+    if (!mergeMode) { setError("Choose Merge or Replace first"); return; }
     setLoading(true); setError("");
     wsSend({
       type: "join_room",
@@ -3318,12 +3526,21 @@ function BoardSessionModal({ visible, onClose, userIdentity, wsRef, currentRoomI
     <Modal visible={visible} transparent animationType="slide">
       <View style={{ flex:1, backgroundColor:"rgba(0,0,0,0.85)", justifyContent:"center", alignItems:"center", padding:24 }}>
         <View style={{ backgroundColor:C.s2, borderRadius:20, padding:24, width:"100%", maxWidth:360 }}>
-          <Text style={{ color:C.t1, fontSize:20, fontWeight:"700", marginBottom:16 }}>Share Focus Board</Text>
+          {/* Header with back + X */}
+          <View style={{ flexDirection:"row", alignItems:"center", marginBottom:16 }}>
+            <TouchableOpacity onPress={onClose} style={{ backgroundColor:C.s3, borderRadius:10, padding:8, borderWidth:1, borderColor:C.b1, marginRight:8 }}>
+              <Ionicons name="arrow-back" size={20} color={C.t2} />
+            </TouchableOpacity>
+            <Text style={{ color:C.t1, fontSize:20, fontWeight:"700", flex:1 }}>Share Focus Board</Text>
+            <TouchableOpacity onPress={onClose} style={{ backgroundColor:C.s3, borderRadius:10, padding:8, borderWidth:1, borderColor:C.b1 }}>
+              <Ionicons name="close" size={20} color={C.t2} />
+            </TouchableOpacity>
+          </View>
 
           {/* Tabs */}
           <View style={{ flexDirection:"row", backgroundColor:C.s3, borderRadius:10, padding:4, marginBottom:20 }}>
             {["create","join"].map(t => (
-              <TouchableOpacity key={t} onPress={() => { setTab(t); setError(""); }}
+              <TouchableOpacity key={t} onPress={() => { setTab(t); setError(""); if(t==="join") setMergeMode(null); }}
                 style={{ flex:1, padding:10, borderRadius:8, alignItems:"center",
                   backgroundColor: tab===t ? C.b1 : "transparent" }}>
                 <Text style={{ color: tab===t ? C.t1 : C.t2, fontWeight:"600", textTransform:"capitalize" }}>
@@ -3351,38 +3568,34 @@ function BoardSessionModal({ visible, onClose, userIdentity, wsRef, currentRoomI
             </>
           ) : (
             <>
-              <Text style={{ color:C.t2, fontSize:13, marginBottom:6 }}>Enter Board Code or Scan QR</Text>
-              <View style={{ flexDirection:"row", gap:8, marginBottom:16 }}>
-                <TextInput value={joinCode} onChangeText={v=>{setJoinCode(v.toUpperCase());setError("");}} placeholder="e.g. KIA-7B3F2A" placeholderTextColor={C.t3} autoCapitalize="characters" style={{ flex:1, backgroundColor:C.s3, color:C.t1, borderRadius:10, padding:14, fontSize:16, fontWeight:"700", letterSpacing:2 }} />
-                <TouchableOpacity onPress={()=>setShowQRScanner(true)} style={{ backgroundColor:C.s3, borderRadius:10, padding:14, alignItems:"center", justifyContent:"center", borderWidth:1, borderColor:C.green+"66" }}>
-                  <MaterialCommunityIcons name="qrcode-scan" size={26} color={C.green} />
-                </TouchableOpacity>
-              </View>
-              {showQRScanner&&(<Modal visible animationType="slide"><View style={{flex:1,backgroundColor:"#000"}}><CameraView style={StyleSheet.absoluteFill} facing="back" barcodeScannerSettings={{barcodeTypes:["qr"]}} onBarcodeScanned={({data})=>{const code=data.trim().toUpperCase();if(code.startsWith("KIA-")&&code.length>=8){setJoinCode(code);setShowQRScanner(false);}}}/><View style={{position:"absolute",top:0,left:0,right:0,backgroundColor:"#000000AA",paddingTop:52,paddingBottom:18,paddingHorizontal:24,flexDirection:"row",alignItems:"center",gap:14}}><Text style={{color:C.green,fontSize:22,fontWeight:"900",flex:1}}>Scan Board QR</Text><TouchableOpacity onPress={()=>setShowQRScanner(false)} style={{padding:8}}><Ionicons name="close" size={28} color={C.t1}/></TouchableOpacity></View><View style={{position:"absolute",bottom:60,left:0,right:0,alignItems:"center"}}><Text style={{color:C.t2,fontSize:14}}>Point at the QR code on Device 1</Text></View></View></Modal>)}
-
-              <Text style={{ color:C.t2, fontSize:13, marginBottom:8 }}>When joining:</Text>
-              <View style={{ flexDirection:"row", gap:8, marginBottom:16 }}>
+              <Text style={{ color:C.t2, fontSize:13, marginBottom:8 }}>Step 1 — How do you want to join?</Text>
+              <View style={{ flexDirection:"row", gap:8, marginBottom:20 }}>
                 {[{k:"merge",label:"Merge boards"},{k:"replace",label:"Replace my board"}].map(opt => (
-                  <TouchableOpacity key={opt.k} onPress={() => setMergeMode(opt.k)}
-                    style={{ flex:1, padding:10, borderRadius:10, alignItems:"center",
-                      backgroundColor: mergeMode===opt.k ? C.b1 : C.s3,
-                      borderWidth: mergeMode===opt.k ? 1 : 0, borderColor: C.green }}>
-                    <Text style={{ color: mergeMode===opt.k ? C.green : C.t2, fontSize:13, fontWeight:"600" }}>{opt.label}</Text>
+                  <TouchableOpacity key={opt.k} onPress={() => { setMergeMode(opt.k); setError(""); }}
+                    style={{ flex:1, padding:12, borderRadius:10, alignItems:"center",
+                      backgroundColor: mergeMode===opt.k ? C.green+"22" : C.s3,
+                      borderWidth: 1.5, borderColor: mergeMode===opt.k ? C.green : C.b1 }}>
+                    <Text style={{ color: mergeMode===opt.k ? C.green : C.t2, fontSize:13, fontWeight:"700" }}>{opt.label}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
 
+              <Text style={{ color: mergeMode ? C.t2 : C.t3, fontSize:13, marginBottom:6 }}>Step 2 — Enter Board Code or Scan QR</Text>
+              <View style={{ flexDirection:"row", gap:8, marginBottom:16, opacity: mergeMode ? 1 : 0.4 }}>
+                <TextInput value={joinCode} onChangeText={v=>{setJoinCode(v.toUpperCase());setError("");}} placeholder="e.g. KIA-7B3F2A" placeholderTextColor={C.t3} autoCapitalize="characters" editable={!!mergeMode} style={{ flex:1, backgroundColor:C.s3, color:C.t1, borderRadius:10, padding:14, fontSize:16, fontWeight:"700", letterSpacing:2 }} />
+                <TouchableOpacity onPress={()=>{ if(mergeMode) setShowQRScanner(true); }} style={{ backgroundColor:C.s3, borderRadius:10, padding:14, alignItems:"center", justifyContent:"center", borderWidth:1, borderColor: mergeMode ? C.green+"66" : C.b1, opacity: mergeMode ? 1 : 0.4 }}>
+                  <MaterialCommunityIcons name="qrcode-scan" size={26} color={mergeMode ? C.green : C.t3} />
+                </TouchableOpacity>
+              </View>
+              {showQRScanner&&(<Modal visible animationType="slide"><View style={{flex:1,backgroundColor:"#000"}}><CameraView style={StyleSheet.absoluteFill} facing="back" barcodeScannerSettings={{barcodeTypes:["qr"]}} onBarcodeScanned={({data})=>{const code=data.trim().toUpperCase();if(code.startsWith("KIA-")&&code.length>=8){setJoinCode(code);setShowQRScanner(false);}}}/><View style={{position:"absolute",top:0,left:0,right:0,backgroundColor:"#000000AA",paddingTop:52,paddingBottom:18,paddingHorizontal:24,flexDirection:"row",alignItems:"center",gap:14}}><Text style={{color:C.green,fontSize:22,fontWeight:"900",flex:1}}>Scan Board QR</Text><TouchableOpacity onPress={()=>setShowQRScanner(false)} style={{padding:8}}><Ionicons name="close" size={28} color={C.t1}/></TouchableOpacity></View><View style={{position:"absolute",bottom:60,left:0,right:0,alignItems:"center"}}><Text style={{color:C.t2,fontSize:14}}>Point at the QR code on Device 1</Text></View></View></Modal>)}
+
               {!!error && <Text style={{ color:C.red, marginBottom:10, fontSize:13 }}>{error}</Text>}
-              <TouchableOpacity onPress={handleJoin} disabled={loading}
-                style={{ backgroundColor:C.blue, borderRadius:12, padding:14, alignItems:"center" }}>
-                <Text style={{ color:C.bg, fontWeight:"700", fontSize:16 }}>Join Board</Text>
+              <TouchableOpacity onPress={handleJoin} disabled={loading || !mergeMode}
+                style={{ backgroundColor: mergeMode ? C.blue : C.s3, borderRadius:12, padding:14, alignItems:"center", opacity: mergeMode ? 1 : 0.5 }}>
+                <Text style={{ color: mergeMode ? C.bg : C.t3, fontWeight:"700", fontSize:16 }}>Join Board</Text>
               </TouchableOpacity>
             </>
           )}
-
-          <TouchableOpacity onPress={onClose} style={{ padding:14, alignItems:"center" }}>
-            <Text style={{ color:C.t2 }}>Cancel</Text>
-          </TouchableOpacity>
         </View>
       </View>
     </Modal>
@@ -3450,12 +3663,19 @@ function KiaFocusBoard({ invoices, allInvoices, focusList, onSelect, onBack, tor
     return () => clearInterval(interval);
   }, [currentRoomId, userIdentity]);
   const [boardScanMode, setBoardScanMode] = useState(false);
+  const [boardScanOcr, setBoardScanOcr]   = useState(false);
   const [scanPopup, setScanPopup]         = useState(null);
   const [qtyModal, setQtyModal]           = useState(null);
   const [qtyInput, setQtyInput]           = useState("");
   const [flashId, setFlashId]             = useState(null);
+  const [tappedCardId, setTappedCardId]   = useState(null); // two-tap: first tap selects, second opens
   const [multiMatch, setMultiMatch]       = useState(null); // { scanned, matches: [{inv, idx}] }
   const [boardToolsVisible, setBoardToolsVisible] = useState(false);
+  const [kbLookupVisible, setKbLookupVisible] = useState(false);
+  const [kbLookupMode, setKbLookupMode]       = useState("board"); // "board" | "all"
+  const [kbLookupQuery, setKbLookupQuery]     = useState("");
+  const [kbLookupResults, setKbLookupResults] = useState(null);
+  const kbLookupInputRef = useRef(null);
   const [selectedBoardIds, setSelectedBoardIds] = useState([]);
   const [boardSelectMode, setBoardSelectMode] = useState(false);
   const [toolsTab, setToolsTab]           = useState("board"); // "board" | "csv"
@@ -3844,18 +4064,25 @@ function KiaFocusBoard({ invoices, allInvoices, focusList, onSelect, onBack, tor
               setBoardMultiSelectIds(prev =>
                 prev.includes(inv.id) ? prev.filter(x => x !== inv.id) : [...prev, inv.id]
               );
-            } else {
+            } else if (tappedCardId === inv.id) {
+              setTappedCardId(null);
               onSelect(inv.id);
+            } else {
+              setTappedCardId(inv.id);
+              if (setLastVisitedId) setLastVisitedId(inv.id);
             }
           }}
           onLongPress={handleLongPress} delayLongPress={600} activeOpacity={0.8}
           style={{
-            backgroundColor: boardMultiSelectIds.includes(inv.id) ? C.red + "22" : isFlashing ? accent + "22" : C.s2,
+            backgroundColor: boardMultiSelectIds.includes(inv.id) ? C.red + "22" : isFlashing ? accent + "22" : tappedCardId === inv.id ? accent + "18" : C.s2,
             marginBottom: 8,
             borderRadius: isLastVisited ? 12 : 10,
-            borderLeftWidth: 4,
-            borderLeftColor: boardMultiSelectIds.includes(inv.id) ? C.red : isFlashing ? C.green : accent,
-            borderTopWidth: 0, borderRightWidth: 0, borderBottomWidth: 0,
+            borderLeftWidth: tappedCardId === inv.id ? 6 : 4,
+            borderLeftColor: boardMultiSelectIds.includes(inv.id) ? C.red : isFlashing ? C.green : tappedCardId === inv.id ? accent : accent,
+            borderTopWidth: tappedCardId === inv.id ? 1 : 0,
+            borderRightWidth: tappedCardId === inv.id ? 1 : 0,
+            borderBottomWidth: tappedCardId === inv.id ? 1 : 0,
+            borderColor: tappedCardId === inv.id ? accent + "55" : undefined,
             padding: isLastVisited ? 14 : 12,
             opacity: isDimmed ? 0.35 : 1,
           }}>
@@ -4119,12 +4346,10 @@ function KiaFocusBoard({ invoices, allInvoices, focusList, onSelect, onBack, tor
           </>
         ) : (
           <>
-            {!hideFindBtn && (
-            <TouchableOpacity onPress={() => onFindPart && onFindPart(true)} activeOpacity={0.75}
-              style={{ width: 64, backgroundColor: C.s2, borderRadius: 18, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: C.b1, paddingVertical: 28 }}>
-              <MaterialCommunityIcons name="magnify-scan" size={26} color={C.t3} />
+            <TouchableOpacity onPress={() => { setKbLookupQuery(""); setKbLookupResults(null); setKbLookupMode("board"); setKbLookupVisible(true); setTimeout(() => kbLookupInputRef.current?.focus(), 200); }} activeOpacity={0.75}
+              style={{ width: 64, backgroundColor: C.s2, borderRadius: 18, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: C.b1, paddingVertical: 28, alignSelf: "stretch" }}>
+              <MaterialCommunityIcons name="keyboard-outline" size={26} color={C.green} />
             </TouchableOpacity>
-            )}
             <View style={{ flex: 1 }}>
               <View style={{ flex: 1 }}
                 onStartShouldSetResponder={() => true}
@@ -4163,7 +4388,7 @@ function KiaFocusBoard({ invoices, allInvoices, focusList, onSelect, onBack, tor
                     clearInterval(_scanProgressInterval.current);
                     setScanArmed(false);
                     setScanProgress(0);
-                    onFindPartKeyboard && onFindPartKeyboard();
+                    setKbLookupQuery(""); setKbLookupResults(null); setKbLookupMode("board"); setKbLookupVisible(true); setTimeout(() => kbLookupInputRef.current?.focus(), 200);
                   }
                 }}
                 onResponderRelease={() => {
@@ -4171,7 +4396,7 @@ function KiaFocusBoard({ invoices, allInvoices, focusList, onSelect, onBack, tor
                   clearInterval(_scanProgressInterval.current);
                   setScanArmed(false);
                   setScanProgress(0);
-                  if (!_scanSwiped.current) setBoardScanMode(true);
+                  if (!_scanSwiped.current) { setTappedCardId(null); setBoardScanMode(true); }
                 }}>
                 {/* Glow rings — visible when armed */}
                 <View style={{ position: "absolute", top: -8, left: -8, right: -8, bottom: -8, borderRadius: 26, borderWidth: 4, borderColor: C.green + (scanArmed ? "55" : "00") }} />
@@ -4183,6 +4408,10 @@ function KiaFocusBoard({ invoices, allInvoices, focusList, onSelect, onBack, tor
                 </TouchableOpacity>
               </View>
             </View>
+            <TouchableOpacity onPress={() => { setBoardScanOcr(true); setBoardScanMode(true); }} activeOpacity={0.75}
+              style={{ width: 64, backgroundColor: C.s2, borderRadius: 18, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: C.b1, paddingVertical: 28, alignSelf: "stretch" }}>
+              <MaterialCommunityIcons name="camera-outline" size={26} color={C.green} />
+            </TouchableOpacity>
 
           </>
         )}
@@ -4229,13 +4458,86 @@ function KiaFocusBoard({ invoices, allInvoices, focusList, onSelect, onBack, tor
         </View>
       </Modal>
 
+      {/* ── Keyboard Lookup Modal ── */}
+      <Modal visible={kbLookupVisible} transparent animationType="slide" onRequestClose={() => setKbLookupVisible(false)}>
+        <TouchableOpacity style={{ flex: 1, backgroundColor: "#00000088" }} activeOpacity={1} onPress={() => setKbLookupVisible(false)} />
+        <View style={{ backgroundColor: C.s1, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 48, maxHeight: "80%" }}>
+          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 16 }}>
+            <TouchableOpacity onPress={() => setKbLookupVisible(false)} style={{ backgroundColor: C.s2, borderRadius: 10, padding: 8, borderWidth: 1, borderColor: C.b1, marginRight: 8 }}><Ionicons name="arrow-back" size={20} color={C.t2} /></TouchableOpacity>
+            <View style={{ flex: 1 }} />
+            <TouchableOpacity onPress={() => setKbLookupVisible(false)} style={{ backgroundColor: C.s2, borderRadius: 10, padding: 8, borderWidth: 1, borderColor: C.b1 }}><Ionicons name="close" size={20} color={C.t2} /></TouchableOpacity>
+          </View>
+          {/* Toggle */}
+          <View style={{ flexDirection: "row", backgroundColor: C.s2, borderRadius: 14, padding: 4, marginBottom: 16, borderWidth: 1, borderColor: C.b1 }}>
+            {["board", "all"].map(mode => (
+              <TouchableOpacity key={mode} onPress={() => { setKbLookupMode(mode); setKbLookupResults(null); setKbLookupQuery(""); setTimeout(() => kbLookupInputRef.current?.focus(), 100); }}
+                style={{ flex: 1, paddingVertical: 10, borderRadius: 11, alignItems: "center", backgroundColor: kbLookupMode === mode ? C.green : "transparent" }}>
+                <Text style={{ color: kbLookupMode === mode ? C.bg : C.t2, fontWeight: "900", fontSize: 13 }}>{mode === "board" ? "FOCUS BOARD" : "ALL KIA INVOICES"}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          {/* Input */}
+          <TextInput
+            ref={kbLookupInputRef}
+            value={kbLookupQuery}
+            onChangeText={v => {
+              setKbLookupQuery(v);
+              const q = v.trim().toUpperCase().replace(/-/g, "");
+              if (!q) { setKbLookupResults(null); return; }
+              const pool = kbLookupMode === "board" ? invoices.filter(inv => !inv.removedFromBoard && (inv.manuallyAdded || inv.complete || inv.parts.some(p => p.confirmed > 0))) : allInvoices;
+              const found = [];
+              for (const inv of (pool || [])) {
+                const orderRef = (inv.orderRef || "").toUpperCase().replace(/-/g, "");
+                if (orderRef && (orderRef === q || orderRef.includes(q) || q.includes(orderRef))) { found.push(inv); continue; }
+                if (inv.parts.some(p => { const pn = p.partNumber.toUpperCase().replace(/-/g, ""); return pn === q || pn.includes(q) || q.includes(pn); })) found.push(inv);
+              }
+              found.sort((a, b) => (parseInt(b.id.replace(/\D/g, "")) || 0) - (parseInt(a.id.replace(/\D/g, "")) || 0));
+              setKbLookupResults(found);
+            }}
+            placeholder={kbLookupMode === "board" ? "Part or order number…" : "Part or order number…"}
+            placeholderTextColor={C.t3}
+            autoCapitalize="characters"
+            returnKeyType="search"
+            style={{ backgroundColor: C.s2, borderRadius: 14, padding: 18, color: C.t1, fontSize: 18, fontWeight: "900", borderWidth: 1.5, borderColor: C.green + "66", letterSpacing: 1, marginBottom: 12 }}
+          />
+          {/* Results */}
+          <ScrollView style={{ maxHeight: 300 }} keyboardShouldPersistTaps="handled">
+            {kbLookupResults === null && <Text style={{ color: C.t3, textAlign: "center", marginTop: 8 }}>Start typing to search</Text>}
+            {kbLookupResults !== null && kbLookupResults.length === 0 && <Text style={{ color: C.red, textAlign: "center", fontWeight: "900", marginTop: 8 }}>No invoices found</Text>}
+            {(kbLookupResults || []).map(inv => {
+              const status = getStatus(inv);
+              const accent = status === "complete" ? C.green : status === "inprogress" ? C.amber : C.t3;
+              const isOnBoard = !inv.removedFromBoard && (inv.manuallyAdded || inv.complete || inv.parts.some(p => p.confirmed > 0));
+              return (
+                <View key={inv.id} style={{ backgroundColor: C.s2, borderRadius: 14, padding: 14, marginBottom: 8, borderWidth: 1.5, borderColor: accent + "55", flexDirection: "row", alignItems: "center", gap: 10 }}>
+                  <TouchableOpacity style={{ flex: 1 }} activeOpacity={0.7} onPress={() => { setKbLookupVisible(false); onSelect && onSelect(inv.id); }}>
+                    <Text style={{ color: C.t1, fontSize: 16, fontWeight: "900" }}>{inv.id}</Text>
+                    {inv.orderRef ? <Text style={{ color: C.t3, fontSize: 11, marginTop: 2 }}>{inv.orderRef}</Text> : null}
+                    <Text style={{ color: accent, fontSize: 11, fontWeight: "700", marginTop: 2 }}>{status.toUpperCase()} · {inv.parts.length} parts</Text>
+                  </TouchableOpacity>
+                  {!isOnBoard && (
+                    <TouchableOpacity onPress={() => { setKiaInvoices(prev => prev.map(i => i.id === inv.id ? { ...i, manuallyAdded: true, removedFromBoard: false } : i)); setKbLookupVisible(false); onSelect && onSelect(inv.id); }}
+                      style={{ backgroundColor: C.green + "22", borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: C.green + "55" }}>
+                      <Text style={{ color: C.green, fontWeight: "900", fontSize: 12 }}>+ BOARD</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              );
+            })}
+          </ScrollView>
+        </View>
+      </Modal>
+
       <BarcodeScanner
         visible={boardScanMode}
         title="Scan Part Number Barcode"
         torchEnabled={torchEnabled}
-        onClose={() => setBoardScanMode(false)}
+        onClose={() => { setBoardScanMode(false); setBoardScanOcr(false); }}
         onScanned={autoConfirmPart}
+        initialOcr={boardScanOcr}
         partsDB={invoices.flatMap(inv => inv.parts.map(p => ({ partNumber: p.partNumber })))}
+        onKeyboardIconPress={() => { setBoardScanMode(false); setBoardScanOcr(false); setKbLookupQuery(""); setKbLookupResults(null); setKbLookupMode("board"); setTimeout(() => { setKbLookupVisible(true); setTimeout(() => kbLookupInputRef.current?.focus(), 200); }, 300); }}
+        hideIcons
       />
 
       {/* Multi-invoice picker modal */}
@@ -4399,7 +4701,7 @@ function KiaFocusBoard({ invoices, allInvoices, focusList, onSelect, onBack, tor
 }
 
 // ─── KIA FIND PART SCREEN ─────────────────────────────────────────────────────
-function KiaFindPartScreen({ invoices, onBack, setKiaInvoices, torchEnabled, initialQuery, autoScan, onAutoScanDone, onGoToDetail, initialOcrMode, initialKeyboardMode }) {
+function KiaFindPartScreen({ invoices, onBack, setKiaInvoices, torchEnabled, initialQuery, autoScan, onAutoScanDone, onGoToDetail, initialOcrMode, initialKeyboardMode, dispatchInvoices, onOpenDispatchPrecount }) {
   const insets = useSafeAreaInsets();
   const [scannerVisible, setScannerVisible] = useState(false);
   const [scannerInitKeyboard, setScannerInitKeyboard] = useState(false);
@@ -4600,11 +4902,11 @@ function KiaFindPartScreen({ invoices, onBack, setKiaInvoices, torchEnabled, ini
         {/* OCR button — same size as Focus Board side buttons */}
         <TouchableOpacity onPress={() => { setScannerInitOcr(true); setScannerInitKeyboard(false); setScannerVisible(true); }} activeOpacity={0.8}
           style={{ width: 64, backgroundColor: C.s2, borderRadius: 18, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: C.b1, paddingVertical: 28, alignSelf: "stretch" }}>
-          <Text style={{ color: C.t3, fontSize: 13, fontWeight: "900" }}>OCR</Text>
+          <MaterialCommunityIcons name="camera-outline" size={26} color={C.t3} />
         </TouchableOpacity>
       </View>
 
-      <BarcodeScanner visible={scannerVisible} title="Invoice Data Base Look Up" onScanned={(s) => { setScannerVisible(false); setScannerInitKeyboard(false); setScannerInitOcr(false); setQuery(s); search(s); }} onClose={() => { setScannerVisible(false); setScannerInitKeyboard(false); setScannerInitOcr(false); onBack(); }} partsDB={allParts} torchEnabled={torchEnabled} initialKeyboard={scannerInitKeyboard} initialOcr={scannerInitOcr} />
+      <BarcodeScanner visible={scannerVisible} title="Invoice Data Base Look Up" onScanned={(s) => { setScannerVisible(false); setScannerInitKeyboard(false); setScannerInitOcr(false); setQuery(s); search(s); }} onClose={() => { setScannerVisible(false); setScannerInitKeyboard(false); setScannerInitOcr(false); onBack(); }} partsDB={allParts} torchEnabled={torchEnabled} initialKeyboard={scannerInitKeyboard} initialOcr={scannerInitOcr} keyboardLabel="PANEL INVOICE LOOKUP" keyboardPlaceholder="Panel invoice number…" onKeyboardConfirm={(val) => { setScannerVisible(false); setScannerInitKeyboard(false); setScannerInitOcr(false); const inv = (dispatchInvoices || []).find(i => i.id.toUpperCase() === val) || (dispatchInvoices || []).find(i => i.id.toUpperCase().includes(val)); if (inv && onOpenDispatchPrecount) { onOpenDispatchPrecount(inv.id); } else { Alert.alert("Not Found", `Panel invoice "${val}" not found in Dispatch CSV.`); } }} />
     </View>
   );
 }
@@ -4757,6 +5059,40 @@ export default function App() {
       }));
     }, 2000);
   }, [kiaInvoices, currentRoomId]);
+
+  // ── Auto-announce: when user opens Focus Board, create/rejoin a personal room so
+  // others can see them in the Live Boards strip without manual "Create Board" ──
+  const autoRoomRef = useRef(false);
+  useEffect(() => {
+    if (kiaScreen !== "board") return;
+    if (!userIdentity) return;
+    const ws = wsRef.current;
+    if (!ws || ws.readyState !== 1) return;
+    if (currentRoomId) return; // Already in a room — don't override
+    if (autoRoomRef.current) return; // Already announced this session
+    autoRoomRef.current = true;
+    const roomId = userIdentity.id + "-AUTO"; // stable personal room id
+    const roomName = userIdentity.name + "'s Board";
+    ws.send(JSON.stringify({
+      type: "create_room",
+      roomId,
+      roomName,
+      userId: userIdentity.id,
+      initials: userIdentity.initials,
+      color: userIdentity.color,
+      name: userIdentity.name,
+      focusList: kiaFocusList,
+      pinnedIds: kiaPinnedIds,
+      invoices: kiaInvoices,
+    }));
+    setCurrentRoomId(roomId);
+    setRoomName(roomName);
+  }, [kiaScreen, userIdentity]);
+
+  // Reset auto-room flag when leaving board so it re-announces next time
+  useEffect(() => {
+    if (kiaScreen !== "board") autoRoomRef.current = false;
+  }, [kiaScreen]);
 
   useEffect(() => {
     if (userIdentity) AsyncStorage.setItem(USER_IDENTITY_KEY, JSON.stringify(userIdentity)).catch(() => {});
@@ -4988,6 +5324,7 @@ export default function App() {
             requesterColor: msg.requesterColor,
             requesterName: msg.requesterName,
             roomId: msg.roomId,
+            mergeMode: msg.mergeMode || "merge",
           });
           return;
         }
@@ -4995,7 +5332,7 @@ export default function App() {
         // Phone 2 receives response to their join request
         if (msg.type === "join_response") {
           if (msg.approved) {
-            // Auto-join the room
+            // Auto-join the room using the mergeMode the user picked
             ws.send(JSON.stringify({
               type: "join_room",
               roomId: msg.roomId,
@@ -5003,7 +5340,7 @@ export default function App() {
               initials: userIdentityRef.current?.initials,
               color: userIdentityRef.current?.color,
               name: userIdentityRef.current?.name,
-              mergeMode: "merge",
+              mergeMode: msg.mergeMode || "merge",
             }));
             setCurrentRoomId(msg.roomId);
             setRoomName(msg.roomName);
@@ -5024,19 +5361,39 @@ export default function App() {
           setRoomName(msg.roomName);
           setRoomMembers(msg.members || []);
           setIsRoomHost(msg.hostId === userIdentityRef.current?.id);
-          // focusList from host — used to decide which invoices get manuallyAdded
           const remoteFocusList = msg.focusList || [];
           const remotePinnedIds = msg.pinnedIds || [];
+          const isReplace = msg.mergeMode === "replace";
           if (msg.invoices && msg.invoices.length > 0) {
             setKiaInvoices(prev => {
+              // Replace mode: wipe all local board flags, then take host invoices as source of truth
+              if (isReplace) {
+                const hostIds = new Set(msg.invoices.map(i => i.id));
+                // Keep local invoices NOT on host board (don't delete their data), just remove from board
+                const localReset = prev.map(inv => ({
+                  ...inv,
+                  manuallyAdded: false,
+                  removedFromBoard: true,
+                }));
+                // Now apply all host invoices on top
+                const next = [...localReset];
+                msg.invoices.forEach(ri => {
+                  const ei = next.findIndex(e => e.id === ri.id);
+                  if (ei === -1) {
+                    next.push({ ...ri, removedFromBoard: false });
+                  } else {
+                    next[ei] = { ...next[ei], ...ri, removedFromBoard: false };
+                  }
+                });
+                return next;
+              }
+              // Merge mode: existing behaviour
               const next = [...prev];
               msg.invoices.forEach(ri => {
                 const ei = next.findIndex(e => e.id === ri.id);
                 if (ei === -1) {
-                  // Invoice not local — take it fully from remote including its manuallyAdded state
                   next.push({ ...ri, removedFromBoard: false });
                 } else {
-                  // Existing invoice — merge parts trusting remote confirmed over local zero
                   const mergedParts = ri.parts.map(rp => {
                     const lp = next[ei].parts.find(p => p.partNumber === rp.partNumber && p.lineNo === rp.lineNo);
                     if (!lp) return rp;
@@ -5048,7 +5405,6 @@ export default function App() {
                   });
                   const done = mergedParts.every(p => p.short || p.confirmed >= p.qty);
                   next[ei] = { ...next[ei], ...ri,
-                    // Trust host's manuallyAdded — they control the board layout
                     manuallyAdded: ri.manuallyAdded || next[ei].manuallyAdded,
                     removedFromBoard: false,
                     parts: mergedParts, complete: ri.complete || done || next[ei].complete,
@@ -5058,11 +5414,9 @@ export default function App() {
               return next;
             });
           }
-          // Apply any remaining invoiceUpdates (catches parts confirmed after last room.invoices save)
           if (msg.invoiceUpdates && Object.keys(msg.invoiceUpdates).length > 0) {
             setKiaInvoices(prev => applyInvoiceUpdates(prev, msg.invoiceUpdates));
           }
-          // Always replace focusList/pinnedIds from host — they are the source of truth for board layout
           setKiaFocusList(remoteFocusList);
           setKiaPinnedIds(remotePinnedIds);
           return;
@@ -5235,7 +5589,7 @@ export default function App() {
       } catch(e) { console.error("activeBoards poll:", e); }
     };
     poll();
-    const interval = setInterval(poll, 8000);
+    const interval = setInterval(poll, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -5593,6 +5947,7 @@ export default function App() {
               initials: userIdentity.initials,
               color: userIdentity.color,
               name: userIdentity.name,
+              mergeMode: board.mergeMode || "merge",
             }));
             Alert.alert("Request Sent", `Asked to join ${board.roomName}. Waiting for host to approve.`);
           }}
@@ -5615,6 +5970,10 @@ export default function App() {
           onExportEmail={() => {
             if (!kiaInvoices.length) { Alert.alert("Nothing to export", "No invoices loaded."); return; }
             setExportFilterVisible(true);
+          }}
+          onEditIdentity={(updated) => {
+            setUserIdentity(updated);
+            if (wsRef.current?.readyState === 1) wsRef.current.send(JSON.stringify({ type: "identify", ...updated }));
           }}
           onSilentSync={async () => {
             const FILES = ["stdpartski.csv", "stdpartshy.csv"];
@@ -5747,6 +6106,7 @@ export default function App() {
               roomId: incomingJoinReq.roomId,
               roomName: roomName,
               approved,
+              mergeMode: incomingJoinReq.mergeMode || "merge",
             }));
             setIncomingJoinReq(null);
           }}
@@ -5775,6 +6135,8 @@ export default function App() {
           torchEnabled={torchEnabled}
           initialQuery={kiaFindQuery}
           onGoToDetail={(invId, pn) => { setKiaFindPartNumber(pn); setKiaReturnScreen("findpart"); setActiveKiaId(invId); setKiaScreen("detail"); }}
+          dispatchInvoices={dispatchInvoices}
+          onOpenDispatchPrecount={(invId) => { setActiveDispatchId(invId); setShowDispatchPrecount(true); }}
         />
       ) : null}
 
@@ -5823,14 +6185,20 @@ export default function App() {
         partsDB={dispatchInvoices.flatMap(inv => inv.parts.map(p => ({ partNumber: p.partNumber })))}
         deliverRaw
         torchEnabled={torchEnabled}
-        onInvoiceKeyboard={() => { setKiaPartLookupCamera(false); setInvoiceLookupText(""); setTimeout(() => setInvoiceLookupVisible(true), 350); }}
+        keyboardLabel="PANEL INVOICE LOOKUP"
+        keyboardPlaceholder="Panel invoice number…"
+        onKeyboardConfirm={(val) => { setKiaPartLookupCamera(false); const inv = dispatchInvoices.find(i => i.id.toUpperCase() === val) || dispatchInvoices.find(i => i.id.toUpperCase().includes(val)); if (inv) { setActiveDispatchId(inv.id); setShowDispatchPrecount(true); } else { Alert.alert("Not Found", `Panel invoice "${val}" not found in Dispatch CSV.`); } }}
       />
 
       {/* ── Invoice number keyboard lookup — Trace to Invoice screen only ── */}
       <Modal visible={invoiceLookupVisible} transparent animationType="slide" onRequestClose={() => setInvoiceLookupVisible(false)} onShow={() => setTimeout(() => invoiceLookupInputRef.current?.focus(), 100)}>
         <TouchableOpacity style={{ flex: 1, backgroundColor: "#00000088" }} activeOpacity={1} onPress={() => setInvoiceLookupVisible(false)} />
         <View style={{ backgroundColor: C.s1, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 48 }}>
-          <View style={{ alignSelf: "center", width: 40, height: 4, backgroundColor: C.b1, borderRadius: 2, marginBottom: 20 }} />
+          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 16 }}>
+            <TouchableOpacity onPress={() => setInvoiceLookupVisible(false)} style={{ backgroundColor: C.s2, borderRadius: 10, padding: 8, borderWidth: 1, borderColor: C.b1, marginRight: 8 }}><Ionicons name="arrow-back" size={20} color={C.t2} /></TouchableOpacity>
+            <View style={{ flex: 1 }} />
+            <TouchableOpacity onPress={() => setInvoiceLookupVisible(false)} style={{ backgroundColor: C.s2, borderRadius: 10, padding: 8, borderWidth: 1, borderColor: C.b1 }}><Ionicons name="close" size={20} color={C.t2} /></TouchableOpacity>
+          </View>
           <Text style={{ color: C.t2, fontSize: 12, fontWeight: "900", letterSpacing: 1.5, marginBottom: 8 }}>PANEL SHOP INVOICE LOOKUP</Text>
           <TextInput
             ref={invoiceLookupInputRef}
