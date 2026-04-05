@@ -1587,7 +1587,7 @@ function DispatchPreCountScreen({ invoice, onBack, onComplete, setDispatchInvoic
 }
 
 // ─── KIA HOME SCREEN ──────────────────────────────────────────────────────────
-function KiaHomeScreen({ invoices, onImportCSV, onFetchFromServer, onClearAll, onOpenList, onFindPart, onManualInvoice, torchEnabled, setTorchEnabled, onScanFindPart, appMode, setAppMode, kiaPartResult, setKiaPartResult, onOpenInvoice, focusList, onOpenBoard, setFocusList, onAddToPending, wsStatus, wsLastSync, onSilentSync, onDispatchSync, hideOrderRefs, setHideOrderRefs, suppressNewInvAlert, setSuppressNewInvAlert, dimOtherCards, setDimOtherCards, onExportEmail, hideFindBtn, setHideFindBtn, onFindPartLookup, partLookupResult, setPartLookupResult, hideClosedInvoices, setHideClosedInvoices, onOpenDispatchPrecount, hideBackorderColProp, setHideBackorderColProp, activeBoards, userIdentity, wsRef, currentRoomId, onRequestJoin, onEditIdentity }) {
+function KiaHomeScreen({ invoices, onImportCSV, onFetchFromServer, onClearAll, onOpenList, onFindPart, onManualInvoice, torchEnabled, setTorchEnabled, onScanFindPart, appMode, setAppMode, kiaPartResult, setKiaPartResult, onOpenInvoice, focusList, onOpenBoard, setFocusList, onAddToPending, wsStatus, wsLastSync, onSilentSync, onDispatchSync, hideOrderRefs, setHideOrderRefs, suppressNewInvAlert, setSuppressNewInvAlert, dimOtherCards, setDimOtherCards, onExportEmail, hideFindBtn, setHideFindBtn, onFindPartLookup, partLookupResult, setPartLookupResult, hideClosedInvoices, setHideClosedInvoices, onOpenDispatchPrecount, hideBackorderColProp, setHideBackorderColProp, activeBoards, userIdentity, wsRef, currentRoomId, onRequestJoin, onEditIdentity, highlightLastThree, setHighlightLastThree }) {
   const [showManual, setShowManual]         = useState(false);
   const [manualText, setManualText]         = useState("");
   const [settingsMenu, setSettingsMenu]     = useState(false);
@@ -1596,8 +1596,9 @@ function KiaHomeScreen({ invoices, onImportCSV, onFetchFromServer, onClearAll, o
   const swipeStartY = useRef(0);
   const [showFocusModal, setShowFocusModal] = useState(false);
   const [focusInput, setFocusInput]         = useState("");
-  const [joinModeModal, setJoinModeModal]   = useState(null); // { board } — pick merge/replace before requesting
-  const [joinModeChoice, setJoinModeChoice] = useState(null); // "merge" | "replace"
+  const [joinModeModal, setJoinModeModal]   = useState(null);
+  const [joinModeChoice, setJoinModeChoice] = useState(null);
+  const [liveBoardsExpanded, setLiveBoardsExpanded] = useState(false);
   const [editIdentityVisible, setEditIdentityVisible] = useState(false);
   const [editName, setEditName]             = useState("");
   const [editInitials, setEditInitials]     = useState("");
@@ -1755,46 +1756,76 @@ function KiaHomeScreen({ invoices, onImportCSV, onFetchFromServer, onClearAll, o
       )}
 
       {/* ── LIVE BOARDS STRIP — always at top ── */}
-      {activeBoards.filter(b => b.roomId !== currentRoomId).length > 0 && (
-        <View style={{ backgroundColor: C.s1, paddingHorizontal: 14, paddingTop: 10, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: C.b1 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 10 }}>
+      {(activeBoards.filter(b => b.roomId !== currentRoomId && b.hostId !== userIdentity?.id).length > 0 || currentRoomId) && (
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => setLiveBoardsExpanded(v => !v)}
+          style={{ backgroundColor: C.s1, paddingHorizontal: 14, paddingTop: 10, paddingBottom: liveBoardsExpanded ? 14 : 10, borderBottomWidth: 1, borderBottomColor: C.b1 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
             <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: C.green }} />
-            <Text style={{ color: C.green, fontSize: 10, fontWeight: "900", letterSpacing: 1.5 }}>LIVE BOARDS</Text>
+            <Text style={{ color: C.green, fontSize: 10, fontWeight: "900", letterSpacing: 1.5, flex: 1 }}>LIVE BOARDS</Text>
+            <Text style={{ color: C.t3, fontSize: 10 }}>{liveBoardsExpanded ? "▲" : "▼"}</Text>
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={{ flexDirection: "row", gap: 20, paddingBottom: 2 }}>
-              {activeBoards.filter(b => b.roomId !== currentRoomId).map(board => (
-                <TouchableOpacity
-                  key={board.roomId}
-                  activeOpacity={0.75}
-                  onPress={() => {
-                    if (!userIdentity) { Alert.alert("Set up your identity first"); return; }
-                    setJoinModeChoice(null);
-                    setJoinModeModal({ board });
-                  }}
-                  style={{ alignItems: "center", gap: 5 }}>
-                  <View style={{ position: "relative" }}>
-                    <View style={{ width: 52, height: 52, borderRadius: 26,
-                      backgroundColor: board.hostColor,
-                      borderWidth: 2.5, borderColor: board.hostColor + "44",
-                      alignItems: "center", justifyContent: "center" }}>
-                      <Text style={{ color: "#07090F", fontSize: 15, fontWeight: "900" }}>
-                        {board.hostInitials}
-                      </Text>
+
+          {liveBoardsExpanded && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10 }}>
+              <View style={{ flexDirection: "row", gap: 20, paddingBottom: 2 }}>
+
+                {/* My own board */}
+                {currentRoomId && userIdentity && (
+                  <View style={{ alignItems: "center", gap: 5 }}>
+                    <View style={{ position: "relative" }}>
+                      <View style={{ width: 52, height: 52, borderRadius: 26,
+                        backgroundColor: userIdentity.color,
+                        borderWidth: 2.5, borderColor: userIdentity.color + "44",
+                        alignItems: "center", justifyContent: "center" }}>
+                        <Text style={{ color: "#07090F", fontSize: 15, fontWeight: "900" }}>{userIdentity.initials}</Text>
+                      </View>
+                      <View style={{ position: "absolute", bottom: 1, right: 1, width: 12, height: 12, borderRadius: 6, backgroundColor: C.green, borderWidth: 2, borderColor: C.s1 }} />
                     </View>
-                    <View style={{ position: "absolute", bottom: 1, right: 1, width: 12, height: 12, borderRadius: 6, backgroundColor: C.green, borderWidth: 2, borderColor: C.s1 }} />
+                    <Text style={{ color: userIdentity.color, fontSize: 11, fontWeight: "900", maxWidth: 64, textAlign: "center" }} numberOfLines={1}>
+                      {userIdentity.name}
+                    </Text>
+                    <View style={{ backgroundColor: C.green + "22", borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2, borderWidth: 1, borderColor: C.green + "44" }}>
+                      <Text style={{ color: C.green, fontSize: 9, fontWeight: "900" }}>MY BOARD</Text>
+                    </View>
                   </View>
-                  <Text style={{ color: C.t2, fontSize: 11, fontWeight: "700", maxWidth: 64, textAlign: "center" }} numberOfLines={1}>
-                    {board.roomName}
-                  </Text>
-                  <Text style={{ color: C.t3, fontSize: 10 }}>
-                    {board.invoiceCount != null ? `${board.invoiceCount} invoices` : `${board.memberCount} online`}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </ScrollView>
-        </View>
+                )}
+
+                {activeBoards.filter(b => b.roomId !== currentRoomId && b.hostId !== userIdentity?.id).map(board => (
+                  <TouchableOpacity
+                    key={board.roomId}
+                    activeOpacity={0.75}
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      if (!userIdentity) { Alert.alert("Set up your identity first"); return; }
+                      setJoinModeChoice(null);
+                      setJoinModeModal({ board });
+                    }}
+                    style={{ alignItems: "center", gap: 5 }}>
+                    <View style={{ position: "relative" }}>
+                      <View style={{ width: 52, height: 52, borderRadius: 26,
+                        backgroundColor: board.hostColor,
+                        borderWidth: 2.5, borderColor: board.hostColor + "44",
+                        alignItems: "center", justifyContent: "center" }}>
+                        <Text style={{ color: "#07090F", fontSize: 15, fontWeight: "900" }}>
+                          {board.hostInitials}
+                        </Text>
+                      </View>
+                      <View style={{ position: "absolute", bottom: 1, right: 1, width: 12, height: 12, borderRadius: 6, backgroundColor: C.green, borderWidth: 2, borderColor: C.s1 }} />
+                    </View>
+                    <Text style={{ color: C.t2, fontSize: 11, fontWeight: "700", maxWidth: 64, textAlign: "center" }} numberOfLines={1}>
+                      {board.roomName}
+                    </Text>
+                    <Text style={{ color: C.t3, fontSize: 10 }}>
+                      {board.invoiceCount != null ? `${board.invoiceCount} invoices` : `${board.memberCount} online`}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+          )}
+        </TouchableOpacity>
       )}
 
       {/* Centre */}
@@ -1863,19 +1894,22 @@ function KiaHomeScreen({ invoices, onImportCSV, onFetchFromServer, onClearAll, o
       {/* ── Settings bottom sheet — swipe up anywhere to open ── */}
       <Modal visible={settingsMenu} transparent animationType="slide" onRequestClose={() => setSettingsMenu(false)}>
         <TouchableOpacity style={{ flex: 1, backgroundColor: "#00000088" }} activeOpacity={1} onPress={() => setSettingsMenu(false)} />
-        <View style={{ backgroundColor: C.s1, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 48 }}>
-          <View style={{ alignSelf: "center", width: 40, height: 4, backgroundColor: C.b1, borderRadius: 2, marginBottom: 16 }} />
-          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 14 }}>
-            <TouchableOpacity onPress={() => setSettingsMenu(false)} activeOpacity={0.7}
-              style={{ backgroundColor: C.s2, borderRadius: 10, padding: 8, borderWidth: 1, borderColor: C.b1, marginRight: 12 }}>
-              <Ionicons name="arrow-back" size={20} color={C.t2} />
-            </TouchableOpacity>
-            <Text style={{ color: C.t1, fontSize: 17, fontWeight: "900", flex: 1 }}>Settings</Text>
-            <TouchableOpacity onPress={() => setSettingsMenu(false)} activeOpacity={0.7}
-              style={{ backgroundColor: C.s2, borderRadius: 10, padding: 8, borderWidth: 1, borderColor: C.b1 }}>
-              <Ionicons name="close" size={20} color={C.t2} />
-            </TouchableOpacity>
+        <View style={{ backgroundColor: C.s1, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: "85%", paddingBottom: 0 }}>
+          <View style={{ padding: 20, paddingBottom: 0 }}>
+            <View style={{ alignSelf: "center", width: 40, height: 4, backgroundColor: C.b1, borderRadius: 2, marginBottom: 16 }} />
+            <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 14 }}>
+              <TouchableOpacity onPress={() => setSettingsMenu(false)} activeOpacity={0.7}
+                style={{ backgroundColor: C.s2, borderRadius: 10, padding: 8, borderWidth: 1, borderColor: C.b1, marginRight: 12 }}>
+                <Ionicons name="arrow-back" size={20} color={C.t2} />
+              </TouchableOpacity>
+              <Text style={{ color: C.t1, fontSize: 17, fontWeight: "900", flex: 1 }}>Settings</Text>
+              <TouchableOpacity onPress={() => setSettingsMenu(false)} activeOpacity={0.7}
+                style={{ backgroundColor: C.s2, borderRadius: 10, padding: 8, borderWidth: 1, borderColor: C.b1 }}>
+                <Ionicons name="close" size={20} color={C.t2} />
+              </TouchableOpacity>
+            </View>
           </View>
+          <ScrollView style={{ paddingHorizontal: 20 }} contentContainerStyle={{ paddingBottom: 48 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <TouchableOpacity onPress={() => { setSettingsMenu(false); onClearAll(); }} activeOpacity={0.8}
             style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", padding: 14, borderRadius: 12, backgroundColor: C.red + "18", marginBottom: 6 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
@@ -1970,6 +2004,17 @@ function KiaHomeScreen({ invoices, onImportCSV, onFetchFromServer, onClearAll, o
               <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: hideBackorderColProp ? C.orange : C.t3, alignSelf: hideBackorderColProp ? "flex-end" : "flex-start" }} />
             </View>
           </TouchableOpacity>
+          {/* Highlight last 3 digits */}
+          <TouchableOpacity onPress={() => setHighlightLastThree && setHighlightLastThree(v => !v)} activeOpacity={0.8}
+            style={{ flexDirection: "row", alignItems: "center", backgroundColor: C.s2, borderRadius: 12, padding: 12, marginBottom: 6, borderWidth: 1, borderColor: highlightLastThree ? C.orange + "55" : C.b1 }}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: C.t1, fontSize: 13, fontWeight: "900" }}>Highlight last 3 digits</Text>
+              <Text style={{ color: C.t3, fontSize: 11, marginTop: 2 }}>Colours last 3 of invoice number amber</Text>
+            </View>
+            <View style={{ width: 42, height: 24, borderRadius: 12, backgroundColor: highlightLastThree ? C.orange + "44" : C.s3, borderWidth: 1, borderColor: highlightLastThree ? C.orange + "66" : C.b1, justifyContent: "center", paddingHorizontal: 3 }}>
+              <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: highlightLastThree ? C.orange : C.t3, alignSelf: highlightLastThree ? "flex-end" : "flex-start" }} />
+            </View>
+          </TouchableOpacity>
           <View style={{ height: 1, backgroundColor: C.b1, marginVertical: 6 }} />
           {/* Edit identity */}
           <TouchableOpacity onPress={() => {
@@ -2000,10 +2045,9 @@ function KiaHomeScreen({ invoices, onImportCSV, onFetchFromServer, onClearAll, o
               <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: torchEnabled ? C.amber : C.t3, alignSelf: torchEnabled ? "flex-end" : "flex-start" }} />
             </View>
           </TouchableOpacity>
+          </ScrollView>
         </View>
       </Modal>
-
-      {/* ── FIND PART LOOKUP result modal ── */}
       {/* ── FIND PART LOOKUP result modal — exact delivery app ── */}
       <Modal visible={!!partLookupResult} transparent animationType="slide">
         <View style={{ flex: 1, backgroundColor: "#000000AA", justifyContent: "flex-end" }}>
@@ -3637,7 +3681,7 @@ function PresenceBar({ members, userIdentity, currentRoomId, roomName, isHost, o
 }
 
 // ─── KIA FOCUS BOARD ─────────────────────────────────────────────────────────
-function KiaFocusBoard({ invoices, allInvoices, focusList, onSelect, onBack, torchEnabled, setKiaInvoices, lastScanned, setLastScanned, pinnedIds, setPinnedIds, activeInvId, setActiveInvId, pileCount, setPileCount, hideOrderRefs, setHideOrderRefs, suppressNewInvAlert, setSuppressNewInvAlert, dimOtherCards, setDimOtherCards, lastVisitedId, setLastVisitedId, onFindPart, onFindPartOcr, onFindPartKeyboard, hideFindBtn,
+function KiaFocusBoard({ invoices, allInvoices, focusList, onSelect, onBack, torchEnabled, setKiaInvoices, lastScanned, setLastScanned, pinnedIds, setPinnedIds, activeInvId, setActiveInvId, pileCount, setPileCount, hideOrderRefs, setHideOrderRefs, suppressNewInvAlert, setSuppressNewInvAlert, dimOtherCards, setDimOtherCards, lastVisitedId, setLastVisitedId, onFindPart, onFindPartOcr, onFindPartKeyboard, hideFindBtn, highlightLastThree,
   userIdentity, wsRef, currentRoomId, roomName, roomMembers, setRoomMembers, isRoomHost, onOpenSession, incomingJoinReq, onRespondJoinReq }) {
   const insets = useSafeAreaInsets();
   const [boardRefreshing, setBoardRefreshing] = React.useState(false);
@@ -4088,7 +4132,12 @@ function KiaFocusBoard({ invoices, allInvoices, focusList, onSelect, onBack, tor
           }}>
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             <View style={{ flex: 1 }}>
-              <Text style={{ color: isFlashing ? C.green : C.t1, fontWeight: "900", fontSize: isLastVisited ? (hideOrderRefs ? 28 : 24) : (hideOrderRefs ? 26 : 22) }} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{inv.id}</Text>
+              <Text style={{ fontWeight: "900", fontSize: isLastVisited ? (hideOrderRefs ? 28 : 24) : (hideOrderRefs ? 26 : 22) }} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+                {highlightLastThree
+                  ? <><Text style={{ color: isFlashing ? C.green : C.t1 }}>{inv.id.slice(0, -3)}</Text><Text style={{ color: isFlashing ? C.green : C.amber }}>{inv.id.slice(-3)}</Text></>
+                  : <Text style={{ color: isFlashing ? C.green : C.t1 }}>{inv.id}</Text>
+                }
+              </Text>
               {(!dimOtherCards && isLastVisited && !!lastVisited) && (
                 <View style={{ height: 2, backgroundColor: accent, borderRadius: 1, marginTop: 2 }} />
               )}
@@ -4180,7 +4229,14 @@ function KiaFocusBoard({ invoices, allInvoices, focusList, onSelect, onBack, tor
                   {/* Left: LAST SCAN + invoice + parts counter */}
                   <View style={{ flex: 1, paddingTop: 12, paddingBottom: 12, paddingLeft: 16 }}>
                     <Text style={{ color: C.t3, fontSize: 10, fontWeight: "900", letterSpacing: 2, marginBottom: 4 }}>LAST SCAN</Text>
-                    <Text style={{ color: lastScanned ? C.t1 : C.t3, fontSize: 46, fontWeight: "900", letterSpacing: -2, lineHeight: 48 }} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{lastScanned ? lastScanned.invId : ""}</Text>
+                    {highlightLastThree && lastScanned ? (
+                      <Text style={{ fontSize: 46, fontWeight: "900", letterSpacing: -2, lineHeight: 48 }} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
+                        <Text style={{ color: C.t1 }}>{lastScanned.invId.slice(0, -3)}</Text>
+                        <Text style={{ color: C.amber }}>{lastScanned.invId.slice(-3)}</Text>
+                      </Text>
+                    ) : (
+                      <Text style={{ color: lastScanned ? C.t1 : C.t3, fontSize: 46, fontWeight: "900", letterSpacing: -2, lineHeight: 48 }} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>{lastScanned ? lastScanned.invId : ""}</Text>
+                    )}
                     <View style={{ flexDirection: "row", alignItems: "center", marginTop: 6, gap: 8 }}>
                       <Text style={{ color: chipColor, fontSize: 18, fontWeight: "900" }}>{(() => { const confirmed = inv ? inv.parts.filter(p => p.confirmed > 0 || p.short).length : 0; const total = inv ? inv.parts.length : 0; return lastScanned ? `${confirmed}/${total} parts` : "No scans yet"; })()}</Text>
                       {inv?.complete && (
@@ -4928,6 +4984,8 @@ export default function App() {
   const [kiaDimOtherCards, setKiaDimOtherCards] = useState(true);
   const [kiaHideFindBtn, setKiaHideFindBtn]     = useState(true);
   const [hideBackorderCol, setHideBackorderCol] = useState(true);
+  const [kiaHideClosedInvoices, setKiaHideClosedInvoices] = useState(true);
+  const [highlightLastThree, setHighlightLastThree] = useState(false);
   const [kiaLastVisitedId, setKiaLastVisitedId] = useState(null);
   const [kiaPrecountCamera, setKiaPrecountCamera] = useState(false);
   const [kiaFindCamera, setKiaFindCamera]     = useState(false);
@@ -4938,7 +4996,6 @@ export default function App() {
   const [kiaFindInitKeyboard, setKiaFindInitKeyboard] = useState(false);
   const [kiaFindPartNumber, setKiaFindPartNumber] = useState(null);
   const [kiaPartResult, setKiaPartResult]     = useState(null);
-  const [kiaHideClosedInvoices, setKiaHideClosedInvoices] = useState(true);
   const [kiaPartLookupResult, setKiaPartLookupResult] = useState(null);
   const kiaPartLookupRawRef = useRef(null);
   const [invoiceLookupVisible, setInvoiceLookupVisible] = useState(false);
@@ -5037,11 +5094,39 @@ export default function App() {
         }
       } catch {}
     });
+    // Load user settings
+    AsyncStorage.getItem("@kia_settings_v1").then(raw => {
+      if (raw) {
+        try {
+          const s = JSON.parse(raw);
+          if (s.hideOrderRefs !== undefined) setKiaHideOrderRefs(s.hideOrderRefs);
+          if (s.suppressNewInv !== undefined) setKiaSuppressNewInv(s.suppressNewInv);
+          if (s.dimOtherCards !== undefined) setKiaDimOtherCards(s.dimOtherCards);
+          if (s.hideFindBtn !== undefined) setKiaHideFindBtn(s.hideFindBtn);
+          if (s.hideBackorderCol !== undefined) setHideBackorderCol(s.hideBackorderCol);
+          if (s.hideClosedInvoices !== undefined) setKiaHideClosedInvoices(s.hideClosedInvoices);
+          if (s.torchEnabled !== undefined) setTorchEnabled(s.torchEnabled);
+          if (s.highlightLastThree !== undefined) setHighlightLastThree(s.highlightLastThree);
+        } catch {}
+      }
+      settingsLoadedRef.current = true;
+    });
   }, []);
 
+  // Save all settings whenever any changes — only after initial load to avoid overwriting with defaults
   useEffect(() => {
-    AsyncStorage.setItem(KIA_STORAGE_KEY, JSON.stringify(kiaInvoices)).catch(() => {});
-  }, [kiaInvoices]);
+    if (!settingsLoadedRef.current) return;
+    AsyncStorage.setItem("@kia_settings_v1", JSON.stringify({
+      hideOrderRefs: kiaHideOrderRefs,
+      suppressNewInv: kiaSuppressNewInv,
+      dimOtherCards: kiaDimOtherCards,
+      hideFindBtn: kiaHideFindBtn,
+      hideBackorderCol,
+      hideClosedInvoices: kiaHideClosedInvoices,
+      torchEnabled,
+      highlightLastThree,
+    })).catch(() => {});
+  }, [kiaHideOrderRefs, kiaSuppressNewInv, kiaDimOtherCards, kiaHideFindBtn, hideBackorderCol, kiaHideClosedInvoices, torchEnabled, highlightLastThree]);
 
   // ── Auto-push full invoice state to server when in a room (debounced 2s) ──
   // This keeps room.invoices fresh so late joiners always get the full picture
@@ -5060,39 +5145,55 @@ export default function App() {
     }, 2000);
   }, [kiaInvoices, currentRoomId]);
 
-  // ── Auto-announce: when user opens Focus Board, create/rejoin a personal room so
+  // ── Auto-announce: when user opens Focus Board, create a personal room so
   // others can see them in the Live Boards strip without manual "Create Board" ──
   const autoRoomRef = useRef(false);
+  const autoRoomTimerRef = useRef(null);
+  const settingsLoadedRef = useRef(false);
   useEffect(() => {
-    if (kiaScreen !== "board") return;
+    if (kiaScreen !== "board") {
+      autoRoomRef.current = false;
+      clearInterval(autoRoomTimerRef.current);
+      return;
+    }
     if (!userIdentity) return;
-    const ws = wsRef.current;
-    if (!ws || ws.readyState !== 1) return;
-    if (currentRoomId) return; // Already in a room — don't override
-    if (autoRoomRef.current) return; // Already announced this session
-    autoRoomRef.current = true;
-    const roomId = userIdentity.id + "-AUTO"; // stable personal room id
-    const roomName = userIdentity.name + "'s Board";
-    ws.send(JSON.stringify({
-      type: "create_room",
-      roomId,
-      roomName,
-      userId: userIdentity.id,
-      initials: userIdentity.initials,
-      color: userIdentity.color,
-      name: userIdentity.name,
-      focusList: kiaFocusList,
-      pinnedIds: kiaPinnedIds,
-      invoices: kiaInvoices,
-    }));
-    setCurrentRoomId(roomId);
-    setRoomName(roomName);
-  }, [kiaScreen, userIdentity]);
+    const autoRoomId = userIdentity.id + "-AUTO";
+    // If already in THIS auto room, nothing to do
+    if (currentRoomId === autoRoomId) return;
+    // If in a DIFFERENT (manually joined) room, don't override
+    if (currentRoomId && currentRoomId !== autoRoomId) return;
 
-  // Reset auto-room flag when leaving board so it re-announces next time
-  useEffect(() => {
-    if (kiaScreen !== "board") autoRoomRef.current = false;
-  }, [kiaScreen]);
+    const tryAnnounce = () => {
+      const ws = wsRef.current;
+      if (!ws || ws.readyState !== 1) return false;
+      if (autoRoomRef.current) return true;
+      autoRoomRef.current = true;
+      const roomName = userIdentity.name + "'s Board";
+      ws.send(JSON.stringify({
+        type: "create_room",
+        roomId: autoRoomId,
+        roomName,
+        userId: userIdentity.id,
+        initials: userIdentity.initials,
+        color: userIdentity.color,
+        name: userIdentity.name,
+        focusList: kiaFocusList,
+        pinnedIds: kiaPinnedIds,
+        invoices: kiaInvoices,
+      }));
+      setCurrentRoomId(autoRoomId);
+      setRoomName(roomName);
+      return true;
+    };
+
+    // Try immediately, then retry every 500ms until WS is ready
+    if (!tryAnnounce()) {
+      autoRoomTimerRef.current = setInterval(() => {
+        if (tryAnnounce()) clearInterval(autoRoomTimerRef.current);
+      }, 500);
+    }
+    return () => clearInterval(autoRoomTimerRef.current);
+  }, [kiaScreen, userIdentity, currentRoomId]);
 
   useEffect(() => {
     if (userIdentity) AsyncStorage.setItem(USER_IDENTITY_KEY, JSON.stringify(userIdentity)).catch(() => {});
@@ -5975,6 +6076,8 @@ export default function App() {
             setUserIdentity(updated);
             if (wsRef.current?.readyState === 1) wsRef.current.send(JSON.stringify({ type: "identify", ...updated }));
           }}
+          highlightLastThree={highlightLastThree}
+          setHighlightLastThree={setHighlightLastThree}
           onSilentSync={async () => {
             const FILES = ["stdpartski.csv", "stdpartshy.csv"];
             for (const filename of FILES) {
@@ -6092,6 +6195,7 @@ export default function App() {
           userIdentity={userIdentity}
           wsRef={wsRef}
           currentRoomId={currentRoomId}
+          highlightLastThree={highlightLastThree}
           roomName={roomName}
           roomMembers={roomMembers}
           setRoomMembers={setRoomMembers}
