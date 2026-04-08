@@ -696,7 +696,7 @@ app.post("/sync-invoices", (req, res) => {
     else stored[existing] = entry;
   });
   saveInvoices(stored);
-  console.log(\`[sync-invoices] stored \${invoices.length} invoices. Total: \${stored.length}\`);
+  console.log("[sync-invoices] stored " + invoices.length + " invoices. Total: " + stored.length);
   res.json({ ok: true, stored: stored.length });
 });
 
@@ -708,6 +708,9 @@ app.get("/invoices", (req, res) => {
   if (invoiceId) result = result.filter(i => i.id.includes(invoiceId.toUpperCase()));
   res.json({ invoices: result, total: result.length });
 });
+
+// ── Health / keep-alive ───────────────────────────────────────────────────────
+app.get("/ping", (req, res) => res.json({ ok: true, ts: Date.now() }));
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 app.get("/dashboard", (req, res) => {
