@@ -607,8 +607,12 @@ app.get("/room/:roomId/updates", (req, res) => {
 
 // ── Scan log endpoints ────────────────────────────────────────────────────────
 app.post("/log-scan", (req, res) => {
+  console.log("[log-scan] received:", JSON.stringify(req.body));
   const { initials, color, invoiceId, brand, partNumber, description, action, note } = req.body;
-  if (!initials || !invoiceId || !partNumber || !action) return res.status(400).json({ error: "Missing fields" });
+  if (!initials || !invoiceId || !partNumber || !action) {
+    console.log("[log-scan] REJECTED missing fields:", { initials, invoiceId, partNumber, action });
+    return res.status(400).json({ error: "Missing fields" });
+  }
   let log = purgeScanLog(readScanLog());
   const entry = {
     id: Math.random().toString(36).slice(2, 10).toUpperCase(),
