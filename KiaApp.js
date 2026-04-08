@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
   View, Text, TouchableOpacity, ScrollView, TextInput,
-  StyleSheet, StatusBar, Modal, Vibration, Dimensions, Alert, Linking, Image, RefreshControl, Share, AppState,
+  StyleSheet, StatusBar, Modal, Vibration, Dimensions, Alert, Linking, Image, RefreshControl, Share, AppState, KeyboardAvoidingView, Platform,
 } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { CameraView, useCameraPermissions } from "expo-camera";
@@ -9,6 +9,7 @@ import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from "react-native-
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImageManipulator from "expo-image-manipulator";
+import * as Application from "expo-application";
 
 const { width } = Dimensions.get("window");
 const KIA_STORAGE_KEY = "@kia_receiving_v1";
@@ -530,8 +531,53 @@ function parsePartNumber(scannedData, partsDB) {
   return null;
 }
 
-// ─── OCR ENGINE ───────────────────────────────────────────────────────────────
-const VISION_KEY = "AIzaSyDZ5j5Rj2NtXfwPop2dNafUThQW8ZHhfJA";
+// ─── FIREBASE CONFIG (KIA RECEIVING APP) ─────────────────────────────────────
+const KIA_FB_PROJECT = "stocktake-pro-231f8";
+const KIA_FB_API_KEY = "AIzaSyB-5AYCKXYa0_ewedqlHQi3y4PxPeB7R4I";
+const KIA_FIRESTORE  = `https://firestore.googleapis.com/v1/projects/${KIA_FB_PROJECT}/databases/(default)/documents`;
+
+async function kiaFsGet(collection, docId) {
+  const url = `${KIA_FIRESTORE}/${collection}/${docId}?key=${KIA_FB_API_KEY}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Firestore GET ${res.status}`);
+  return await res.json();
+}
+
+async function kiaFsPatch(collection, docId, fields) {
+  const body = { fields: {} };
+  for (const [k, v] of Object.entries(fields)) {
+    if (typeof v === "boolean") body.fields[k] = { booleanValue: v };
+    else body.fields[k] = { stringValue: String(v) };
+  }
+  const mask = Object.keys(fields).map(k => `updateMask.fieldPaths=${k}`).join("&");
+  const url  = `${KIA_FIRESTORE}/${collection}/${docId}?${mask}&key=${KIA_FB_API_KEY}`;
+  const res  = await fetch(url, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  if (!res.ok) throw new Error(`Firestore PATCH ${res.status}`);
+  return await res.json();
+}
+
+async function kiaFsQuery(collection, fieldName, fieldValue) {
+  const url  = `https://firestore.googleapis.com/v1/projects/${KIA_FB_PROJECT}/databases/(default)/documents:runQuery?key=${KIA_FB_API_KEY}`;
+  const body = { structuredQuery: { from: [{ collectionId: collection }], where: { fieldFilter: { field: { fieldPath: fieldName }, op: "EQUAL", value: { stringValue: fieldValue } } } } };
+  const res  = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  if (!res.ok) throw new Error(`Firestore query ${res.status}`);
+  return await res.json();
+}
+
+// ─── VISION KEY — fetched from Firebase, cached in memory ────────────────────
+let _kiaVisionKey = null;
+async function getKiaVisionKey() {
+  if (_kiaVisionKey) return _kiaVisionKey;
+  try {
+    const res  = await fetch(`https://firestore.googleapis.com/v1/projects/${KIA_FB_PROJECT}/databases/(default)/documents/kiaReceiving_config/apiKeys`);
+    const data = await res.json();
+    const fields = data?.fields || {};
+    const key = (fields["googleVisionKey"] || fields["googleVisionKey "])?.stringValue;
+    if (key) { _kiaVisionKey = key; return key; }
+  } catch(e) { console.log("Vision key fetch failed:", e.message); }
+  return null;
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 const _ocrCache = { partsSet: new Set(), dbDigits: [], builtFor: 0 };
 
@@ -977,7 +1023,9 @@ function BarcodeScanner({ visible, onScanned, onClose, title, partsDB, invoiceMo
                       const fallback = await ImageManipulator.manipulateAsync(photo.uri, [], { base64: true, compress: 0.85, format: ImageManipulator.SaveFormat.JPEG });
                       base64Data = fallback.base64;
                     }
-                    const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${VISION_KEY}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ requests: [{ image: { content: base64Data }, features: [{ type: "DOCUMENT_TEXT_DETECTION", maxResults: 1 }] }] }) });
+                    const _vk1 = await getKiaVisionKey();
+                    if (!_vk1) { Alert.alert("OCR Unavailable", "Could not reach license server. Check your internet connection."); setOcrProcessing(false); return; }
+                    const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${_vk1}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ requests: [{ image: { content: base64Data }, features: [{ type: "DOCUMENT_TEXT_DETECTION", maxResults: 1 }] }] }) });
                     const json = await res.json();
                     const annotation = json.responses?.[0]?.fullTextAnnotation;
                     const text = annotation?.text || "";
@@ -1044,7 +1092,9 @@ function BarcodeScanner({ visible, onScanned, onClose, title, partsDB, invoiceMo
                   const fallback = await ImageManipulator.manipulateAsync(photo.uri, [], { base64: true, compress: 0.85, format: ImageManipulator.SaveFormat.JPEG });
                   base64Data = fallback.base64;
                 }
-                const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${VISION_KEY}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ requests: [{ image: { content: base64Data }, features: [{ type: "DOCUMENT_TEXT_DETECTION", maxResults: 1 }] }] }) });
+                const _vk2 = await getKiaVisionKey();
+                if (!_vk2) { Alert.alert("OCR Unavailable", "Could not reach license server. Check your internet connection."); setOcrProcessing(false); return; }
+                const res = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${_vk2}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ requests: [{ image: { content: base64Data }, features: [{ type: "DOCUMENT_TEXT_DETECTION", maxResults: 1 }] }] }) });
                 const json = await res.json();
                 const annotation = json.responses?.[0]?.fullTextAnnotation;
                 const text = annotation?.text || "";
@@ -1587,7 +1637,7 @@ function DispatchPreCountScreen({ invoice, onBack, onComplete, setDispatchInvoic
 }
 
 // ─── KIA HOME SCREEN ──────────────────────────────────────────────────────────
-function KiaHomeScreen({ invoices, onImportCSV, onFetchFromServer, onClearAll, onOpenList, onFindPart, onManualInvoice, torchEnabled, setTorchEnabled, onScanFindPart, appMode, setAppMode, kiaPartResult, setKiaPartResult, onOpenInvoice, focusList, onOpenBoard, setFocusList, onAddToPending, wsStatus, wsLastSync, onSilentSync, onDispatchSync, hideOrderRefs, setHideOrderRefs, suppressNewInvAlert, setSuppressNewInvAlert, dimOtherCards, setDimOtherCards, onExportEmail, hideFindBtn, setHideFindBtn, onFindPartLookup, partLookupResult, setPartLookupResult, hideClosedInvoices, setHideClosedInvoices, onOpenDispatchPrecount, hideBackorderColProp, setHideBackorderColProp, activeBoards, userIdentity, wsRef, currentRoomId, onRequestJoin, onEditIdentity, highlightLastThree, setHighlightLastThree }) {
+function KiaHomeScreen({ invoices, onImportCSV, onFetchFromServer, onClearAll, onOpenList, onFindPart, onManualInvoice, torchEnabled, setTorchEnabled, onScanFindPart, appMode, setAppMode, kiaPartResult, setKiaPartResult, onOpenInvoice, focusList, onOpenBoard, setFocusList, onAddToPending, wsStatus, wsLastSync, onSilentSync, onDispatchSync, hideOrderRefs, setHideOrderRefs, suppressNewInvAlert, setSuppressNewInvAlert, dimOtherCards, setDimOtherCards, onExportEmail, hideFindBtn, setHideFindBtn, onFindPartLookup, partLookupResult, setPartLookupResult, hideClosedInvoices, setHideClosedInvoices, onOpenDispatchPrecount, hideBackorderColProp, setHideBackorderColProp, activeBoards, userIdentity, wsRef, currentRoomId, onRequestJoin, onEditIdentity, highlightLastThree, setHighlightLastThree, dupeLinePicker, setDupeLinePicker, hidePresenceBar, setHidePresenceBar, isRoomHost }) {
   const [showManual, setShowManual]         = useState(false);
   const [manualText, setManualText]         = useState("");
   const [settingsMenu, setSettingsMenu]     = useState(false);
@@ -1631,8 +1681,6 @@ function KiaHomeScreen({ invoices, onImportCSV, onFetchFromServer, onClearAll, o
   const ocrCamRef   = useRef(null);
   const autoFireRef = useRef(null);
 
-  const VISION_KEY = "AIzaSyDZ5j5Rj2NtXfwPop2dNafUThQW8ZHhfJA";
-
   const takeOcrPhoto = async () => {
     if (!ocrCamRef.current || ocrProcessing) return;
     setOcrProcessing(true);
@@ -1648,7 +1696,9 @@ function KiaHomeScreen({ invoices, onImportCSV, onFetchFromServer, onClearAll, o
         catch{const r=await ImageManipulator.manipulateAsync(photo.uri,[],{base64:true,compress:0.75,format:ImageManipulator.SaveFormat.JPEG});base64Data=r.base64;}
       }
       const body  = JSON.stringify({ requests: [{ image: { content: base64Data }, features: [{ type: "DOCUMENT_TEXT_DETECTION", maxResults: 1 }] }] });
-      const res   = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${VISION_KEY}`, { method: "POST", headers: { "Content-Type": "application/json" }, body });
+      const _vk3  = await getKiaVisionKey();
+      if (!_vk3) { Alert.alert("OCR Unavailable", "Could not reach license server. Check your internet connection."); setOcrProcessing(false); setCameraActive(true); return; }
+      const res   = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${_vk3}`, { method: "POST", headers: { "Content-Type": "application/json" }, body });
       const json  = await res.json();
       const text  = json.responses?.[0]?.fullTextAnnotation?.text || "";
       const extractInvoiceIds = (rawText) => {
@@ -1773,22 +1823,25 @@ function KiaHomeScreen({ invoices, onImportCSV, onFetchFromServer, onClearAll, o
 
                 {/* My own board */}
                 {currentRoomId && userIdentity && (
-                  <View style={{ alignItems: "center", gap: 5 }}>
+                  <View style={{ alignItems: "center", gap: 6 }}>
                     <View style={{ position: "relative" }}>
-                      <View style={{ width: 52, height: 52, borderRadius: 26,
+                      <View style={{ width: 44, height: 44, borderRadius: 22,
                         backgroundColor: userIdentity.color,
-                        borderWidth: 2.5, borderColor: userIdentity.color + "44",
                         alignItems: "center", justifyContent: "center" }}>
-                        <Text style={{ color: "#07090F", fontSize: 15, fontWeight: "900" }}>{userIdentity.initials}</Text>
+                        <Text style={{ color: "#07090F", fontSize: 14, fontWeight: "900" }}>{userIdentity.initials}</Text>
                       </View>
-                      <View style={{ position: "absolute", bottom: 1, right: 1, width: 12, height: 12, borderRadius: 6, backgroundColor: C.green, borderWidth: 2, borderColor: C.s1 }} />
+                      {/* Green online dot */}
+                      <View style={{ position: "absolute", bottom: 1, right: 1, width: 9, height: 9, borderRadius: 5, backgroundColor: C.green, borderWidth: 1.5, borderColor: C.s1 }} />
+                      {/* Crown if host */}
+                      {isRoomHost && (
+                        <View style={{ position: "absolute", top: -6, right: -4 }}>
+                          <Text style={{ fontSize: 10 }}>👑</Text>
+                        </View>
+                      )}
                     </View>
-                    <Text style={{ color: userIdentity.color, fontSize: 11, fontWeight: "900", maxWidth: 64, textAlign: "center" }} numberOfLines={1}>
+                    <Text style={{ color: C.t3, fontSize: 10, maxWidth: 56, textAlign: "center" }} numberOfLines={1}>
                       {userIdentity.name}
                     </Text>
-                    <View style={{ backgroundColor: C.green + "22", borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2, borderWidth: 1, borderColor: C.green + "44" }}>
-                      <Text style={{ color: C.green, fontSize: 9, fontWeight: "900" }}>MY BOARD</Text>
-                    </View>
                   </View>
                 )}
 
@@ -2013,6 +2066,28 @@ function KiaHomeScreen({ invoices, onImportCSV, onFetchFromServer, onClearAll, o
             </View>
             <View style={{ width: 42, height: 24, borderRadius: 12, backgroundColor: highlightLastThree ? C.orange + "44" : C.s3, borderWidth: 1, borderColor: highlightLastThree ? C.orange + "66" : C.b1, justifyContent: "center", paddingHorizontal: 3 }}>
               <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: highlightLastThree ? C.orange : C.t3, alignSelf: highlightLastThree ? "flex-end" : "flex-start" }} />
+            </View>
+          </TouchableOpacity>
+          {/* Hide presence bar */}
+          <TouchableOpacity onPress={() => setHidePresenceBar(v => !v)} activeOpacity={0.8}
+            style={{ flexDirection: "row", alignItems: "center", backgroundColor: C.s2, borderRadius: 12, padding: 12, marginBottom: 6, borderWidth: 1, borderColor: hidePresenceBar ? C.orange + "55" : C.b1 }}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: C.t1, fontSize: 13, fontWeight: "900" }}>Hide board banner</Text>
+              <Text style={{ color: C.t3, fontSize: 11, marginTop: 2 }}>Hides the Kaine's Board · KT strip on Focus Board</Text>
+            </View>
+            <View style={{ width: 42, height: 24, borderRadius: 12, backgroundColor: hidePresenceBar ? C.orange + "44" : C.s3, borderWidth: 1, borderColor: hidePresenceBar ? C.orange + "66" : C.b1, justifyContent: "center", paddingHorizontal: 3 }}>
+              <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: hidePresenceBar ? C.orange : C.t3, alignSelf: hidePresenceBar ? "flex-end" : "flex-start" }} />
+            </View>
+          </TouchableOpacity>
+          {/* Dupe line picker */}
+          <TouchableOpacity onPress={() => setDupeLinePicker && setDupeLinePicker(v => !v)} activeOpacity={0.8}
+            style={{ flexDirection: "row", alignItems: "center", backgroundColor: C.s2, borderRadius: 12, padding: 12, marginBottom: 6, borderWidth: 1, borderColor: dupeLinePicker ? C.orange + "55" : C.b1 }}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: C.t1, fontSize: 13, fontWeight: "900" }}>Dupe line picker</Text>
+              <Text style={{ color: C.t3, fontSize: 11, marginTop: 2 }}>Ask which line when same part appears twice</Text>
+            </View>
+            <View style={{ width: 42, height: 24, borderRadius: 12, backgroundColor: dupeLinePicker ? C.orange + "44" : C.s3, borderWidth: 1, borderColor: dupeLinePicker ? C.orange + "66" : C.b1, justifyContent: "center", paddingHorizontal: 3 }}>
+              <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: dupeLinePicker ? C.orange : C.t3, alignSelf: dupeLinePicker ? "flex-end" : "flex-start" }} />
             </View>
           </TouchableOpacity>
           <View style={{ height: 1, backgroundColor: C.b1, marginVertical: 6 }} />
@@ -3650,38 +3725,38 @@ function BoardSessionModal({ visible, onClose, userIdentity, wsRef, currentRoomI
 function PresenceBar({ members, userIdentity, currentRoomId, roomName, isHost, onKick, onOpenSession }) {
   if (!currentRoomId || members.length === 0) return null;
   return (
-    <View style={{ backgroundColor:C.s3, paddingHorizontal:12, paddingVertical:6,
-      flexDirection:"row", alignItems:"center", gap:6, flexWrap:"wrap",
-      borderRadius:10, borderWidth:1, borderColor:C.b1, marginTop:6 }}>
-      <TouchableOpacity onPress={onOpenSession} style={{ flexDirection:"row", alignItems:"center", gap:4 }}>
-        <MaterialCommunityIcons name="account-group" size={13} color={C.green} />
-        <Text style={{ color:C.green, fontSize:11, fontWeight:"800" }}>{roomName || currentRoomId}</Text>
-        <Text style={{ color:C.t3, fontSize:11 }}> •</Text>
-      </TouchableOpacity>
-      {members.map(m => {
-        const isMe = m.id === userIdentity?.id;
-        return (
-          <TouchableOpacity key={m.id} onLongPress={() => isHost && !isMe && onKick(m.id)} activeOpacity={0.7}>
-            <View style={{ flexDirection:"row", alignItems:"center", gap:3,
-              backgroundColor: isMe ? m.color+"22" : "transparent",
-              borderRadius:6, paddingHorizontal:5, paddingVertical:2,
-              borderWidth: isMe ? 1 : 0, borderColor: m.color+"44" }}>
-              {m.isHost && <Text style={{ fontSize:10 }}>👑</Text>}
-              <View style={{ width:7, height:7, borderRadius:4, backgroundColor: m.connected ? m.color : C.t3 }} />
-              <Text style={{ color: m.connected ? m.color : C.t3, fontSize:12, fontWeight:"900" }}>
-                {m.initials}{isMe ? " (you)" : ""}
-              </Text>
+    <TouchableOpacity onPress={onOpenSession} activeOpacity={0.7}
+      style={{ flexDirection:"row", alignItems:"center", gap:8, paddingHorizontal:12, paddingVertical:8,
+        backgroundColor:C.s1, borderRadius:8, borderWidth:1, borderColor:C.b1, marginTop:6 }}>
+      {/* Green online dot */}
+      <View style={{ width:6, height:6, borderRadius:3, backgroundColor:C.green }} />
+      {/* Overlapping avatar circles */}
+      <View style={{ flexDirection:"row" }}>
+        {members.slice(0, 4).map((m, i) => (
+          <TouchableOpacity key={m.id} onLongPress={() => isHost && m.id !== userIdentity?.id && onKick(m.id)} activeOpacity={0.7}
+            style={{ marginRight: i < members.slice(0,4).length - 1 ? -6 : 0, zIndex: members.length - i }}>
+            <View style={{ width:22, height:22, borderRadius:11,
+              backgroundColor: m.connected ? m.color : C.t3,
+              borderWidth:1.5, borderColor:C.s1,
+              alignItems:"center", justifyContent:"center" }}>
+              <Text style={{ fontSize:7, color:"#07090F", fontWeight:"900" }}>{m.initials}</Text>
             </View>
+            {m.isHost && (
+              <Text style={{ position:"absolute", top:-5, right:-4, fontSize:9, lineHeight:12 }}>👑</Text>
+            )}
           </TouchableOpacity>
-        );
-      })}
-      {isHost && <Text style={{ color:C.green+"99", fontSize:10, marginLeft:"auto" }}>HOST</Text>}
-    </View>
+        ))}
+      </View>
+      {/* Room name + count */}
+      <Text style={{ color:C.t3, fontSize:10, flex:1, marginLeft:4 }}>
+        {roomName || currentRoomId} · {members.length} online
+      </Text>
+    </TouchableOpacity>
   );
 }
 
 // ─── KIA FOCUS BOARD ─────────────────────────────────────────────────────────
-function KiaFocusBoard({ invoices, allInvoices, focusList, onSelect, onBack, torchEnabled, setKiaInvoices, lastScanned, setLastScanned, pinnedIds, setPinnedIds, activeInvId, setActiveInvId, pileCount, setPileCount, hideOrderRefs, setHideOrderRefs, suppressNewInvAlert, setSuppressNewInvAlert, dimOtherCards, setDimOtherCards, lastVisitedId, setLastVisitedId, onFindPart, onFindPartOcr, onFindPartKeyboard, hideFindBtn, highlightLastThree,
+function KiaFocusBoard({ invoices, allInvoices, focusList, onSelect, onBack, torchEnabled, setKiaInvoices, lastScanned, setLastScanned, pinnedIds, setPinnedIds, activeInvId, setActiveInvId, pileCount, setPileCount, hideOrderRefs, setHideOrderRefs, suppressNewInvAlert, setSuppressNewInvAlert, dimOtherCards, setDimOtherCards, lastVisitedId, setLastVisitedId, onFindPart, onFindPartOcr, onFindPartKeyboard, hideFindBtn, highlightLastThree, dupeLinePicker, kbLookupResetRef, hidePresenceBar,
   userIdentity, wsRef, currentRoomId, roomName, roomMembers, setRoomMembers, isRoomHost, onOpenSession, incomingJoinReq, onRespondJoinReq }) {
   const insets = useSafeAreaInsets();
   const [boardRefreshing, setBoardRefreshing] = React.useState(false);
@@ -3714,11 +3789,24 @@ function KiaFocusBoard({ invoices, allInvoices, focusList, onSelect, onBack, tor
   const [flashId, setFlashId]             = useState(null);
   const [tappedCardId, setTappedCardId]   = useState(null); // two-tap: first tap selects, second opens
   const [multiMatch, setMultiMatch]       = useState(null); // { scanned, matches: [{inv, idx}] }
+  const [dupeLineModal, setDupeLineModal] = useState(null); // { scanned, inv, allIdx, partNumber }
   const [boardToolsVisible, setBoardToolsVisible] = useState(false);
   const [kbLookupVisible, setKbLookupVisible] = useState(false);
   const [kbLookupMode, setKbLookupMode]       = useState("board"); // "board" | "all"
   const [kbLookupQuery, setKbLookupQuery]     = useState("");
   const [kbLookupResults, setKbLookupResults] = useState(null);
+
+  // Register reset function so App() can clear kb lookup on Clear All
+  useEffect(() => {
+    if (kbLookupResetRef) {
+      kbLookupResetRef.current = () => {
+        setKbLookupVisible(false);
+        setKbLookupQuery("");
+        setKbLookupResults(null);
+        setKbLookupMode("board");
+      };
+    }
+  }, []);
   const kbLookupInputRef = useRef(null);
   const [selectedBoardIds, setSelectedBoardIds] = useState([]);
   const [boardSelectMode, setBoardSelectMode] = useState(false);
@@ -3902,7 +3990,12 @@ function KiaFocusBoard({ invoices, allInvoices, focusList, onSelect, onBack, tor
       return;
     }
 
-    // Single match — confirm as normal
+    // Single match — confirm as normal, but check for dupe lines first
+    if (dupeLinePicker && matches[0].allIdx && matches[0].allIdx.length > 1) {
+      const { inv, allIdx } = matches[0];
+      setDupeLineModal({ scanned, inv, allIdx, partNumber: inv.parts[allIdx[0]].partNumber });
+      return;
+    }
     confirmMatch(matches[0].inv, matches[0].idx, scanned);
   };
 
@@ -3913,7 +4006,9 @@ function KiaFocusBoard({ invoices, allInvoices, focusList, onSelect, onBack, tor
 
   const confirmMatch = (matchInv, matchIdx, scanned) => {
     setMultiMatch(null);
+    if (!matchInv || matchIdx === undefined || matchIdx === null) return;
     const part = matchInv.parts[matchIdx];
+    if (!part) return;
 
     if (part.short || part.confirmed >= part.qty) {
       showScanPopup("✓", "ALREADY DONE", C.amber, matchInv.id);
@@ -4133,10 +4228,7 @@ function KiaFocusBoard({ invoices, allInvoices, focusList, onSelect, onBack, tor
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             <View style={{ flex: 1 }}>
               <Text style={{ fontWeight: "900", fontSize: isLastVisited ? (hideOrderRefs ? 28 : 24) : (hideOrderRefs ? 26 : 22) }} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
-                {highlightLastThree
-                  ? <><Text style={{ color: isFlashing ? C.green : C.t1 }}>{inv.id.slice(0, -3)}</Text><Text style={{ color: isFlashing ? C.green : C.amber }}>{inv.id.slice(-3)}</Text></>
-                  : <Text style={{ color: isFlashing ? C.green : C.t1 }}>{inv.id}</Text>
-                }
+                <Text style={{ color: isFlashing ? C.green : C.t1 }}>{inv.id}</Text>
               </Text>
               {(!dimOtherCards && isLastVisited && !!lastVisited) && (
                 <View style={{ height: 2, backgroundColor: accent, borderRadius: 1, marginTop: 2 }} />
@@ -4196,8 +4288,12 @@ function KiaFocusBoard({ invoices, allInvoices, focusList, onSelect, onBack, tor
           </TouchableOpacity>
         </View>
 
+
+
+
+
         {/* Presence bar — shown when in a room */}
-        <PresenceBar
+        {!hidePresenceBar && <PresenceBar
           members={roomMembers}
           userIdentity={userIdentity}
           currentRoomId={currentRoomId}
@@ -4205,9 +4301,7 @@ function KiaFocusBoard({ invoices, allInvoices, focusList, onSelect, onBack, tor
           isHost={isRoomHost}
           onKick={(targetId) => wsRef?.current?.send(JSON.stringify({ type:"kick_member", userId:userIdentity?.id, targetId }))}
           onOpenSession={onOpenSession}
-        />
-
-
+        />}
 
         {/* Last scanned — Layout C: split block, pile counter right — always visible */}
         {!bannerHidden && (() => {
@@ -4528,7 +4622,7 @@ function KiaFocusBoard({ invoices, allInvoices, focusList, onSelect, onBack, tor
             {["board", "all"].map(mode => (
               <TouchableOpacity key={mode} onPress={() => { setKbLookupMode(mode); setKbLookupResults(null); setKbLookupQuery(""); setTimeout(() => kbLookupInputRef.current?.focus(), 100); }}
                 style={{ flex: 1, paddingVertical: 10, borderRadius: 11, alignItems: "center", backgroundColor: kbLookupMode === mode ? C.green : "transparent" }}>
-                <Text style={{ color: kbLookupMode === mode ? C.bg : C.t2, fontWeight: "900", fontSize: 13 }}>{mode === "board" ? "FOCUS BOARD" : "ALL KIA INVOICES"}</Text>
+                <Text style={{ color: kbLookupMode === mode ? C.bg : C.t2, fontWeight: "900", fontSize: 13 }}>{mode === "board" ? "FOCUS BOARD" : "ALL INVOICES"}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -4599,16 +4693,29 @@ function KiaFocusBoard({ invoices, allInvoices, focusList, onSelect, onBack, tor
       {/* Multi-invoice picker modal */}
       <Modal visible={!!multiMatch} transparent animationType="slide" onRequestClose={() => setMultiMatch(null)}>
         <TouchableOpacity style={{ flex: 1, backgroundColor: "#00000088" }} activeOpacity={1} onPress={() => setMultiMatch(null)} />
-        <View style={{ backgroundColor: C.s1, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: Math.max(insets.bottom, 24) }}>
-          <View style={{ alignSelf: "center", width: 40, height: 4, backgroundColor: C.b1, borderRadius: 2, marginBottom: 16 }} />
-          <Text style={{ color: C.t3, fontSize: 10, fontWeight: "900", letterSpacing: 1.5, marginBottom: 4 }}>
-            {multiMatch?.outsideBoard ? "NOT IN FOCUS BOARD" : "MULTIPLE INVOICES"}
-          </Text>
-          <Text style={{ color: C.t1, fontSize: 18, fontWeight: "900", marginBottom: 4 }} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.4}>{multiMatch?.partNumber}</Text>
-          <Text style={{ color: C.t3, fontSize: 12, marginBottom: 16 }}>
-            {multiMatch?.outsideBoard ? "Found outside focus board — tap to confirm anyway" : "Which invoice is this part for?"}
-          </Text>
-          <ScrollView style={{ maxHeight: 320 }} showsVerticalScrollIndicator={false}>
+        <View style={{ backgroundColor: C.s1, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: Math.max(insets.bottom, 8) }}>
+          <View style={{ alignSelf: "center", width: 40, height: 4, backgroundColor: C.b1, borderRadius: 2, marginTop: 12 }} />
+          {/* Header */}
+          <View style={{ padding: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: C.b1 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 12 }}>
+              <TouchableOpacity onPress={() => setMultiMatch(null)} style={{ backgroundColor: C.s2, borderRadius: 10, padding: 8, borderWidth: 1, borderColor: C.b1, marginRight: 8 }}>
+                <Ionicons name="arrow-back" size={20} color={C.t2} />
+              </TouchableOpacity>
+              <View style={{ flex: 1 }} />
+              <TouchableOpacity onPress={() => setMultiMatch(null)} style={{ backgroundColor: C.s2, borderRadius: 10, padding: 8, borderWidth: 1, borderColor: C.b1 }}>
+                <Ionicons name="close" size={20} color={C.t2} />
+              </TouchableOpacity>
+            </View>
+            <Text style={{ color: C.t3, fontSize: 9, fontWeight: "900", letterSpacing: 1.5, marginBottom: 5 }}>
+              {multiMatch?.outsideBoard ? "NOT IN FOCUS BOARD" : "WHICH ORDER IS THIS FOR?"}
+            </Text>
+            <Text style={{ color: C.t1, fontSize: 17, fontWeight: "900" }} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5}>{multiMatch?.partNumber}</Text>
+            <Text style={{ color: C.t3, fontSize: 11, marginTop: 2 }}>
+              {multiMatch?.outsideBoard ? "Found outside focus board — tap to confirm anyway" : `${multiMatch?.matches?.length} invoice${multiMatch?.matches?.length !== 1 ? "s" : ""} have this part`}
+            </Text>
+          </View>
+          {/* Cards */}
+          <ScrollView style={{ maxHeight: 380 }} contentContainerStyle={{ padding: 12, gap: 8 }} showsVerticalScrollIndicator={false}>
             {multiMatch?.matches?.map(({ inv, idx, allIdx }) => {
               const part = inv.parts[idx];
               const status = getStatus(inv);
@@ -4617,48 +4724,102 @@ function KiaFocusBoard({ invoices, allInvoices, focusList, onSelect, onBack, tor
               const total = inv.parts.length;
               const hasMultiLines = allIdx && allIdx.length > 1;
               const totalPendingQty = allIdx ? allIdx.reduce((s, i) => s + inv.parts[i].qty, 0) : part.qty;
+              const isComplete = status === "complete";
+              const statusLabel = status === "complete" ? "Complete" : status === "inprogress" ? "In progress" : "Pending";
               return (
-                <View key={inv.id + "-" + idx} style={{ flexDirection: "row", gap: 8, marginBottom: 8 }}>
-                  {/* Left — main card, tap = confirm this line only */}
+                <View key={inv.id + "-" + idx} style={{ flexDirection: "row", gap: 8 }}>
                   <TouchableOpacity
-                    onPress={() => { setMultiMatch(null); confirmMatch(inv, idx, multiMatch.scanned); }}
-                    activeOpacity={0.8}
-                    style={{ flex: 1, backgroundColor: C.s2, borderRadius: 12, padding: 14, borderLeftWidth: 4, borderLeftColor: accent, borderTopWidth: 0, borderRightWidth: 0, borderBottomWidth: 0 }}>
-                    <View style={{ flexDirection: "row", alignItems: "center" }}>
-                      <Text style={{ color: C.t1, fontSize: 16, fontWeight: "900", flex: 1 }}>{inv.id}</Text>
-                      <View style={{ backgroundColor: accent + "22", borderRadius: 20, paddingHorizontal: 8, paddingVertical: 3 }}>
-                        <Text style={{ color: accent, fontSize: 9, fontWeight: "900" }}>{status === "complete" ? "DONE" : status === "inprogress" ? "IN PROG" : "PENDING"}</Text>
-                      </View>
+                    onPress={() => {
+                      const scannedVal = multiMatch?.scanned;
+                      setMultiMatch(null);
+                      if (dupeLinePicker && hasMultiLines) {
+                        setTimeout(() => setDupeLineModal({ scanned: scannedVal, inv, allIdx, partNumber: part.partNumber }), 300);
+                      } else {
+                        confirmMatch(inv, idx, scannedVal);
+                      }
+                    }}
+                    activeOpacity={0.75}
+                    style={{ flex: 1, backgroundColor: C.s2, borderRadius: 12, padding: 14, borderLeftWidth: 4, borderLeftColor: accent, borderTopWidth: 0, borderRightWidth: 0, borderBottomWidth: 0, opacity: isComplete ? 0.5 : 1 }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                      <Text style={{ color: C.t1, fontSize: 26, fontWeight: "900", letterSpacing: 0.3, flex: 1 }}>{inv.orderRef || "—"}</Text>
+                      {hasMultiLines && (
+                        <View style={{ backgroundColor: C.amber + "22", borderRadius: 5, paddingHorizontal: 7, paddingVertical: 3, borderWidth: 1, borderColor: C.amber + "55", flexShrink: 0 }}>
+                          <Text style={{ color: C.amber, fontSize: 9, fontWeight: "900" }}>DUPE ×{allIdx.length}</Text>
+                        </View>
+                      )}
                     </View>
-                    <Text style={{ color: C.t3, fontSize: 12, marginTop: 3 }}>{inv.orderRef || "—"} · {confirmed}/{total} parts</Text>
-                    <Text style={{ color: accent, fontSize: 11, fontWeight: "700", marginTop: 4 }}>
-                      {hasMultiLines ? `${allIdx.length} lines · ${totalPendingQty} units pending` : `Line ${part.lineNo || (idx + 1)} — qty ${part.qty}`}
-                    </Text>
-                    {hasMultiLines && (
-                      <View style={{ marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: C.b1 }}>
-                        <Text style={{ color: C.t3, fontSize: 10 }}>tap here → confirm 1 unit only</Text>
-                      </View>
-                    )}
+                    <Text style={{ color: C.t2, fontSize: 12, fontWeight: "700", marginBottom: 2 }}>{inv.id}</Text>
+                    <Text style={{ color: accent, fontSize: 11, fontWeight: "700" }}>{statusLabel} · {confirmed}/{total}</Text>
                   </TouchableOpacity>
-                  {/* Right — confirm all block, only shown when multiple lines */}
                   {hasMultiLines && (
                     <TouchableOpacity
                       onPress={() => confirmAllLines(inv, allIdx, multiMatch.scanned)}
                       activeOpacity={0.8}
-                      style={{ backgroundColor: C.s2, borderRadius: 12, borderWidth: 2, borderColor: C.green, minWidth: 82, alignItems: "center", justifyContent: "center", gap: 4, paddingVertical: 14, paddingHorizontal: 12 }}>
-                      <Text style={{ color: C.green, fontSize: 28, fontWeight: "900", lineHeight: 30 }}>{totalPendingQty}</Text>
-                      <Text style={{ color: C.green + "99", fontSize: 9, fontWeight: "900", textAlign: "center", letterSpacing: 0.5 }}>CONFIRM</Text>
-                      <Text style={{ color: C.green + "99", fontSize: 9, fontWeight: "900", textAlign: "center", letterSpacing: 0.5 }}>ALL</Text>
-                      <Text style={{ color: C.green + "66", fontSize: 8, textAlign: "center", marginTop: 2 }}>{allIdx.length} lines</Text>
+                      style={{ backgroundColor: C.s2, borderRadius: 12, borderWidth: 2, borderColor: C.green, minWidth: 72, alignItems: "center", justifyContent: "center", gap: 4, paddingVertical: 14, paddingHorizontal: 10 }}>
+                      <Text style={{ color: C.green, fontSize: 22, fontWeight: "900", lineHeight: 24 }}>{totalPendingQty}</Text>
+                      <Text style={{ color: C.green + "99", fontSize: 9, fontWeight: "900", letterSpacing: 0.5 }}>ALL</Text>
                     </TouchableOpacity>
                   )}
                 </View>
               );
             })}
           </ScrollView>
-          <TouchableOpacity onPress={() => setMultiMatch(null)} style={{ paddingVertical: 14, alignItems: "center", marginTop: 4 }}>
-            <Text style={{ color: C.t3, fontSize: 16 }}>Cancel</Text>
-          </TouchableOpacity>
+        </View>
+      </Modal>
+
+      {/* Dupe line picker — same part, multiple lines on same invoice */}
+      <Modal visible={!!dupeLineModal} transparent animationType="slide" onRequestClose={() => setDupeLineModal(null)}>
+        <TouchableOpacity style={{ flex: 1, backgroundColor: "#00000088" }} activeOpacity={1} onPress={() => setDupeLineModal(null)} />
+        <View style={{ backgroundColor: C.s1, borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: "hidden", paddingBottom: Math.max(insets.bottom, 8) }}>
+          {/* Handle */}
+          <View style={{ alignSelf: "center", width: 40, height: 4, backgroundColor: C.b1, borderRadius: 2, marginTop: 12, marginBottom: 0 }} />
+          {/* Header */}
+          <View style={{ padding: 18, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: C.b1 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 14 }}>
+              <TouchableOpacity onPress={() => setDupeLineModal(null)} style={{ backgroundColor: C.s2, borderRadius: 10, padding: 8, borderWidth: 1, borderColor: C.b1, marginRight: 8 }}>
+                <Ionicons name="arrow-back" size={20} color={C.t2} />
+              </TouchableOpacity>
+              <View style={{ flex: 1 }} />
+              <TouchableOpacity onPress={() => setDupeLineModal(null)} style={{ backgroundColor: C.s2, borderRadius: 10, padding: 8, borderWidth: 1, borderColor: C.b1 }}>
+                <Ionicons name="close" size={20} color={C.t2} />
+              </TouchableOpacity>
+            </View>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 6 }}>
+              <Text style={{ color: C.t1, fontSize: 28, fontWeight: "900", letterSpacing: 0.5 }}>{dupeLineModal?.inv?.id}</Text>
+              <View style={{ backgroundColor: C.green + "22", borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3, borderWidth: 1, borderColor: C.green + "55" }}>
+                <Text style={{ color: C.green, fontSize: 10, fontWeight: "900", letterSpacing: 1 }}>DUPE</Text>
+              </View>
+            </View>
+            <Text style={{ color: C.t1, fontSize: 20, fontWeight: "900", marginBottom: 4 }}>{dupeLineModal?.partNumber}</Text>
+            <Text style={{ color: C.t3, fontSize: 12 }}>Same part on {dupeLineModal?.allIdx?.length} lines — pick one</Text>
+          </View>
+          {/* Line buttons */}
+          <View style={{ padding: 14, gap: 8 }}>
+            {(dupeLineModal?.allIdx || []).map((partIdx, i) => {
+              const part = dupeLineModal?.inv?.parts?.[partIdx];
+              if (!part) return null;
+              const lineLabel = part.lineNo ? String(parseInt(part.lineNo, 10) || part.lineNo) : (partIdx + 1);
+              const isFirst = i === 0;
+              return (
+                <TouchableOpacity
+                  key={partIdx}
+                  onPress={() => { setDupeLineModal(null); confirmMatch(dupeLineModal.inv, partIdx, dupeLineModal.scanned); }}
+                  activeOpacity={0.8}
+                  style={{ backgroundColor: C.s2, borderRadius: 12, padding: 16, flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderLeftWidth: 3, borderLeftColor: isFirst ? C.green : C.b1, borderTopWidth: 0, borderRightWidth: 0, borderBottomWidth: 0 }}>
+                  <View>
+                    <Text style={{ color: C.t1, fontSize: 16, fontWeight: "900" }}>Line {lineLabel}</Text>
+                    <View style={{ flexDirection: "row", alignItems: "baseline", gap: 5, marginTop: 4 }}>
+                      <Text style={{ color: isFirst ? C.green : C.t2, fontSize: 28, fontWeight: "900", lineHeight: 30 }}>{part.qty}</Text>
+                      <Text style={{ color: C.t3, fontSize: 12 }}>units</Text>
+                    </View>
+                  </View>
+                  <View style={{ backgroundColor: isFirst ? C.green : C.s3, borderRadius: 9, paddingHorizontal: 16, paddingVertical: 9, borderWidth: isFirst ? 0 : 1, borderColor: C.b1 }}>
+                    <Text style={{ color: isFirst ? C.bg : C.t2, fontSize: 12, fontWeight: "900" }}>CONFIRM</Text>
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
         </View>
       </Modal>
 
@@ -4970,6 +5131,97 @@ function KiaFindPartScreen({ invoices, onBack, setKiaInvoices, torchEnabled, ini
 
 // ─── ROOT APP ─────────────────────────────────────────────────────────────────
 export default function App() {
+  // ── License state ─────────────────────────────────────────────────────────────────────────────
+  const [licenseChecking, setLicenseChecking]   = useState(true);
+  const [licenseValid, setLicenseValid]         = useState(false);
+  const [showActivation, setShowActivation]     = useState(false);
+  const [activationCode, setActivationCode]     = useState("");
+  const [activationLoading, setActivationLoading] = useState(false);
+  const [activationError, setActivationError]   = useState("");
+  const [visionKeyStatus, setVisionKeyStatus]   = useState(null); // null | "ok" | "fail"
+
+  const getDeviceId = async () => {
+    try {
+      const id = Application.androidId;
+      if (id) return String(id);
+      const stored = await AsyncStorage.getItem("@kia_device_uuid");
+      if (stored) return stored;
+      const uuid = Math.random().toString(36).slice(2) + Date.now().toString(36);
+      await AsyncStorage.setItem("@kia_device_uuid", uuid);
+      return uuid;
+    } catch { return "unknown"; }
+  };
+
+  const validateCodeWithFirebase = async (code) => {
+    try {
+      const deviceId  = await getDeviceId();
+      const upperCode = code.trim().toUpperCase();
+      const results   = await kiaFsQuery("kiaReceiving_licenses", "code", upperCode);
+      const match     = results.find(r => r.document);
+      if (!match) return { valid: false, error: "Activation code not found. Check your code and try again." };
+      const docFields = match.document?.fields;
+      const docName   = match.document?.name;
+      if (!docFields || !docName) return { valid: false, error: "License data corrupted. Contact support." };
+      const docId        = docName.split("/").pop();
+      const activated    = docFields.activated?.booleanValue || false;
+      const storedDevice = docFields.deviceId?.stringValue || "";
+      if (activated && storedDevice && storedDevice !== deviceId) {
+        return { valid: false, error: "This code is already activated on another device. Contact support to transfer." };
+      }
+      if (!activated || !storedDevice) {
+        await kiaFsPatch("kiaReceiving_licenses", docId, { activated: true, deviceId, activatedAt: new Date().toISOString() });
+      }
+      return { valid: true };
+    } catch (e) {
+      return { valid: false, error: "Could not connect to license server. Check your internet connection." };
+    }
+  };
+
+  const checkLicense = async () => {
+    try {
+      setLicenseChecking(true);
+      const storedCode = await AsyncStorage.getItem("@kia_activation_code");
+      if (!storedCode) { setLicenseChecking(false); setShowActivation(true); return; }
+      const result = await validateCodeWithFirebase(storedCode);
+      if (result.valid) {
+        setLicenseValid(true);
+        getKiaVisionKey().then(k => {
+          setVisionKeyStatus(k ? "ok" : "fail");
+          setTimeout(() => setVisionKeyStatus(null), 3000);
+        });
+      } else {
+        await AsyncStorage.removeItem("@kia_activation_code");
+        setActivationError(result.error || "License invalid.");
+        setShowActivation(true);
+      }
+    } catch {
+      const fallback = await AsyncStorage.getItem("@kia_activation_code");
+      if (fallback) { setLicenseValid(true); } else { setShowActivation(true); }
+    } finally {
+      setLicenseChecking(false);
+    }
+  };
+
+  const handleActivationSubmit = async () => {
+    if (!activationCode.trim()) { setActivationError("Please enter your activation code."); return; }
+    setActivationLoading(true); setActivationError("");
+    try {
+      const result = await validateCodeWithFirebase(activationCode);
+      if (result.valid) {
+        await AsyncStorage.setItem("@kia_activation_code", activationCode.trim().toUpperCase());
+        setShowActivation(false); setLicenseValid(true);
+        getKiaVisionKey().then(k => {
+          setVisionKeyStatus(k ? "ok" : "fail");
+          setTimeout(() => setVisionKeyStatus(null), 3000);
+        });
+      } else { setActivationError(result.error || "Invalid code."); }
+    } catch { setActivationError("Connection error. Check internet and try again."); }
+    finally { setActivationLoading(false); }
+  };
+
+  useEffect(() => { checkLicense(); }, []);
+  // ─────────────────────────────────────────────────────────────────────────────
+
   const [kiaInvoices, setKiaInvoices]         = useState([]);
   const [kiaScreen, setKiaScreen]             = useState("home");
   const [activeKiaId, setActiveKiaId]         = useState(null);
@@ -4986,6 +5238,8 @@ export default function App() {
   const [hideBackorderCol, setHideBackorderCol] = useState(true);
   const [kiaHideClosedInvoices, setKiaHideClosedInvoices] = useState(true);
   const [highlightLastThree, setHighlightLastThree] = useState(false);
+  const [hidePresenceBar, setHidePresenceBar] = useState(false);
+  const [kiaDupeLinePicker, setKiaDupeLinePicker] = useState(true);
   const [kiaLastVisitedId, setKiaLastVisitedId] = useState(null);
   const [kiaPrecountCamera, setKiaPrecountCamera] = useState(false);
   const [kiaFindCamera, setKiaFindCamera]     = useState(false);
@@ -5033,6 +5287,7 @@ export default function App() {
   const focusListSyncRef                      = useRef(null);
   const invoiceSyncRef                        = useRef(null);
   const userIdentityRef                       = useRef(null);
+  const kbLookupResetRef                      = useRef(null); // set by KiaFocusBoard to reset its kb lookup
   const currentRoomIdRef                      = useRef(null);
 
   // Keep refs in sync with state (WS callbacks can't read state directly)
@@ -5061,6 +5316,7 @@ export default function App() {
   }
 
   // ── Persistence ──────────────────────────────────────────────────────────
+  const settingsLoadedRef = useRef(false);
   useEffect(() => {
     AsyncStorage.getItem(KIA_STORAGE_KEY).then(raw => {
       if (raw) { try { setKiaInvoices(JSON.parse(raw)); } catch {} }
@@ -5107,6 +5363,8 @@ export default function App() {
           if (s.hideClosedInvoices !== undefined) setKiaHideClosedInvoices(s.hideClosedInvoices);
           if (s.torchEnabled !== undefined) setTorchEnabled(s.torchEnabled);
           if (s.highlightLastThree !== undefined) setHighlightLastThree(s.highlightLastThree);
+          if (s.hidePresenceBar !== undefined) setHidePresenceBar(s.hidePresenceBar);
+          if (s.dupeLinePicker !== undefined) setKiaDupeLinePicker(s.dupeLinePicker);
         } catch {}
       }
       settingsLoadedRef.current = true;
@@ -5125,8 +5383,10 @@ export default function App() {
       hideClosedInvoices: kiaHideClosedInvoices,
       torchEnabled,
       highlightLastThree,
+      hidePresenceBar,
+      dupeLinePicker: kiaDupeLinePicker,
     })).catch(() => {});
-  }, [kiaHideOrderRefs, kiaSuppressNewInv, kiaDimOtherCards, kiaHideFindBtn, hideBackorderCol, kiaHideClosedInvoices, torchEnabled, highlightLastThree]);
+  }, [kiaHideOrderRefs, kiaSuppressNewInv, kiaDimOtherCards, kiaHideFindBtn, hideBackorderCol, kiaHideClosedInvoices, torchEnabled, highlightLastThree, kiaDupeLinePicker]);
 
   // ── Auto-push full invoice state to server when in a room (debounced 2s) ──
   // This keeps room.invoices fresh so late joiners always get the full picture
@@ -5149,7 +5409,6 @@ export default function App() {
   // others can see them in the Live Boards strip without manual "Create Board" ──
   const autoRoomRef = useRef(false);
   const autoRoomTimerRef = useRef(null);
-  const settingsLoadedRef = useRef(false);
   useEffect(() => {
     if (kiaScreen !== "board") {
       autoRoomRef.current = false;
@@ -5958,17 +6217,30 @@ export default function App() {
   };
 
   const handleKiaClearAll = () => {
-    Alert.alert("Clear KIA Receiving Data?", "This will remove all KIA invoices and receiving history.", [
+    Alert.alert("Clear All App Data?", "This will reset everything except your imported CSV files.", [
       { text: "Cancel", style: "cancel" },
       { text: "Clear All", style: "destructive", onPress: () => {
+        setKiaFocusList([]);
+        setKiaPinnedIds([]);
+        setKiaPileCount(0);
+        setKiaLastScanned(null);
+        setKiaActiveInvId(null);
         setKiaInvoices([]);
         setActiveKiaId(null);
         setKiaScreen("home");
-        setKiaLastScanned(null);
         setDispatchInvoices([]);
+        setCurrentRoomId(null);
+        setRoomName(null);
+        setRoomMembers([]);
+        setIsRoomHost(false);
+        if (kbLookupResetRef.current) kbLookupResetRef.current();
         AsyncStorage.removeItem(KIA_STORAGE_KEY).catch(() => {});
+        AsyncStorage.removeItem("@kia_focuslist_v1").catch(() => {});
+        AsyncStorage.removeItem("@kia_pinnedids_v1").catch(() => {});
         AsyncStorage.removeItem("@kia_lastscanned_v1").catch(() => {});
         AsyncStorage.removeItem("@dispatch_invoices_v1").catch(() => {});
+        AsyncStorage.removeItem(OCR_CAPTURE_KEY).catch(() => {});
+        AsyncStorage.removeItem(BOARD_SESSION_KEY).catch(() => {});
         AsyncStorage.getAllKeys().then(keys => {
           const detailKeys = keys.filter(k => k.startsWith("@kia_lastscanned_detail_"));
           if (detailKeys.length) AsyncStorage.multiRemove(detailKeys).catch(() => {});
@@ -5982,6 +6254,61 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <StatusBar barStyle="light-content" backgroundColor={C.bg} />
+
+      {/* ── LICENSE CHECKING SPLASH ── */}
+      {licenseChecking && (
+        <View style={{ flex: 1, backgroundColor: C.bg, alignItems: "center", justifyContent: "center" }}>
+          <Text style={{ fontSize: 48, marginBottom: 16 }}>🔑</Text>
+          <Text style={{ color: C.t1, fontSize: 22, fontWeight: "900", marginBottom: 8 }}>KIA Receiving</Text>
+          <Text style={{ color: C.t3, fontSize: 14 }}>Checking license...</Text>
+        </View>
+      )}
+
+      {/* ── DISCREET VISION KEY STATUS ── */}
+      {visionKeyStatus && (
+        <View pointerEvents="none" style={{ position: "absolute", bottom: 32, left: 0, right: 0, alignItems: "center", zIndex: 999 }}>
+          <View style={{ backgroundColor: visionKeyStatus === "ok" ? C.green + "22" : C.red + "22", borderRadius: 20, paddingHorizontal: 16, paddingVertical: 6, borderWidth: 1, borderColor: visionKeyStatus === "ok" ? C.green + "55" : C.red + "55" }}>
+            <Text style={{ color: visionKeyStatus === "ok" ? C.green : C.red, fontSize: 12, fontWeight: "700" }}>
+              {visionKeyStatus === "ok" ? "✓ Vision API key loaded" : "⚠ Vision API key unavailable"}
+            </Text>
+          </View>
+        </View>
+      )}
+
+      {/* ── ACTIVATION SCREEN ── */}
+      {!licenseChecking && showActivation && (
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1, backgroundColor: C.bg }}>
+          <ScrollView contentContainerStyle={{ flexGrow: 1, alignItems: "center", justifyContent: "center", padding: 32 }} keyboardShouldPersistTaps="handled">
+          <Text style={{ fontSize: 48, marginBottom: 16 }}>🔑</Text>
+          <Text style={{ color: C.t1, fontSize: 24, fontWeight: "900", marginBottom: 8 }}>Activate App</Text>
+          <Text style={{ color: C.t3, fontSize: 14, textAlign: "center", marginBottom: 32 }}>Enter your activation code to continue</Text>
+          <TextInput
+            value={activationCode}
+            onChangeText={v => { setActivationCode(v.toUpperCase()); setActivationError(""); }}
+            placeholder="e.g. KIA-XXXX-XXXX"
+            placeholderTextColor={C.t3}
+            autoCapitalize="characters"
+            style={{ backgroundColor: C.s2, borderRadius: 14, padding: 18, color: C.t1, fontSize: 18, fontWeight: "900", borderWidth: 1.5, borderColor: C.green + "66", letterSpacing: 2, width: "100%", marginBottom: 12, textAlign: "center" }}
+          />
+          {!!activationError && (
+            <Text style={{ color: C.red, fontSize: 13, textAlign: "center", marginBottom: 12 }}>{activationError}</Text>
+          )}
+          <TouchableOpacity
+            onPress={handleActivationSubmit}
+            disabled={activationLoading}
+            activeOpacity={0.85}
+            style={{ backgroundColor: activationLoading ? C.s3 : C.green, borderRadius: 16, paddingVertical: 18, width: "100%", alignItems: "center" }}>
+            <Text style={{ color: activationLoading ? C.t3 : C.bg, fontSize: 17, fontWeight: "900" }}>
+              {activationLoading ? "Checking..." : "Activate"}
+            </Text>
+          </TouchableOpacity>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      )}
+
+      {/* ── MAIN APP (only shown when licensed) ── */}
+      {!licenseChecking && !showActivation && licenseValid && (
+        <>
 
       {showDispatchPrecount && dispatchInvoices.find(i => i.id === activeDispatchId) ? (
         <DispatchPreCountScreen
@@ -6078,6 +6405,11 @@ export default function App() {
           }}
           highlightLastThree={highlightLastThree}
           setHighlightLastThree={setHighlightLastThree}
+          dupeLinePicker={kiaDupeLinePicker}
+          setDupeLinePicker={setKiaDupeLinePicker}
+          hidePresenceBar={hidePresenceBar}
+          setHidePresenceBar={setHidePresenceBar}
+          isRoomHost={isRoomHost}
           onSilentSync={async () => {
             const FILES = ["stdpartski.csv", "stdpartshy.csv"];
             for (const filename of FILES) {
@@ -6196,6 +6528,9 @@ export default function App() {
           wsRef={wsRef}
           currentRoomId={currentRoomId}
           highlightLastThree={highlightLastThree}
+          dupeLinePicker={kiaDupeLinePicker}
+          hidePresenceBar={hidePresenceBar}
+          kbLookupResetRef={kbLookupResetRef}
           roomName={roomName}
           roomMembers={roomMembers}
           setRoomMembers={setRoomMembers}
@@ -6573,6 +6908,9 @@ export default function App() {
           })()}
         </View>
       </Modal>
+
+        </>
+      )}
 
     </SafeAreaProvider>
   );

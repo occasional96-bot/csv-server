@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Warehouse PRO — Dashboard</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#050810;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#EDF2FF;min-height:100vh}
+a{color:inherit;text-decoration:none}
+
+/* ── Layout ── */
+.shell{display:flex;min-height:100vh}
+.sidebar{width:220px;background:#080C14;border-right:1px solid #1A2740;padding:20px 0;flex-shrink:0;display:flex;flex-direction:column}
+.main{flex:1;padding:24px;overflow-x:hidden}
+
+/* ── Sidebar ── */
+.logo{padding:0 20px 20px;border-bottom:1px solid #1A2740;margin-bottom:16px}
+.logo-title{font-size:15px;font-weight:800;color:#C8D8EC}
+.logo-sub{font-size:10px;color:#2A3D55;margin-top:2px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;cursor:pointer;font-size:13px;font-weight:600;color:#4A6680;border-left:2px solid transparent;transition:all 0.15s}
+.nav-item:hover{color:#8BA3BE;background:#0C1420}
+.nav-item.active{color:#EDF2FF;border-left-color:#29B6F6;background:#0C1420}
+.nav-icon{width:16px;height:16px;opacity:0.7}
+.sidebar-bottom{margin-top:auto;padding:16px 20px;border-top:1px solid #1A2740}
+.server-status{display:flex;align-items:center;gap:6px;font-size:10px;color:#2A3D55}
+.status-dot{width:6px;height:6px;border-radius:50%;background:#F44336}
+.status-dot.online{background:#00E676}
+
+/* ── Top bar ── */
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.page-title{font-size:18px;font-weight:800;color:#C8D8EC}
+.page-sub{font-size:11px;color:#2A3D55;margin-top:2px}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.live-badge{display:flex;align-items:center;gap:6px;background:#00E67610;border:1px solid #00E67625;border-radius:20px;padding:5px 12px;font-size:11px;color:#00E676;font-weight:700}
+.pulse{width:6px;height:6px;border-radius:50%;background:#00E676;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+.date-chip{font-size:11px;color:#4A6680;background:#0C1420;border:1px solid #1A2740;border-radius:8px;padding:5px 10px}
+
+/* ── Stats ── */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat{background:#0C1420;border-radius:12px;padding:14px 16px;border:1px solid #1A2740;position:relative;overflow:hidden;cursor:pointer;transition:border-color 0.15s}
+.stat:hover{border-color:#243650}
+.stat-bar{position:absolute;top:0;left:0;width:3px;height:100%}
+.stat-label{font-size:9px;color:#364D66;font-weight:700;letter-spacing:1.8px;margin-bottom:8px}
+.stat-val{font-size:28px;font-weight:900;line-height:1;letter-spacing:-1px}
+.stat-sub{font-size:10px;color:#2A3D55;margin-top:4px}
+
+/* ── Brand tabs ── */
+.brand-tabs{display:flex;gap:8px;margin-bottom:16px}
+.tab{border-radius:10px;padding:8px 16px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid #1A2740;color:#4A6680;background:#0C1420;transition:all 0.15s}
+.tab:hover{color:#8BA3BE}
+.tab.t-all.active{background:#1A2740;border-color:#243650;color:#8BA3BE}
+.tab.t-kia.active{background:#29B6F615;color:#29B6F6;border-color:#29B6F640}
+.tab.t-hy.active{background:#FFB30015;color:#FFB300;border-color:#FFB30040}
+
+/* ── Filters ── */
+.filters{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
+.filter{background:#0C1420;border:1px solid #1A2740;border-radius:10px;padding:9px 12px}
+.filter-label{font-size:9px;color:#364D66;font-weight:700;letter-spacing:1.5px;margin-bottom:3px}
+.filter select,.filter input{width:100%;background:transparent;border:none;color:#5A7A9A;font-size:12px;font-weight:600;outline:none;font-family:inherit;cursor:pointer}
+.filter select option{background:#0C1420;color:#EDF2FF}
+
+/* ── Toggles ── */
+.toggles{display:flex;gap:8px;margin-bottom:16px;align-items:center;flex-wrap:wrap}
+.toggle-label{font-size:9px;color:#2A3D55;font-weight:700;letter-spacing:1.5px}
+.toggle{border-radius:8px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;border:1px solid transparent;transition:all 0.15s;user-select:none}
+.toggle.on-confirmed{background:#00E67618;color:#00E676;border-color:#00E67635}
+.toggle.on-manual{background:#FFB30018;color:#FFB300;border-color:#FFB30035}
+.toggle.on-not_found{background:#F4433618;color:#F44336;border-color:#F4433635}
+.toggle.on-unscanned{background:#9C27B018;color:#CE93D8;border-color:#9C27B035}
+.toggle.off{background:#0C1420;color:#2A3D55;border-color:#1A2740}
+.toggle-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.export-disc{margin-left:auto;background:#E040FB18;border:1px solid #E040FB40;border-radius:8px;padding:6px 14px;font-size:11px;font-weight:700;color:#CE93D8;cursor:pointer}
+
+/* ── Table ── */
+.table-wrap{background:#0C1420;border-radius:14px;border:1px solid #1A2740;overflow:hidden}
+.thead{display:grid;grid-template-columns:52px 78px 38px 150px 1fr 90px 120px;padding:10px 16px;border-bottom:1px solid #131E2E;background:#080C14}
+.th{font-size:9px;font-weight:700;color:#2A3D55;letter-spacing:1.5px}
+.tbody{}
+.row{display:grid;grid-template-columns:52px 78px 38px 150px 1fr 90px 120px;padding:12px 16px;border-bottom:1px solid #0C1420;align-items:center;transition:background 0.1s}
+.row:last-child{border-bottom:none}
+.row:hover{background:#0F1E30}
+.row.flash-new{animation:flashrow 1.5s ease-out}
+@keyframes flashrow{0%{background:#00E67618}100%{background:transparent}}
+.row.unscanned-row{border-left:2px solid #9C27B030}
+
+.brand-chip{border-radius:5px;padding:3px 8px;font-size:9px;font-weight:700;letter-spacing:1px;text-align:center;background:#0F1820;border:1px solid #1E2D42;color:#3A5068;display:inline-block}
+.time-cell{font-size:11px;color:#4A6680;font-weight:600;font-variant-numeric:tabular-nums}
+.avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;flex-shrink:0}
+.inv-block{}
+.inv-num{font-size:12px;font-weight:700}
+.inv-kia{color:#29B6F6}
+.inv-hy{color:#FFB300}
+.inv-progress{display:flex;align-items:center;gap:5px;margin-top:3px}
+.prog-bar-wrap{width:44px;height:3px;background:#1A2740;border-radius:2px;overflow:hidden}
+.prog-bar{height:3px;border-radius:2px}
+.prog-text{font-size:9px;color:#2A4060;font-weight:700}
+.part-cell{}
+.part-num{font-size:12px;font-weight:800;color:#EDF2FF;letter-spacing:0.3px}
+.part-num.dim{color:#4A4060}
+.part-desc{font-size:10px;color:#364D66;margin-top:2px}
+.part-desc.dim{color:#2A1E3A}
+.note-cell{font-size:10px;color:#FFB300;font-style:italic;line-height:1.3;max-width:88px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.note-empty{font-size:10px;color:#1A2740}
+.badge{display:inline-flex;align-items:center;gap:5px;border-radius:7px;padding:5px 10px;font-size:10px;font-weight:800;white-space:nowrap}
+.badge-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.b-confirmed{background:#00E67620;color:#00E676;border:1px solid #00E67650}
+.b-manual{background:#FFB30020;color:#FFB300;border:1px solid #FFB30050}
+.b-not_found{background:#F4433620;color:#F44336;border:1px solid #F4433650}
+.b-unscanned{background:#9C27B015;color:#CE93D8;border:1px solid #9C27B035}
+
+.empty-state{padding:48px;text-align:center;color:#2A3D55;font-size:13px}
+.footer-bar{display:flex;align-items:center;justify-content:space-between;margin-top:12px}
+.footer-txt{font-size:10px;color:#1E2D42}
+.export-csv-btn{background:#0C1420;border:1px solid #1A2740;border-radius:8px;padding:6px 12px;color:#4A6680;font-size:10px;font-weight:700;cursor:pointer}
+
+/* ── Import page ── */
+.import-page{display:none}
+.section-label{font-size:9px;font-weight:700;color:#2A3D55;letter-spacing:2px;margin-bottom:12px}
+.import-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.drop-zone{background:#0C1420;border:1.5px dashed #1E2D42;border-radius:14px;padding:20px 16px;display:flex;flex-direction:column;align-items:center;text-align:center;cursor:pointer;gap:8px;transition:border-color 0.2s;position:relative}
+.drop-zone:hover{border-color:#29B6F650}
+.drop-zone.dz-success{border-color:#00E67650;border-style:solid;background:#00E67606}
+.drop-zone.dz-error{border-color:#F4433650;border-style:solid;background:#F4433606}
+.drop-zone.dz-uploading{border-color:#29B6F650;border-style:solid}
+.dz-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dz-title{font-size:12px;font-weight:800;color:#8BA3BE}
+.dz-sub{font-size:10px;color:#2A3D55;line-height:1.4}
+.dz-filename{font-size:10px;font-weight:700;font-family:monospace;color:#4A6680;background:#0F1820;border-radius:5px;padding:3px 8px}
+.dz-btn{font-size:10px;font-weight:700;border-radius:7px;padding:5px 12px;cursor:pointer;border:1px solid transparent}
+.dz-btn-kia{color:#29B6F6;border-color:#29B6F630;background:#29B6F610}
+.dz-btn-hy{color:#FFB300;border-color:#FFB30030;background:#FFB30010}
+.dz-btn-inv{color:#00E676;border-color:#00E67630;background:#00E67610}
+.dz-input{display:none}
+.status-card{background:#0C1420;border:1px solid #1A2740;border-radius:12px;overflow:hidden;margin-bottom:16px}
+.status-row{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #0F1820}
+.status-row:last-child{border-bottom:none}
+.status-left{display:flex;align-items:center;gap:10px}
+.status-dot2{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.status-name{font-size:12px;font-weight:700;color:#8BA3BE}
+.status-meta{font-size:10px;color:#2A3D55;margin-top:2px}
+.status-right{display:flex;align-items:center;gap:10px}
+.file-size{font-size:10px;color:#2A3D55}
+.sbadge{font-size:9px;font-weight:800;border-radius:5px;padding:3px 8px}
+.sb-live{background:#00E67615;color:#00E676;border:1px solid #00E67630}
+.sb-outdated{background:#F4433615;color:#F44336;border:1px solid #F4433630}
+.sb-unknown{background:#1A2740;color:#2A3D55;border:1px solid #1A2740}
+.notify-bar{background:#00E67610;border:1px solid #00E67625;border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.notify-txt{font-size:11px;color:#00E676;font-weight:600}
+.notify-time{font-size:10px;color:#3A7A5A;margin-left:auto}
+
+/* ── Paths page ── */
+.paths-page{display:none}
+.path-card{background:#0C1420;border:1px solid #1A2740;border-radius:14px;padding:18px;margin-bottom:12px}
+.path-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.path-title-row{display:flex;align-items:center;gap:8px}
+.path-dot2{width:8px;height:8px;border-radius:50%}
+.path-name{font-size:13px;font-weight:800;color:#8BA3BE}
+.pbadge{font-size:9px;font-weight:800;border-radius:5px;padding:3px 8px}
+.pb-set{background:#00E67615;color:#00E676;border:1px solid #00E67630}
+.pb-notset{background:#F4433615;color:#F44336;border:1px solid #F4433630}
+.path-input-row{display:flex;gap:8px;margin-bottom:8px}
+.path-input{flex:1;background:#080C14;border:1px solid #1E2D42;border-radius:8px;padding:9px 12px;color:#8BA3BE;font-size:11px;font-family:monospace;outline:none}
+.path-input::placeholder{color:#2A3D55}
+.browse-btn2{background:#131E2E;border:1px solid #1E2D42;border-radius:8px;padding:9px 14px;font-size:11px;font-weight:700;color:#4A6680;cursor:pointer;white-space:nowrap}
+.path-meta{font-size:10px;color:#2A3D55}
+.sync-card{background:#0C1420;border:1px solid #1A2740;border-radius:12px;overflow:hidden;margin-bottom:20px}
+.sync-header{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #1A2740;background:#080C14}
+.sync-title{font-size:13px;font-weight:800;color:#8BA3BE}
+.sync-sub{font-size:10px;color:#2A3D55;margin-top:2px}
+.sync-now-btn{background:#29B6F620;border:1px solid #29B6F640;border-radius:8px;padding:7px 14px;font-size:11px;font-weight:800;color:#29B6F6;cursor:pointer}
+.sync-row2{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:11px 16px;border-bottom:1px solid #0F1820}
+.sync-row2:last-child{border-bottom:none}
+.sync-file{font-size:11px;font-weight:700;color:#4A6680;font-family:monospace}
+.sync-path-txt{font-size:10px;color:#2A3D55;margin-top:2px;font-family:monospace;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sync-mod{font-size:10px;color:#2A3D55;white-space:nowrap}
+.sync-action-badge{font-size:10px;font-weight:700;border-radius:6px;padding:4px 10px;white-space:nowrap}
+.sa-ready{background:#00E67615;color:#00E676;border:1px solid #00E67630}
+.sa-notset{background:#1A2740;color:#2A3D55;border:1px solid #1A2740}
+.big-sync-btn{width:100%;background:#29B6F6;border:none;border-radius:10px;padding:14px;font-size:14px;font-weight:800;color:#080C14;cursor:pointer;margin-bottom:12px;letter-spacing:0.3px;transition:opacity 0.15s}
+.big-sync-btn:hover{opacity:0.85}
+.info-bar2{background:#29B6F610;border:1px solid #29B6F625;border-radius:10px;padding:10px 14px;display:flex;align-items:flex-start;gap:10px;margin-bottom:20px;font-size:11px;color:#29B6F6;line-height:1.5}
+
+/* ── Responsive ── */
+@media(max-width:900px){
+  .sidebar{display:none}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .import-grid{grid-template-columns:1fr}
+  .thead,.row{grid-template-columns:44px 70px 32px 110px 1fr 100px}
+  .th:nth-child(6),.row>*:nth-child(6){display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="logo">
+      <div class="logo-title">Warehouse PRO</div>
+      <div class="logo-sub">KIA &amp; Hyundai Dashboard</div>
+    </div>
+    <div class="nav-item active" onclick="showPage('log')" id="nav-log">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="2" rx="1" fill="#8BA3BE"/><rect x="2" y="7" width="8" height="2" rx="1" fill="#8BA3BE"/><rect x="2" y="12" width="10" height="2" rx="1" fill="#8BA3BE"/></svg>
+      Scan Log
+    </div>
+    <div class="nav-item" onclick="showPage('import')" id="nav-import">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 7l3 3 3-3" stroke="#8BA3BE" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 12h10" stroke="#8BA3BE" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Import CSV
+    </div>
+    <div class="nav-item" onclick="showPage('paths')" id="nav-paths">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5" stroke="#8BA3BE" stroke-width="1.5"/><path d="M8 5v3l2 2" stroke="#8BA3BE" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Saved Paths
+    </div>
+    <div class="sidebar-bottom">
+      <div class="server-status">
+        <div class="status-dot" id="conn-dot"></div>
+        <span id="conn-txt">Connecting...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+
+    <!-- ── SCAN LOG PAGE ── -->
+    <div id="page-log">
+      <div class="topbar">
+        <div>
+          <div class="page-title">Scan Log</div>
+          <div class="page-sub" id="log-date"></div>
+        </div>
+        <div class="topbar-right">
+          <div class="date-chip" id="date-chip"></div>
+          <div class="live-badge"><div class="pulse"></div>Live</div>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat" onclick="toggleFilter('confirmed')">
+          <div class="stat-bar" style="background:#00E676"></div>
+          <div class="stat-label">CONFIRMED</div>
+          <div class="stat-val" id="stat-confirmed" style="color:#00E676">—</div>
+          <div class="stat-sub">parts scanned</div>
+        </div>
+        <div class="stat" onclick="toggleFilter('manual')">
+          <div class="stat-bar" style="background:#FFB300"></div>
+          <div class="stat-label">MANUAL</div>
+          <div class="stat-val" id="stat-manual" style="color:#FFB300">—</div>
+          <div class="stat-sub">overrides</div>
+        </div>
+        <div class="stat" onclick="toggleFilter('not_found')">
+          <div class="stat-bar" style="background:#F44336"></div>
+          <div class="stat-label">NOT FOUND</div>
+          <div class="stat-val" id="stat-notfound" style="color:#F44336">—</div>
+          <div class="stat-sub">unmatched</div>
+        </div>
+        <div class="stat">
+          <div class="stat-bar" style="background:#29B6F6"></div>
+          <div class="stat-label">ACTIVE USERS</div>
+          <div class="stat-val" id="stat-users" style="color:#29B6F6">—</div>
+          <div class="stat-sub">today</div>
+        </div>
+      </div>
+
+      <div class="brand-tabs">
+        <div class="tab t-all active" onclick="setBrand('')">All brands</div>
+        <div class="tab t-kia" onclick="setBrand('KIA')">KIA · L-invoices</div>
+        <div class="tab t-hy" onclick="setBrand('HY')">Hyundai · F-invoices</div>
+      </div>
+
+      <div class="filters">
+        <div class="filter">
+          <div class="filter-label">USER</div>
+          <select id="f-user" onchange="applyFilters()"><option value="">All users</option></select>
+        </div>
+        <div class="filter">
+          <div class="filter-label">INVOICE</div>
+          <input id="f-invoice" placeholder="Invoice number..." oninput="applyFilters()" />
+        </div>
+        <div class="filter">
+          <div class="filter-label">DATE RANGE</div>
+          <select id="f-date" onchange="applyFilters()">
+            <option value="today">Today</option>
+            <option value="week">Last 7 days</option>
+            <option value="fortnight">Last 14 days</option>
+          </select>
+        </div>
+        <div class="filter">
+          <div class="filter-label">PART NUMBER</div>
+          <input id="f-part" placeholder="Search..." oninput="applyFilters()" />
+        </div>
+      </div>
+
+      <div class="toggles">
+        <span class="toggle-label">SHOW</span>
+        <div class="toggle on-confirmed" id="tog-confirmed" onclick="toggleAction('confirmed')">
+          <span class="toggle-dot" style="background:#00E676"></span>Confirmed
+        </div>
+        <div class="toggle on-manual" id="tog-manual" onclick="toggleAction('manual')">
+          <span class="toggle-dot" style="background:#FFB300"></span>Manual
+        </div>
+        <div class="toggle on-not_found" id="tog-not_found" onclick="toggleAction('not_found')">
+          <span class="toggle-dot" style="background:#F44336"></span>Not found
+        </div>
+        <div class="toggle on-unscanned" id="tog-unscanned" onclick="toggleAction('unscanned')">
+          <span class="toggle-dot" style="background:#CE93D8"></span>Unscanned
+        </div>
+        <div class="export-disc" onclick="exportDiscrepancy()">Export Discrepancy Report</div>
+      </div>
+
+      <div class="table-wrap">
+        <div class="thead">
+          <div class="th">BRAND</div>
+          <div class="th">TIME</div>
+          <div class="th">USER</div>
+          <div class="th">INVOICE</div>
+          <div class="th">PART / DESCRIPTION</div>
+          <div class="th">NOTE</div>
+          <div class="th">STATUS</div>
+        </div>
+        <div class="tbody" id="log-tbody">
+          <div class="empty-state">Loading scan log...</div>
+        </div>
+      </div>
+
+      <div class="footer-bar">
+        <div class="footer-txt" id="footer-txt">—</div>
+        <div class="export-csv-btn" onclick="exportCSV()">Export CSV</div>
+      </div>
+    </div>
+
+    <!-- ── IMPORT PAGE ── -->
+    <div id="page-import" class="import-page">
+      <div class="topbar">
+        <div>
+          <div class="page-title">Import CSV</div>
+          <div class="page-sub">Upload files directly to Railway — all devices update instantly</div>
+        </div>
+      </div>
+
+      <div class="section-label">DRAG &amp; DROP OR CLICK TO UPLOAD</div>
+      <div class="import-grid">
+        <div class="drop-zone" id="dz-kia" ondragover="dzDrag(event,'kia')" ondragleave="dzLeave('kia')" ondrop="dzDrop(event,'kia')" onclick="document.getElementById('fi-kia').click()">
+          <input type="file" id="fi-kia" class="dz-input" accept=".csv" onchange="dzFile(this,'kia')" />
+          <div class="dz-icon" style="background:#29B6F615;border:1px solid #29B6F630">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 14V4h6l4 4v6H4z" stroke="#29B6F6" stroke-width="1.5" fill="none" stroke-linejoin="round"/><path d="M10 4v4h4" stroke="#29B6F6" stroke-width="1.5" fill="none"/><path d="M9 12V8m-2 2l2-2 2 2" stroke="#29B6F6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="dz-title" style="color:#29B6F6">KIA Parts</div>
+          <div class="dz-sub" id="dz-kia-sub">stdpartski.csv<br>Drag &amp; drop or tap</div>
+          <div class="dz-btn dz-btn-kia">Browse file</div>
+        </div>
+        <div class="drop-zone" id="dz-hy" ondragover="dzDrag(event,'hy')" ondragleave="dzLeave('hy')" ondrop="dzDrop(event,'hy')" onclick="document.getElementById('fi-hy').click()">
+          <input type="file" id="fi-hy" class="dz-input" accept=".csv" onchange="dzFile(this,'hy')" />
+          <div class="dz-icon" style="background:#FFB30015;border:1px solid #FFB30030">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 14V4h6l4 4v6H4z" stroke="#FFB300" stroke-width="1.5" fill="none" stroke-linejoin="round"/><path d="M10 4v4h4" stroke="#FFB300" stroke-width="1.5" fill="none"/><path d="M9 12V8m-2 2l2-2 2 2" stroke="#FFB300" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="dz-title" style="color:#FFB300">Hyundai Parts</div>
+          <div class="dz-sub" id="dz-hy-sub">stdpartshy.csv<br>Drag &amp; drop or tap</div>
+          <div class="dz-btn dz-btn-hy">Browse file</div>
+        </div>
+        <div class="drop-zone" id="dz-inv" ondragover="dzDrag(event,'inv')" ondragleave="dzLeave('inv')" ondrop="dzDrop(event,'inv')" onclick="document.getElementById('fi-inv').click()">
+          <input type="file" id="fi-inv" class="dz-input" accept=".csv" onchange="dzFile(this,'inv')" />
+          <div class="dz-icon" style="background:#00E67610;border:1px solid #00E67625">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 14V4h6l4 4v6H4z" stroke="#00E676" stroke-width="1.5" fill="none" stroke-linejoin="round"/><path d="M10 4v4h4" stroke="#00E676" stroke-width="1.5" fill="none"/><path d="M9 12V8m-2 2l2-2 2 2" stroke="#00E676" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="dz-title">Invoice Data</div>
+          <div class="dz-sub" id="dz-inv-sub">04-INVOICE-SCAN-APP_Data.csv<br>Drag &amp; drop or tap</div>
+          <div class="dz-btn dz-btn-inv">Browse file</div>
+        </div>
+      </div>
+
+      <div id="notify-upload" style="display:none" class="notify-bar">
+        <div class="pulse" style="width:8px;height:8px;border-radius:50%;background:#00E676;flex-shrink:0"></div>
+        <div class="notify-txt" id="notify-txt">Uploaded successfully</div>
+        <div class="notify-time" id="notify-time"></div>
+      </div>
+
+      <div class="section-label">SERVER STATUS</div>
+      <div class="status-card" id="server-status-card">
+        <div class="status-row">
+          <div class="status-left"><div class="status-dot2" style="background:#29B6F6"></div><div><div class="status-name">stdpartski.csv</div><div class="status-meta" id="meta-kia">Checking...</div></div></div>
+          <div class="status-right"><div class="file-size" id="size-kia"></div><div class="sbadge sb-unknown" id="sbadge-kia">Unknown</div></div>
+        </div>
+        <div class="status-row">
+          <div class="status-left"><div class="status-dot2" style="background:#FFB300"></div><div><div class="status-name">stdpartshy.csv</div><div class="status-meta" id="meta-hy">Checking...</div></div></div>
+          <div class="status-right"><div class="file-size" id="size-hy"></div><div class="sbadge sb-unknown" id="sbadge-hy">Unknown</div></div>
+        </div>
+        <div class="status-row">
+          <div class="status-left"><div class="status-dot2" style="background:#00E676"></div><div><div class="status-name">04-INVOICE-SCAN-APP_Data.csv</div><div class="status-meta" id="meta-inv">Checking...</div></div></div>
+          <div class="status-right"><div class="file-size" id="size-inv"></div><div class="sbadge sb-unknown" id="sbadge-inv">Unknown</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PATHS PAGE ── -->
+    <div id="page-paths" class="paths-page">
+      <div class="topbar">
+        <div>
+          <div class="page-title">Saved Paths</div>
+          <div class="page-sub">Set once — one-click sync from your PC every time</div>
+        </div>
+      </div>
+
+      <div class="info-bar2">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0;margin-top:1px"><circle cx="7" cy="7" r="6" stroke="#29B6F6" stroke-width="1.2"/><path d="M7 6v4" stroke="#29B6F6" stroke-width="1.2" stroke-linecap="round"/><circle cx="7" cy="4.5" r="0.6" fill="#29B6F6"/></svg>
+        Paths are saved in your browser. Next time you open the dashboard, just hit "Sync &amp; Push" — it reads the files from those locations and pushes to all devices in one click.
+      </div>
+
+      <div class="section-label">FILE PATHS</div>
+
+      <div class="path-card">
+        <div class="path-header">
+          <div class="path-title-row"><div class="path-dot2" style="background:#29B6F6"></div><div class="path-name">KIA Parts</div></div>
+          <div class="pbadge" id="pbadge-kia">Not set</div>
+        </div>
+        <div class="path-input-row">
+          <input class="path-input" id="pi-kia" placeholder="C:\Users\kaine\Downloads\stdpartski.csv" oninput="savePaths()" />
+          <div class="browse-btn2" onclick="document.getElementById('pf-kia').click()">Browse</div>
+          <input type="file" id="pf-kia" class="dz-input" accept=".csv" onchange="pathBrowse(this,'kia')" />
+        </div>
+        <div class="path-meta" id="pmeta-kia">—</div>
+      </div>
+
+      <div class="path-card">
+        <div class="path-header">
+          <div class="path-title-row"><div class="path-dot2" style="background:#FFB300"></div><div class="path-name">Hyundai Parts</div></div>
+          <div class="pbadge" id="pbadge-hy">Not set</div>
+        </div>
+        <div class="path-input-row">
+          <input class="path-input" id="pi-hy" placeholder="C:\Users\kaine\Downloads\stdpartshy.csv" oninput="savePaths()" />
+          <div class="browse-btn2" onclick="document.getElementById('pf-hy').click()">Browse</div>
+          <input type="file" id="pf-hy" class="dz-input" accept=".csv" onchange="pathBrowse(this,'hy')" />
+        </div>
+        <div class="path-meta" id="pmeta-hy">—</div>
+      </div>
+
+      <div class="path-card">
+        <div class="path-header">
+          <div class="path-title-row"><div class="path-dot2" style="background:#00E676"></div><div class="path-name">Invoice Data</div></div>
+          <div class="pbadge" id="pbadge-inv">Not set</div>
+        </div>
+        <div class="path-input-row">
+          <input class="path-input" id="pi-inv" placeholder="C:\Users\kaine\Downloads\04-INVOICE-SCAN-APP_Data.csv" oninput="savePaths()" />
+          <div class="browse-btn2" onclick="document.getElementById('pf-inv').click()">Browse</div>
+          <input type="file" id="pf-inv" class="dz-input" accept=".csv" onchange="pathBrowse(this,'inv')" />
+        </div>
+        <div class="path-meta" id="pmeta-inv">—</div>
+      </div>
+
+      <div class="section-label" style="margin-top:20px">SYNC STATUS</div>
+      <div class="sync-card">
+        <div class="sync-header">
+          <div><div class="sync-title">Sync from saved paths</div><div class="sync-sub">Reads latest files and pushes to Railway</div></div>
+          <div class="sync-now-btn" onclick="syncNow()">Sync now</div>
+        </div>
+        <div class="sync-row2">
+          <div><div class="sync-file">stdpartski.csv</div><div class="sync-path-txt" id="sp-kia">No path set</div></div>
+          <div class="sync-mod" id="sm-kia">—</div>
+          <div class="sync-action-badge sa-notset" id="sa-kia">Not set</div>
+        </div>
+        <div class="sync-row2">
+          <div><div class="sync-file">stdpartshy.csv</div><div class="sync-path-txt" id="sp-hy">No path set</div></div>
+          <div class="sync-mod" id="sm-hy">—</div>
+          <div class="sync-action-badge sa-notset" id="sa-hy">Not set</div>
+        </div>
+        <div class="sync-row2">
+          <div><div class="sync-file">04-INVOICE-SCAN-APP_Data.csv</div><div class="sync-path-txt" id="sp-inv">No path set</div></div>
+          <div class="sync-mod" id="sm-inv">—</div>
+          <div class="sync-action-badge sa-notset" id="sa-inv">Not set</div>
+        </div>
+      </div>
+
+      <button class="big-sync-btn" onclick="syncNow()">Sync &amp; Push to All Devices</button>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /shell -->
+
+<script>
+const SERVER = location.origin;
+const WS_URL = SERVER.replace(/^http/, "ws");
+
+// ── State ──────────────────────────────────────────────────────────────────
+let allLogs = [];
+let filters = { brand:"", user:"", invoice:"", part:"", date:"today" };
+let hiddenActions = new Set();
+let pathFiles = { kia: null, hy: null, inv: null };
+let ws = null;
+
+// ── Date helpers ──────────────────────────────────────────────────────────
+function fmtTime(ts){ const d=new Date(ts); return d.getHours().toString().padStart(2,"0")+":"+d.getMinutes().toString().padStart(2,"0")+":"+d.getSeconds().toString().padStart(2,"0"); }
+function fmtDate(ts){ const d=new Date(ts); return d.toLocaleDateString("en-AU",{day:"2-digit",month:"short",year:"numeric"}); }
+function getDateFrom(){
+  const now=Date.now();
+  if(filters.date==="today"){ const t=new Date(); t.setHours(0,0,0,0); return t.getTime(); }
+  if(filters.date==="week") return now - 7*86400000;
+  return now - 14*86400000;
+}
+
+// ── Pages ─────────────────────────────────────────────────────────────────
+function showPage(p){
+  ["log","import","paths"].forEach(x=>{
+    document.getElementById("page-"+x).style.display = x===p ? "block" : "none";
+    document.getElementById("nav-"+x).classList.toggle("active", x===p);
+  });
+  if(p==="import") loadFileMeta();
+  if(p==="paths") loadPathsUI();
+}
+
+// ── WebSocket ─────────────────────────────────────────────────────────────
+function connectWS(){
+  try{
+    ws = new WebSocket(WS_URL);
+    ws.onopen = () => { document.getElementById("conn-dot").className="status-dot online"; document.getElementById("conn-txt").textContent="Connected"; };
+    ws.onclose = () => { document.getElementById("conn-dot").className="status-dot"; document.getElementById("conn-txt").textContent="Reconnecting..."; setTimeout(connectWS,3000); };
+    ws.onerror = () => ws.close();
+    ws.onmessage = (e) => {
+      try{
+        const msg = JSON.parse(e.data);
+        if(msg.type==="scan_log_update"){
+          allLogs.unshift(msg.entry);
+          renderTable(true);
+          loadStats();
+        }
+      }catch{}
+    };
+  }catch{ setTimeout(connectWS,3000); }
+}
+
+// ── Load scan logs ────────────────────────────────────────────────────────
+async function loadLogs(){
+  try{
+    const r = await fetch(SERVER+"/scan-logs");
+    const d = await r.json();
+    allLogs = d.logs || [];
+    renderTable(false);
+    populateUserFilter();
+  }catch(e){ document.getElementById("log-tbody").innerHTML='<div class="empty-state">Could not load logs — is the server running?</div>'; }
+}
+
+async function loadStats(){
+  try{
+    const r = await fetch(SERVER+"/scan-log-stats");
+    const d = await r.json();
+    document.getElementById("stat-confirmed").textContent = d.confirmed ?? 0;
+    document.getElementById("stat-manual").textContent = d.manual ?? 0;
+    document.getElementById("stat-notfound").textContent = d.not_found ?? 0;
+    document.getElementById("stat-users").textContent = (d.users||[]).length;
+  }catch{}
+}
+
+function populateUserFilter(){
+  const users = [...new Set(allLogs.map(e=>e.initials))].sort();
+  const sel = document.getElementById("f-user");
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">All users</option>' + users.map(u=>`<option value="${u}">${u}</option>`).join("");
+  if(cur) sel.value = cur;
+}
+
+// ── Render table ──────────────────────────────────────────────────────────
+function getFiltered(){
+  const from = getDateFrom();
+  return allLogs.filter(e=>{
+    if(e.timestamp < from) return false;
+    if(filters.brand && e.brand !== filters.brand) return false;
+    if(filters.user && e.initials !== filters.user) return false;
+    if(filters.invoice && !e.invoiceId.includes(filters.invoice.toUpperCase())) return false;
+    if(filters.part && !e.partNumber.includes(filters.part.toUpperCase())) return false;
+    const act = e.action || "confirmed";
+    if(hiddenActions.has(act)) return false;
+    return true;
+  });
+}
+
+function renderTable(flashFirst){
+  const rows = getFiltered();
+  const tbody = document.getElementById("log-tbody");
+  if(!rows.length){ tbody.innerHTML='<div class="empty-state">No events match your filters</div>'; document.getElementById("footer-txt").textContent="No results"; return; }
+
+  tbody.innerHTML = rows.map((e,i)=>{
+    const isNew = flashFirst && i===0;
+    const isUnscan = e.action==="unscanned";
+    const invClass = e.brand==="KIA" ? "inv-kia" : "inv-hy";
+    const prog = e.progress ? `<div class="inv-progress"><div class="prog-bar-wrap"><div class="prog-bar" style="width:${Math.round(e.progress.done/e.progress.total*100)}%;background:${e.brand==='KIA'?'#29B6F6':'#FFB300'}"></div></div><span class="prog-text">${e.progress.done}/${e.progress.total}</span></div>` : "";
+    const avatarStyle = `background:${e.color}20;border:1.5px solid ${e.color}40;color:${e.color}`;
+    const badgeClass = "b-"+(e.action||"confirmed");
+    const badgeLabel = e.action==="confirmed"?"Confirmed":e.action==="manual"?"Manual":e.action==="not_found"?"Not found":e.action==="unscanned"?"Unscanned":"Undo";
+    const dotColor = e.action==="confirmed"?"#00E676":e.action==="manual"?"#FFB300":e.action==="not_found"?"#F44336":"#CE93D8";
+    return `<div class="row${isNew?" flash-new":""}${isUnscan?" unscanned-row":""}">
+      <div><div class="brand-chip">${e.brand||"?"}</div></div>
+      <div class="time-cell">${isUnscan?"—":fmtTime(e.timestamp)}</div>
+      <div><div class="avatar" style="${isUnscan?"background:#1A1A2A;border:1px solid #2A2A3A;color:#3A3A5A":avatarStyle}">${isUnscan?"—":e.initials}</div></div>
+      <div class="inv-block"><div class="inv-num ${invClass}">${e.invoiceId}</div>${prog}</div>
+      <div class="part-cell"><div class="part-num${isUnscan?" dim":""}">${e.partNumber}</div><div class="part-desc${isUnscan?" dim":""}">${e.description||""}</div></div>
+      <div>${e.note?`<div class="note-cell" title="${e.note}">${e.note}</div>`:'<div class="note-empty">—</div>'}</div>
+      <div><span class="badge ${badgeClass}"><span class="badge-dot" style="background:${dotColor}"></span>${badgeLabel}</span></div>
+    </div>`;
+  }).join("");
+
+  document.getElementById("footer-txt").textContent = `Showing ${rows.length} event${rows.length!==1?"s":""} · Auto-refreshes every 5s · Last 14 days retained`;
+}
+
+// ── Filter controls ───────────────────────────────────────────────────────
+function applyFilters(){
+  filters.user    = document.getElementById("f-user").value;
+  filters.invoice = document.getElementById("f-invoice").value;
+  filters.date    = document.getElementById("f-date").value;
+  filters.part    = document.getElementById("f-part").value;
+  renderTable(false);
+}
+
+function setBrand(b){
+  filters.brand = b;
+  document.querySelectorAll(".brand-tabs .tab").forEach(t=>t.classList.remove("active"));
+  const cls = b===""?"t-all":b==="KIA"?"t-kia":"t-hy";
+  document.querySelector(".tab."+cls).classList.add("active");
+  renderTable(false);
+}
+
+function toggleAction(action){
+  if(hiddenActions.has(action)){ hiddenActions.delete(action); document.getElementById("tog-"+action).className="toggle on-"+action; }
+  else{ hiddenActions.add(action); document.getElementById("tog-"+action).className="toggle off"; }
+  renderTable(false);
+}
+
+function toggleFilter(action){ toggleAction(action); }
+
+// ── Export ────────────────────────────────────────────────────────────────
+function exportCSV(){
+  const rows = getFiltered();
+  const header = ["Time","User","Brand","Invoice","PartNumber","Description","Note","Status"];
+  const lines = rows.map(e=>[fmtTime(e.timestamp),e.initials,e.brand,e.invoiceId,e.partNumber,`"${(e.description||"").replace(/"/g,'""')}"`,`"${(e.note||"").replace(/"/g,'""')}"`,e.action].join(","));
+  download("scan-log-"+new Date().toISOString().slice(0,10)+".csv", [header.join(","),...lines].join("\n"));
+}
+
+function exportDiscrepancy(){
+  const rows = getFiltered().filter(e=>["not_found","unscanned"].includes(e.action));
+  if(!rows.length){ alert("No discrepancies found in current filter."); return; }
+  const header = ["Time","User","Brand","Invoice","PartNumber","Description","Status","Note"];
+  const lines = rows.map(e=>[fmtTime(e.timestamp),e.initials,e.brand,e.invoiceId,e.partNumber,`"${(e.description||"").replace(/"/g,'""')}"`,e.action,`"${(e.note||"").replace(/"/g,'""')}"`].join(","));
+  download("discrepancy-"+new Date().toISOString().slice(0,10)+".csv", [header.join(","),...lines].join("\n"));
+}
+
+function download(filename, text){
+  const a = document.createElement("a");
+  a.href = "data:text/csv;charset=utf-8,"+encodeURIComponent(text);
+  a.download = filename;
+  a.click();
+}
+
+// ── File upload (Import page) ─────────────────────────────────────────────
+function dzDrag(e,id){ e.preventDefault(); document.getElementById("dz-"+id).style.borderColor="#29B6F6"; }
+function dzLeave(id){ document.getElementById("dz-"+id).style.borderColor=""; }
+function dzDrop(e,id){ e.preventDefault(); dzLeave(id); const f=e.dataTransfer.files[0]; if(f) uploadFile(f,id); }
+function dzFile(input,id){ if(input.files[0]) uploadFile(input.files[0],id); }
+
+async function uploadFile(file, hint){
+  const dz = document.getElementById("dz-"+hint);
+  dz.className="drop-zone dz-uploading";
+  document.getElementById("dz-"+hint+"-sub").textContent="Uploading...";
+  try{
+    const fd = new FormData();
+    fd.append("file", file, file.name);
+    const r = await fetch(SERVER+"/upload", { method:"POST", body:fd });
+    const d = await r.json();
+    if(d.filename){
+      dz.className="drop-zone dz-success";
+      document.getElementById("dz-"+hint+"-sub").textContent=file.name+" · Uploaded "+new Date().toLocaleTimeString("en-AU",{hour:"2-digit",minute:"2-digit"});
+      showNotify("Uploaded "+file.name+" — pushing to all devices");
+      loadFileMeta();
+    } else { throw new Error(d.error||"Upload failed"); }
+  }catch(e){
+    dz.className="drop-zone dz-error";
+    document.getElementById("dz-"+hint+"-sub").textContent="Upload failed — "+e.message;
+  }
+}
+
+function showNotify(msg){
+  document.getElementById("notify-upload").style.display="flex";
+  document.getElementById("notify-txt").textContent=msg;
+  document.getElementById("notify-time").textContent=new Date().toLocaleTimeString("en-AU",{hour:"2-digit",minute:"2-digit"});
+}
+
+async function loadFileMeta(){
+  const files = ["stdpartski.csv","stdpartshy.csv","04-INVOICE-SCAN-APP_Data.csv"];
+  const ids   = ["kia","hy","inv"];
+  for(let i=0;i<files.length;i++){
+    try{
+      const r = await fetch(SERVER+"/file-meta/"+files[i]);
+      const d = await r.json();
+      const el = document.getElementById("meta-"+ids[i]);
+      const badge = document.getElementById("sbadge-"+ids[i]);
+      if(d.uploadedAt){
+        const age = Date.now()-d.uploadedAt;
+        const label = age<86400000 ? "Today "+new Date(d.uploadedAt).toLocaleTimeString("en-AU",{hour:"2-digit",minute:"2-digit"}) : fmtDate(d.uploadedAt);
+        el.textContent="Last uploaded: "+label;
+        badge.className="sbadge "+(age<86400000?"sb-live":"sb-outdated");
+        badge.textContent=age<86400000?"Live":"Outdated";
+      } else {
+        el.textContent="Not yet uploaded";
+        badge.className="sbadge sb-unknown";
+        badge.textContent="Not found";
+      }
+    }catch{}
+  }
+}
+
+// ── Saved paths ───────────────────────────────────────────────────────────
+const PATH_KEY = "wh_pro_paths";
+
+function loadPathsUI(){
+  const saved = JSON.parse(localStorage.getItem(PATH_KEY)||"{}");
+  ["kia","hy","inv"].forEach(k=>{
+    const val = saved[k]||"";
+    document.getElementById("pi-"+k).value = val;
+    updatePathBadge(k, val);
+    document.getElementById("sp-"+k).textContent = val || "No path set";
+    document.getElementById("sa-"+k).className = "sync-action-badge "+(val?"sa-ready":"sa-notset");
+    document.getElementById("sa-"+k).textContent = val?"Ready":"Not set";
+  });
+}
+
+function savePaths(){
+  const obj={};
+  ["kia","hy","inv"].forEach(k=>{
+    const v=document.getElementById("pi-"+k).value.trim();
+    if(v) obj[k]=v;
+    updatePathBadge(k,v);
+    document.getElementById("sp-"+k).textContent=v||"No path set";
+    document.getElementById("sa-"+k).className="sync-action-badge "+(v?"sa-ready":"sa-notset");
+    document.getElementById("sa-"+k).textContent=v?"Ready":"Not set";
+  });
+  localStorage.setItem(PATH_KEY,JSON.stringify(obj));
+}
+
+function updatePathBadge(k,val){
+  const b=document.getElementById("pbadge-"+k);
+  b.className="pbadge "+(val?"pb-set":"pb-notset");
+  b.textContent=val?"Path saved":"Not set";
+}
+
+function pathBrowse(input,k){
+  const f=input.files[0]; if(!f) return;
+  document.getElementById("pi-"+k).value=f.name;
+  pathFiles[k]=f;
+  savePaths();
+  document.getElementById("pmeta-"+k).textContent="File selected: "+f.name+" ("+Math.round(f.size/1024)+" KB)";
+  document.getElementById("sm-"+k).textContent="Now";
+}
+
+async function syncNow(){
+  let uploaded=0;
+  const keys=["kia","hy","inv"];
+  const filenames=["stdpartski.csv","stdpartshy.csv","04-INVOICE-SCAN-APP_Data.csv"];
+  for(let i=0;i<keys.length;i++){
+    const f=pathFiles[keys[i]];
+    if(!f) continue;
+    const fd=new FormData();
+    fd.append("file",f,filenames[i]);
+    try{
+      const r=await fetch(SERVER+"/upload",{method:"POST",body:fd});
+      const d=await r.json();
+      if(d.filename) uploaded++;
+    }catch{}
+  }
+  if(uploaded>0){
+    alert(uploaded+" file"+(uploaded!==1?"s":"")+" synced and pushed to all devices!");
+    showPage("import");
+    loadFileMeta();
+  } else {
+    alert("No files selected via Browse. Go to Import page to upload files directly, or use Browse on each path to select the file first.");
+  }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+document.getElementById("log-date").textContent="KIA (L-invoices) & Hyundai (F-invoices)";
+const now=new Date();
+document.getElementById("date-chip").textContent=now.toLocaleDateString("en-AU",{weekday:"short",day:"2-digit",month:"short",year:"numeric"});
+
+showPage("log");
+connectWS();
+loadLogs();
+loadStats();
+setInterval(()=>{ loadLogs(); loadStats(); }, 5000);
+</script>
+</body>
+</html>

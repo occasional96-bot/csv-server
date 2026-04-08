@@ -58,6 +58,22 @@ function cleanRooms() {
 }
 setInterval(cleanRooms, 60 * 1000);
 
+// ── Scan log ──────────────────────────────────────────────────────────────────
+const SCANLOG_FILE = path.join(__dirname, "scanlog.json");
+const SCANLOG_TMP  = path.join(__dirname, "scanlog.tmp.json");
+const FOURTEEN_DAYS = 14 * 24 * 60 * 60 * 1000;
+
+const readScanLog = () => {
+  try { return JSON.parse(fs.readFileSync(SCANLOG_FILE, "utf8")); } catch { return []; }
+};
+const saveScanLog = (log) => {
+  try {
+    fs.writeFileSync(SCANLOG_TMP, JSON.stringify(log, null, 2));
+    fs.renameSync(SCANLOG_TMP, SCANLOG_FILE);
+  } catch(e) { console.error("saveScanLog error:", e); }
+};
+const purgeScanLog = (log) => log.filter(e => Date.now() - e.timestamp < FOURTEEN_DAYS);
+
 // ── WebSocket clients map: ws → { id, initials, color, name, roomId } ───────
 const clients = new Map(); // ws → clientInfo
 
@@ -587,6 +603,62 @@ app.get("/room/:roomId/updates", (req, res) => {
   const room = rooms[req.params.roomId];
   if (!room) return res.status(404).json({ error: "Room not found or expired" });
   res.json({ invoiceUpdates: room.invoiceUpdates || {}, invoices: room.invoices || [], focusList: room.focusList || [], pinnedIds: room.pinnedIds || [] });
+});
+
+// ── Scan log endpoints ────────────────────────────────────────────────────────
+app.post("/log-scan", (req, res) => {
+  const { initials, color, invoiceId, brand, partNumber, description, action, note } = req.body;
+  if (!initials || !invoiceId || !partNumber || !action) return res.status(400).json({ error: "Missing fields" });
+  let log = purgeScanLog(readScanLog());
+  const entry = {
+    id: Math.random().toString(36).slice(2, 10).toUpperCase(),
+    timestamp: Date.now(),
+    initials: initials || "?",
+    color: color || "#8BA3BE",
+    invoiceId,
+    brand: brand || (invoiceId.startsWith("L") ? "KIA" : invoiceId.startsWith("F") ? "HY" : "?"),
+    partNumber,
+    description: description || "",
+    action, // "confirmed" | "manual" | "not_found" | "undo"
+    note: note || "",
+  };
+  log.unshift(entry);
+  saveScanLog(log);
+  broadcast({ type: "scan_log_update", entry });
+  res.json({ ok: true, entry });
+});
+
+app.get("/scan-logs", (req, res) => {
+  let log = purgeScanLog(readScanLog());
+  const { brand, invoiceId, initials, partNumber, action, from, to } = req.query;
+  if (brand)       log = log.filter(e => e.brand === brand);
+  if (invoiceId)   log = log.filter(e => e.invoiceId.includes(invoiceId.toUpperCase()));
+  if (initials)    log = log.filter(e => e.initials === initials.toUpperCase());
+  if (partNumber)  log = log.filter(e => e.partNumber.includes(partNumber.toUpperCase()));
+  if (action)      log = log.filter(e => action.split(",").includes(e.action));
+  if (from)        log = log.filter(e => e.timestamp >= parseInt(from));
+  if (to)          log = log.filter(e => e.timestamp <= parseInt(to));
+  res.json({ logs: log, total: log.length });
+});
+
+app.get("/scan-log-stats", (req, res) => {
+  const log = purgeScanLog(readScanLog());
+  const today = new Date(); today.setHours(0,0,0,0);
+  const todayLog = log.filter(e => e.timestamp >= today.getTime());
+  const stats = {
+    confirmed: todayLog.filter(e => e.action === "confirmed").length,
+    manual:    todayLog.filter(e => e.action === "manual").length,
+    not_found: todayLog.filter(e => e.action === "not_found").length,
+    users:     [...new Set(todayLog.map(e => e.initials))],
+  };
+  res.json(stats);
+});
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+app.get("/dashboard", (req, res) => {
+  const fp = path.join(__dirname, "dashboard.html");
+  if (!fs.existsSync(fp)) return res.status(404).send("dashboard.html not found — deploy it alongside server.js");
+  res.sendFile(fp);
 });
 
 app.get("/", (req, res) => res.json({ status: "ok", version: "4.0-rooms" }));
