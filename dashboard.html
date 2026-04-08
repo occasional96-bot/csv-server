@@ -181,6 +181,23 @@ a{color:inherit;text-decoration:none}
 .big-sync-btn{width:100%;background:#29B6F6;border:none;border-radius:10px;padding:14px;font-size:14px;font-weight:800;color:#080C14;cursor:pointer;margin-bottom:12px;letter-spacing:0.3px;transition:opacity 0.15s}
 .big-sync-btn:hover{opacity:0.85}
 .info-bar2{background:#29B6F610;border:1px solid #29B6F625;border-radius:10px;padding:10px 14px;display:flex;align-items:flex-start;gap:10px;margin-bottom:20px;font-size:11px;color:#29B6F6;line-height:1.5}
+.boards-page{display:none}
+.boards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:20px}
+.board-card{background:#0C1420;border:1px solid #1A2740;border-radius:14px;padding:16px;position:relative;overflow:hidden}
+.board-card-bar{position:absolute;top:0;left:0;right:0;height:3px;background:#00E676}
+.board-name{font-size:14px;font-weight:800;color:#C8D8EC;margin-bottom:3px}
+.board-code{font-size:10px;color:#2A3D55;font-family:monospace;margin-bottom:12px}
+.board-members{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.member-chip{display:flex;align-items:center;gap:6px;background:#080C14;border-radius:8px;padding:5px 10px;border:1px solid #1A2740}
+.member-avatar{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;flex-shrink:0}
+.member-label{font-size:11px;font-weight:700;color:#8BA3BE}
+.member-online{width:5px;height:5px;border-radius:50%;background:#00E676;flex-shrink:0}
+.member-host{font-size:8px;color:#FFB300;font-weight:800;margin-left:2px}
+.board-footer{display:flex;align-items:center;justify-content:space-between;margin-top:4px}
+.board-count{font-size:10px;color:#2A3D55}
+.board-age{font-size:10px;color:#2A3D55}
+.no-boards{background:#0C1420;border:1px solid #1A2740;border-radius:14px;padding:48px;text-align:center;color:#2A3D55;font-size:13px}
+.boards-sub{font-size:10px;color:#2A3D55;margin-bottom:16px}
 
 /* ── Responsive ── */
 @media(max-width:900px){
@@ -213,6 +230,10 @@ a{color:inherit;text-decoration:none}
     <div class="nav-item" onclick="showPage('paths')" id="nav-paths">
       <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5" stroke="#8BA3BE" stroke-width="1.5"/><path d="M8 5v3l2 2" stroke="#8BA3BE" stroke-width="1.5" stroke-linecap="round"/></svg>
       Saved Paths
+    </div>
+    <div class="nav-item" onclick="showPage('boards')" id="nav-boards">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="#8BA3BE" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="#8BA3BE" stroke-width="1.5"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="#8BA3BE" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="#8BA3BE" stroke-width="1.5"/></svg>
+      Focus Boards
     </div>
     <div class="sidebar-bottom">
       <div class="server-status">
@@ -479,12 +500,24 @@ a{color:inherit;text-decoration:none}
   </div><!-- /main -->
 </div><!-- /shell -->
 
+<!-- BOARDS PAGE (injected into main on showPage) -->
+<template id="tpl-boards">
+<div class="topbar">
+  <div><div class="page-title">Live Focus Boards</div><div class="page-sub boards-sub" id="boards-sub">Checking for active boards...</div></div>
+  <div class="topbar-right">
+    <div class="live-badge"><div class="pulse"></div>Live</div>
+  </div>
+</div>
+<div class="boards-grid" id="boards-grid"><div class="no-boards">Loading boards...</div></div>
+</template>
+
 <script>
-const SERVER = location.origin;
+const SERVER = (location.protocol === "file:" || location.hostname === "localhost") ? "https://csv-server-production-efc6.up.railway.app" : location.origin;
 const WS_URL = SERVER.replace(/^http/, "ws");
 
 // ── State ──────────────────────────────────────────────────────────────────
 let allLogs = [];
+let allInvoices = [];
 let filters = { brand:"", user:"", invoice:"", part:"", date:"today" };
 let hiddenActions = new Set();
 let pathFiles = { kia: null, hy: null, inv: null };
@@ -501,13 +534,32 @@ function getDateFrom(){
 }
 
 // ── Pages ─────────────────────────────────────────────────────────────────
+let boardsInterval = null;
 function showPage(p){
-  ["log","import","paths"].forEach(x=>{
-    document.getElementById("page-"+x).style.display = x===p ? "block" : "none";
-    document.getElementById("nav-"+x).classList.toggle("active", x===p);
+  ["log","import","paths","boards"].forEach(x=>{
+    const el = document.getElementById("page-"+x);
+    if(el) el.style.display = x===p ? "block" : "none";
+    const nav = document.getElementById("nav-"+x);
+    if(nav) nav.classList.toggle("active", x===p);
   });
   if(p==="import") loadFileMeta();
   if(p==="paths") loadPathsUI();
+  if(p==="boards"){
+    let pg = document.getElementById("page-boards");
+    if(!pg){
+      pg = document.createElement("div");
+      pg.id = "page-boards";
+      pg.className = "boards-page";
+      pg.innerHTML = document.getElementById("tpl-boards").innerHTML;
+      document.querySelector(".main").appendChild(pg);
+    }
+    pg.style.display = "block";
+    loadBoards();
+    if(boardsInterval) clearInterval(boardsInterval);
+    boardsInterval = setInterval(loadBoards, 5000);
+  } else {
+    if(boardsInterval){ clearInterval(boardsInterval); boardsInterval=null; }
+  }
 }
 
 // ── WebSocket ─────────────────────────────────────────────────────────────
@@ -522,7 +574,7 @@ function connectWS(){
         const msg = JSON.parse(e.data);
         if(msg.type==="scan_log_update"){
           allLogs.unshift(msg.entry);
-          renderTable(true);
+          loadInvoices().then(()=>renderTable(true));
           loadStats();
         }
       }catch{}
@@ -552,6 +604,44 @@ async function loadStats(){
   }catch{}
 }
 
+async function loadInvoices(){
+  try{
+    const r = await fetch(SERVER+"/invoices");
+    const d = await r.json();
+    allInvoices = d.invoices || [];
+  }catch(e){ allInvoices = []; }
+}
+
+function getUnscannedRows(){
+  if(hiddenActions.has("unscanned")) return [];
+  const from = getDateFrom();
+  // Build set of scanned part keys (invoiceId+partNumber) for today
+  const scanned = new Set(
+    allLogs
+      .filter(e => e.timestamp >= from && ["confirmed","manual"].includes(e.action))
+      .map(e => e.invoiceId+"||"+e.partNumber)
+  );
+  const rows = [];
+  for(const inv of allInvoices){
+    if(filters.brand && inv.brand !== filters.brand) continue;
+    if(filters.invoice && !inv.id.includes(filters.invoice.toUpperCase())) continue;
+    for(const p of (inv.parts||[])){
+      const key = inv.id+"||"+p.partNumber;
+      if(!scanned.has(key)){
+        rows.push({
+          action:"unscanned", invoiceId:inv.id, brand:inv.brand,
+          partNumber:p.partNumber, description:p.description||"",
+          qty:p.qty, lineNo:p.lineNo, timestamp:0,
+          initials:"—", color:"#3A3A5A", note:"",
+        });
+      }
+    }
+  }
+  // Filter by part number search
+  if(filters.part) return rows.filter(r=>r.partNumber.includes(filters.part.toUpperCase()));
+  return rows;
+}
+
 function populateUserFilter(){
   const users = [...new Set(allLogs.map(e=>e.initials))].sort();
   const sel = document.getElementById("f-user");
@@ -564,6 +654,7 @@ function populateUserFilter(){
 function getFiltered(){
   const from = getDateFrom();
   return allLogs.filter(e=>{
+    if(e.action==="unscanned") return false; // handled by getUnscannedRows
     if(e.timestamp < from) return false;
     if(filters.brand && e.brand !== filters.brand) return false;
     if(filters.user && e.initials !== filters.user) return false;
@@ -576,7 +667,7 @@ function getFiltered(){
 }
 
 function renderTable(flashFirst){
-  const rows = getFiltered();
+  const rows = [...getFiltered(), ...getUnscannedRows()];
   const tbody = document.getElementById("log-tbody");
   if(!rows.length){ tbody.innerHTML='<div class="empty-state">No events match your filters</div>'; document.getElementById("footer-txt").textContent="No results"; return; }
 
@@ -772,6 +863,47 @@ async function syncNow(){
     loadFileMeta();
   } else {
     alert("No files selected via Browse. Go to Import page to upload files directly, or use Browse on each path to select the file first.");
+  }
+}
+
+// ── Focus Boards ──────────────────────────────────────────────────────────
+async function loadBoards(){
+  try{
+    const r = await fetch(SERVER+"/rooms");
+    const d = await r.json();
+    const rooms = d.rooms || [];
+    const grid = document.getElementById("boards-grid");
+    const sub = document.getElementById("boards-sub");
+    if(!grid) return;
+    if(sub) sub.textContent = rooms.length
+      ? rooms.length+" active board"+(rooms.length!==1?"s":"")+" · refreshes every 5s"
+      : "No active boards right now · refreshes every 5s";
+    if(!rooms.length){ grid.innerHTML='<div class="no-boards">No active Focus Boards right now</div>'; return; }
+    grid.innerHTML = rooms.map(room=>{
+      const colors=["#00E676","#29B6F6","#FFB300","#FF6D00","#E040FB","#F44336","#00BCD4","#CDDC39"];
+      const members = (room.memberInitials||[]).map((m,i)=>{
+        const isHost = m.id===room.hostId;
+        const col = m.color || colors[i%colors.length];
+        return `<div class="member-chip">
+          <div class="member-avatar" style="background:${col}20;border:1.5px solid ${col}40;color:${col}">${m.initials}</div>
+          <span class="member-label">${m.initials}${isHost?'<span class="member-host"> HOST</span>':''}</span>
+          <div class="member-online"></div>
+        </div>`;
+      }).join("");
+      const hostColor = room.hostColor||"#00E676";
+      return `<div class="board-card">
+        <div class="board-card-bar" style="background:${hostColor}"></div>
+        <div class="board-name">${room.roomName||"Unnamed Board"}</div>
+        <div class="board-code">${room.roomId}</div>
+        <div class="board-members">${members}</div>
+        <div class="board-footer">
+          <div class="board-count">${room.memberCount} member${room.memberCount!==1?"s":""}</div>
+        </div>
+      </div>`;
+    }).join("");
+  }catch(e){
+    const grid=document.getElementById("boards-grid");
+    if(grid) grid.innerHTML='<div class="no-boards">Could not load boards — is the server running?</div>';
   }
 }
 

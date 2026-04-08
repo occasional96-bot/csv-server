@@ -74,6 +74,24 @@ const saveScanLog = (log) => {
 };
 const purgeScanLog = (log) => log.filter(e => Date.now() - e.timestamp < FOURTEEN_DAYS);
 
+// ── Invoice store ────────────────────────────────────────────────────────────
+const INVOICES_FILE = path.join(__dirname, "invoices.json");
+const INVOICES_TMP  = path.join(__dirname, "invoices.tmp.json");
+
+const readInvoices = () => {
+  try { return JSON.parse(fs.readFileSync(INVOICES_FILE, "utf8")); } catch { return []; }
+};
+const saveInvoices = (list) => {
+  try {
+    fs.writeFileSync(INVOICES_TMP, JSON.stringify(list, null, 2));
+    fs.renameSync(INVOICES_TMP, INVOICES_FILE);
+  } catch(e) { console.error("saveInvoices error:", e); }
+};
+const purgeInvoices = (list) => {
+  const midnight = new Date(); midnight.setHours(0,0,0,0);
+  return list.filter(inv => inv.savedAt >= midnight.getTime());
+};
+
 // ── WebSocket clients map: ws → { id, initials, color, name, roomId } ───────
 const clients = new Map(); // ws → clientInfo
 
@@ -607,12 +625,8 @@ app.get("/room/:roomId/updates", (req, res) => {
 
 // ── Scan log endpoints ────────────────────────────────────────────────────────
 app.post("/log-scan", (req, res) => {
-  console.log("[log-scan] received:", JSON.stringify(req.body));
   const { initials, color, invoiceId, brand, partNumber, description, action, note } = req.body;
-  if (!initials || !invoiceId || !partNumber || !action) {
-    console.log("[log-scan] REJECTED missing fields:", { initials, invoiceId, partNumber, action });
-    return res.status(400).json({ error: "Missing fields" });
-  }
+  if (!initials || !invoiceId || !partNumber || !action) return res.status(400).json({ error: "Missing fields" });
   let log = purgeScanLog(readScanLog());
   const entry = {
     id: Math.random().toString(36).slice(2, 10).toUpperCase(),
@@ -656,6 +670,43 @@ app.get("/scan-log-stats", (req, res) => {
     users:     [...new Set(todayLog.map(e => e.initials))],
   };
   res.json(stats);
+});
+
+// ── Invoice sync endpoints ───────────────────────────────────────────────────
+app.post("/sync-invoices", (req, res) => {
+  const { invoices } = req.body;
+  if (!Array.isArray(invoices)) return res.status(400).json({ error: "invoices must be array" });
+  let stored = purgeInvoices(readInvoices());
+  const now = Date.now();
+  invoices.forEach(inv => {
+    const existing = stored.findIndex(s => s.id === inv.id);
+    const entry = {
+      id: inv.id,
+      orderRef: inv.orderRef || "",
+      brand: inv.id.startsWith("L") ? "KIA" : inv.id.startsWith("F") ? "HY" : "?",
+      savedAt: now,
+      parts: (inv.parts || []).map(p => ({
+        partNumber: p.partNumber,
+        description: p.description || "",
+        qty: p.qty || 1,
+        lineNo: p.lineNo || "0",
+      })),
+    };
+    if (existing === -1) stored.push(entry);
+    else stored[existing] = entry;
+  });
+  saveInvoices(stored);
+  console.log(\`[sync-invoices] stored \${invoices.length} invoices. Total: \${stored.length}\`);
+  res.json({ ok: true, stored: stored.length });
+});
+
+app.get("/invoices", (req, res) => {
+  const list = purgeInvoices(readInvoices());
+  const { brand, invoiceId } = req.query;
+  let result = list;
+  if (brand) result = result.filter(i => i.brand === brand);
+  if (invoiceId) result = result.filter(i => i.id.includes(invoiceId.toUpperCase()));
+  res.json({ invoices: result, total: result.length });
 });
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
