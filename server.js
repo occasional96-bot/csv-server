@@ -9,19 +9,21 @@ const app    = express();
 const server = http.createServer(app);
 const wss    = new WebSocketServer({ server });
 
-const PORT   = process.env.PORT || 3000;
-const UPLOAD = path.join(__dirname, "uploads");
-const META   = path.join(__dirname, "meta.json");
+const PORT      = process.env.PORT || 3000;
+const DATA_DIR  = fs.existsSync("/data") ? "/data" : __dirname;
+const UPLOAD    = path.join(DATA_DIR, "uploads");
+const META      = path.join(DATA_DIR, "meta.json");
 
-if (!fs.existsSync(UPLOAD)) fs.mkdirSync(UPLOAD);
+if (!fs.existsSync(UPLOAD)) fs.mkdirSync(UPLOAD, { recursive: true });
+console.log("[storage] using data dir:", DATA_DIR);
 
 const readMeta  = () => { try { return JSON.parse(fs.readFileSync(META, "utf8")); } catch { return {}; } };
 const writeMeta = (data) => fs.writeFileSync(META, JSON.stringify(data, null, 2));
 
 // ── Board rooms ─────────────────────────────────────────────────────────────
 // rooms[roomId] = { name, hostId, members: [{ id, initials, color, name, lastSeen }], invoices: {...}, focusList: [], pinnedIds: [], createdAt }
-const ROOMS_FILE = path.join(__dirname, "rooms.json");
-const ROOMS_TMP  = path.join(__dirname, "rooms.tmp.json");
+const ROOMS_FILE = path.join(DATA_DIR, "rooms.json");
+const ROOMS_TMP  = path.join(DATA_DIR, "rooms.tmp.json");
 const readRooms  = () => {
   // Try main file first, then temp (in case of interrupted write)
   for (const f of [ROOMS_FILE, ROOMS_TMP]) {
@@ -59,8 +61,8 @@ function cleanRooms() {
 setInterval(cleanRooms, 60 * 1000);
 
 // ── Scan log ──────────────────────────────────────────────────────────────────
-const SCANLOG_FILE = path.join(__dirname, "scanlog.json");
-const SCANLOG_TMP  = path.join(__dirname, "scanlog.tmp.json");
+const SCANLOG_FILE = path.join(DATA_DIR, "scanlog.json");
+const SCANLOG_TMP  = path.join(DATA_DIR, "scanlog.tmp.json");
 const FOURTEEN_DAYS = 14 * 24 * 60 * 60 * 1000;
 
 const readScanLog = () => {
@@ -75,8 +77,8 @@ const saveScanLog = (log) => {
 const purgeScanLog = (log) => log.filter(e => Date.now() - e.timestamp < FOURTEEN_DAYS);
 
 // ── Invoice store ────────────────────────────────────────────────────────────
-const INVOICES_FILE = path.join(__dirname, "invoices.json");
-const INVOICES_TMP  = path.join(__dirname, "invoices.tmp.json");
+const INVOICES_FILE = path.join(DATA_DIR, "invoices.json");
+const INVOICES_TMP  = path.join(DATA_DIR, "invoices.tmp.json");
 
 const readInvoices = () => {
   try { return JSON.parse(fs.readFileSync(INVOICES_FILE, "utf8")); } catch { return []; }
