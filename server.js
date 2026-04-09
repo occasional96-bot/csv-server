@@ -543,7 +543,10 @@ app.use((req, res, next) => {
 
 const storage = multer.diskStorage({
   destination: (_, __, cb) => cb(null, UPLOAD),
-  filename:    (_, file, cb) => cb(null, file.originalname),
+  filename:    (_, file, cb) => {
+    const name = file.originalname.replace(/^04E-INVOICE-SCAN-APP/i, "04-INVOICE-SCAN-APP");
+    cb(null, name);
+  },
 });
 const upload = multer({ storage });
 
