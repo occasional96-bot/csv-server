@@ -56,9 +56,11 @@ a{color:inherit;text-decoration:none}
 
 /* ── Filters ── */
 .filters{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
-.filter{background:#0C1420;border:1px solid #1A2740;border-radius:10px;padding:9px 12px}
+.filter{background:#0C1420;border:1px solid #243650;border-radius:10px;padding:9px 12px;transition:border-color 0.15s}
+.filter:focus-within{border-color:#29B6F660}
 .filter-label{font-size:9px;color:#364D66;font-weight:700;letter-spacing:1.5px;margin-bottom:3px}
-.filter select,.filter input{width:100%;background:transparent;border:none;color:#5A7A9A;font-size:12px;font-weight:600;outline:none;font-family:inherit;cursor:pointer}
+.filter select,.filter input{width:100%;background:transparent;border:none;color:#C8D8EC;font-size:12px;font-weight:500;outline:none;font-family:inherit;cursor:pointer}
+.filter input::placeholder{color:#2A4060;font-weight:400;font-style:italic}
 .filter select option{background:#0C1420;color:#EDF2FF}
 
 /* ── Toggles ── */
@@ -227,10 +229,6 @@ a{color:inherit;text-decoration:none}
       <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 7l3 3 3-3" stroke="#8BA3BE" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 12h10" stroke="#8BA3BE" stroke-width="1.5" stroke-linecap="round"/></svg>
       Import CSV
     </div>
-    <div class="nav-item" onclick="showPage('paths')" id="nav-paths">
-      <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5" stroke="#8BA3BE" stroke-width="1.5"/><path d="M8 5v3l2 2" stroke="#8BA3BE" stroke-width="1.5" stroke-linecap="round"/></svg>
-      Saved Paths
-    </div>
     <div class="nav-item" onclick="showPage('boards')" id="nav-boards">
       <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="#8BA3BE" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="#8BA3BE" stroke-width="1.5"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="#8BA3BE" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="#8BA3BE" stroke-width="1.5"/></svg>
       Focus Boards
@@ -259,77 +257,28 @@ a{color:inherit;text-decoration:none}
         </div>
       </div>
 
-      <div class="stats">
-        <div class="stat" onclick="toggleFilter('confirmed')">
-          <div class="stat-bar" style="background:#00E676"></div>
-          <div class="stat-label">CONFIRMED</div>
-          <div class="stat-val" id="stat-confirmed" style="color:#00E676">—</div>
-          <div class="stat-sub">parts scanned</div>
-        </div>
-        <div class="stat" onclick="toggleFilter('manual')">
-          <div class="stat-bar" style="background:#FFB300"></div>
-          <div class="stat-label">MANUAL</div>
-          <div class="stat-val" id="stat-manual" style="color:#FFB300">—</div>
-          <div class="stat-sub">overrides</div>
-        </div>
-        <div class="stat" onclick="toggleFilter('not_found')">
-          <div class="stat-bar" style="background:#F44336"></div>
-          <div class="stat-label">NOT FOUND</div>
-          <div class="stat-val" id="stat-notfound" style="color:#F44336">—</div>
-          <div class="stat-sub">unmatched</div>
-        </div>
-        <div class="stat">
-          <div class="stat-bar" style="background:#29B6F6"></div>
-          <div class="stat-label">ACTIVE USERS</div>
-          <div class="stat-val" id="stat-users" style="color:#29B6F6">—</div>
-          <div class="stat-sub">today</div>
-        </div>
-      </div>
-
-      <div class="brand-tabs">
-        <div class="tab t-all active" onclick="setBrand('')">All brands</div>
-        <div class="tab t-kia" onclick="setBrand('KIA')">KIA · L-invoices</div>
-        <div class="tab t-hy" onclick="setBrand('HY')">Hyundai · F-invoices</div>
-      </div>
-
       <div class="filters">
         <div class="filter">
-          <div class="filter-label">USER</div>
-          <select id="f-user" onchange="applyFilters()"><option value="">All users</option></select>
+          <div class="filter-label">INVOICE</div>
+          <input id="f-invoice" placeholder="e.g. L12345" oninput="applyFilters()" />
         </div>
         <div class="filter">
-          <div class="filter-label">INVOICE</div>
-          <input id="f-invoice" placeholder="Invoice number..." oninput="applyFilters()" />
+          <div class="filter-label">PART NUMBER</div>
+          <input id="f-part" placeholder="e.g. 123456" oninput="applyFilters()" />
         </div>
         <div class="filter">
           <div class="filter-label">DATE RANGE</div>
           <select id="f-date" onchange="applyFilters()">
             <option value="today">Today</option>
+            <option value="yesterday">Yesterday</option>
             <option value="week">Last 7 days</option>
             <option value="fortnight">Last 14 days</option>
           </select>
         </div>
         <div class="filter">
-          <div class="filter-label">PART NUMBER</div>
-          <input id="f-part" placeholder="Search..." oninput="applyFilters()" />
+          <div class="filter-label">USER</div>
+          <select id="f-user" onchange="applyFilters()"><option value="">All users</option></select>
         </div>
-      </div>
-
-      <div class="toggles">
-        <span class="toggle-label">SHOW</span>
-        <div class="toggle on-confirmed" id="tog-confirmed" onclick="toggleAction('confirmed')">
-          <span class="toggle-dot" style="background:#00E676"></span>Confirmed
-        </div>
-        <div class="toggle on-manual" id="tog-manual" onclick="toggleAction('manual')">
-          <span class="toggle-dot" style="background:#FFB300"></span>Manual
-        </div>
-        <div class="toggle on-not_found" id="tog-not_found" onclick="toggleAction('not_found')">
-          <span class="toggle-dot" style="background:#F44336"></span>Not found
-        </div>
-        <div class="toggle on-unscanned" id="tog-unscanned" onclick="toggleAction('unscanned')">
-          <span class="toggle-dot" style="background:#CE93D8"></span>Unscanned
-        </div>
-        <div class="export-disc" onclick="exportDiscrepancy()">Export Discrepancy Report</div>
       </div>
 
       <div class="table-wrap">
@@ -349,7 +298,6 @@ a{color:inherit;text-decoration:none}
 
       <div class="footer-bar">
         <div class="footer-txt" id="footer-txt">—</div>
-        <div class="export-csv-btn" onclick="exportCSV()">Export CSV</div>
       </div>
     </div>
 
@@ -360,52 +308,6 @@ a{color:inherit;text-decoration:none}
           <div class="page-title">Import CSV</div>
           <div class="page-sub">Upload files directly to Railway — all devices update instantly</div>
         </div>
-      </div>
-
-      <div class="section-label">DRAG &amp; DROP OR CLICK TO UPLOAD</div>
-      <div class="import-grid">
-        <div class="drop-zone" id="dz-kia" ondragover="dzDrag(event,'kia')" ondragleave="dzLeave('kia')" ondrop="dzDrop(event,'kia')" onclick="document.getElementById('fi-kia').click()">
-          <input type="file" id="fi-kia" class="dz-input" accept=".csv" onchange="dzFile(this,'kia')" />
-          <div class="dz-icon" style="background:#29B6F615;border:1px solid #29B6F630">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 14V4h6l4 4v6H4z" stroke="#29B6F6" stroke-width="1.5" fill="none" stroke-linejoin="round"/><path d="M10 4v4h4" stroke="#29B6F6" stroke-width="1.5" fill="none"/><path d="M9 12V8m-2 2l2-2 2 2" stroke="#29B6F6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </div>
-          <div class="dz-title" style="color:#29B6F6">KIA Parts</div>
-          <div class="dz-sub" id="dz-kia-sub">stdpartski.csv<br>Drag &amp; drop or tap</div>
-          <div class="dz-btn dz-btn-kia">Browse file</div>
-        </div>
-        <div class="drop-zone" id="dz-hy" ondragover="dzDrag(event,'hy')" ondragleave="dzLeave('hy')" ondrop="dzDrop(event,'hy')" onclick="document.getElementById('fi-hy').click()">
-          <input type="file" id="fi-hy" class="dz-input" accept=".csv" onchange="dzFile(this,'hy')" />
-          <div class="dz-icon" style="background:#FFB30015;border:1px solid #FFB30030">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 14V4h6l4 4v6H4z" stroke="#FFB300" stroke-width="1.5" fill="none" stroke-linejoin="round"/><path d="M10 4v4h4" stroke="#FFB300" stroke-width="1.5" fill="none"/><path d="M9 12V8m-2 2l2-2 2 2" stroke="#FFB300" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </div>
-          <div class="dz-title" style="color:#FFB300">Hyundai Parts</div>
-          <div class="dz-sub" id="dz-hy-sub">stdpartshy.csv<br>Drag &amp; drop or tap</div>
-          <div class="dz-btn dz-btn-hy">Browse file</div>
-        </div>
-        <div class="drop-zone" id="dz-inv" ondragover="dzDrag(event,'inv')" ondragleave="dzLeave('inv')" ondrop="dzDrop(event,'inv')" onclick="document.getElementById('fi-inv').click()">
-          <input type="file" id="fi-inv" class="dz-input" accept=".csv" onchange="dzFile(this,'inv')" />
-          <div class="dz-icon" style="background:#00E67610;border:1px solid #00E67625">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 14V4h6l4 4v6H4z" stroke="#00E676" stroke-width="1.5" fill="none" stroke-linejoin="round"/><path d="M10 4v4h4" stroke="#00E676" stroke-width="1.5" fill="none"/><path d="M9 12V8m-2 2l2-2 2 2" stroke="#00E676" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </div>
-          <div class="dz-title">Invoice Data</div>
-          <div class="dz-sub" id="dz-inv-sub">04-INVOICE-SCAN-APP_Data.csv<br>Drag &amp; drop or tap</div>
-          <div class="dz-btn dz-btn-inv">Browse file</div>
-        </div>
-        <div class="drop-zone" id="dz-inve" ondragover="dzDrag(event,'inve')" ondragleave="dzLeave('inve')" ondrop="dzDrop(event,'inve')" onclick="document.getElementById('fi-inve').click()">
-          <input type="file" id="fi-inve" class="dz-input" accept=".csv" onchange="dzFile(this,'inve')" />
-          <div class="dz-icon" style="background:#E040FB15;border:1px solid #E040FB30">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 14V4h6l4 4v6H4z" stroke="#E040FB" stroke-width="1.5" fill="none" stroke-linejoin="round"/><path d="M10 4v4h4" stroke="#E040FB" stroke-width="1.5" fill="none"/><path d="M9 12V8m-2 2l2-2 2 2" stroke="#E040FB" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </div>
-          <div class="dz-title" style="color:#E040FB">Invoice Data E</div>
-          <div class="dz-sub" id="dz-inve-sub">04E-INVOICE-SCAN-APP_Data.csv<br>Drag &amp; drop or tap</div>
-          <div class="dz-btn" style="border-color:#E040FB30;color:#E040FB">Browse file</div>
-        </div>
-      </div>
-
-      <div id="notify-upload" style="display:none" class="notify-bar">
-        <div class="pulse" style="width:8px;height:8px;border-radius:50%;background:#00E676;flex-shrink:0"></div>
-        <div class="notify-txt" id="notify-txt">Uploaded successfully</div>
-        <div class="notify-time" id="notify-time"></div>
       </div>
 
       <div class="section-label">SERVER STATUS</div>
@@ -427,107 +329,6 @@ a{color:inherit;text-decoration:none}
           <div class="status-right"><div class="file-size" id="size-inve"></div><div class="sbadge sb-unknown" id="sbadge-inve">Unknown</div></div>
         </div>
       </div>
-    </div>
-
-    <!-- ── PATHS PAGE ── -->
-    <div id="page-paths" class="paths-page">
-      <div class="topbar">
-        <div>
-          <div class="page-title">Saved Paths</div>
-          <div class="page-sub">Set once — one-click sync from your PC every time</div>
-        </div>
-      </div>
-
-      <div class="info-bar2">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0;margin-top:1px"><circle cx="7" cy="7" r="6" stroke="#29B6F6" stroke-width="1.2"/><path d="M7 6v4" stroke="#29B6F6" stroke-width="1.2" stroke-linecap="round"/><circle cx="7" cy="4.5" r="0.6" fill="#29B6F6"/></svg>
-        Paths are saved in your browser. Next time you open the dashboard, just hit "Restore &amp; Auto-Sync" — it re-reads all saved files and pushes to all devices in one click. First time: use Browse below to select each file.
-      </div>
-      <button id="restore-btn" onclick="restoreAndSync()" style="width:100%;padding:14px;background:#29B6F620;border:1px solid #29B6F640;border-radius:10px;color:#29B6F6;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:20px;letter-spacing:0.5px">Restore &amp; Auto-Sync</button>
-      </div>
-
-      <div class="section-label">FILE PATHS</div>
-
-      <div class="path-card">
-        <div class="path-header">
-          <div class="path-title-row"><div class="path-dot2" style="background:#29B6F6"></div><div class="path-name">KIA Parts</div></div>
-          <div class="pbadge" id="pbadge-kia">Not set</div>
-        </div>
-        <div class="path-input-row">
-          <input class="path-input" id="pi-kia" placeholder="C:\Users\kaine\Downloads\stdpartski.csv" oninput="savePaths()" />
-          <div class="browse-btn2" onclick="browseDirect('kia')">Browse</div>
-          <input type="file" id="pf-kia" class="dz-input" accept=".csv" onchange="pathBrowse(this,'kia')" />
-        </div>
-        <div class="path-meta" id="pmeta-kia">—</div>
-      </div>
-
-      <div class="path-card">
-        <div class="path-header">
-          <div class="path-title-row"><div class="path-dot2" style="background:#FFB300"></div><div class="path-name">Hyundai Parts</div></div>
-          <div class="pbadge" id="pbadge-hy">Not set</div>
-        </div>
-        <div class="path-input-row">
-          <input class="path-input" id="pi-hy" placeholder="C:\Users\kaine\Downloads\stdpartshy.csv" oninput="savePaths()" />
-          <div class="browse-btn2" onclick="browseDirect('hy')">Browse</div>
-          <input type="file" id="pf-hy" class="dz-input" accept=".csv" onchange="pathBrowse(this,'hy')" />
-        </div>
-        <div class="path-meta" id="pmeta-hy">—</div>
-      </div>
-
-      <div class="path-card">
-        <div class="path-header">
-          <div class="path-title-row"><div class="path-dot2" style="background:#00E676"></div><div class="path-name">Invoice Data</div></div>
-          <div class="pbadge" id="pbadge-inv">Not set</div>
-        </div>
-        <div class="path-input-row">
-          <input class="path-input" id="pi-inv" placeholder="C:\Users\kaine\Downloads\04-INVOICE-SCAN-APP_Data.csv" oninput="savePaths()" />
-          <div class="browse-btn2" onclick="browseDirect('inv')">Browse</div>
-          <input type="file" id="pf-inv" class="dz-input" accept=".csv" onchange="pathBrowse(this,'inv')" />
-        </div>
-        <div class="path-meta" id="pmeta-inv">—</div>
-      </div>
-
-      <div class="path-card">
-        <div class="path-header">
-          <div class="path-title-row"><div class="path-dot2" style="background:#E040FB"></div><div class="path-name">Invoice Data E</div></div>
-          <div class="pbadge" id="pbadge-inve">Not set</div>
-        </div>
-        <div class="path-input-row">
-          <input class="path-input" id="pi-inve" placeholder="C:\Users\kaine\Downloads\04E-INVOICE-SCAN-APP_Data.csv" oninput="savePaths()" />
-          <div class="browse-btn2" onclick="browseDirect('inve')">Browse</div>
-          <input type="file" id="pf-inve" class="dz-input" accept=".csv" onchange="pathBrowse(this,'inve')" />
-        </div>
-        <div class="path-meta" id="pmeta-inve">—</div>
-      </div>
-
-      <div class="section-label" style="margin-top:20px">SYNC STATUS</div>
-      <div class="sync-card">
-        <div class="sync-header">
-          <div><div class="sync-title">Sync from saved paths</div><div class="sync-sub">Reads latest files and pushes to Railway</div></div>
-          <div class="sync-now-btn" onclick="syncNow()">Sync now</div>
-        </div>
-        <div class="sync-row2">
-          <div><div class="sync-file">stdpartski.csv</div><div class="sync-path-txt" id="sp-kia">No path set</div></div>
-          <div class="sync-mod" id="sm-kia">—</div>
-          <div class="sync-action-badge sa-notset" id="sa-kia">Not set</div>
-        </div>
-        <div class="sync-row2">
-          <div><div class="sync-file">stdpartshy.csv</div><div class="sync-path-txt" id="sp-hy">No path set</div></div>
-          <div class="sync-mod" id="sm-hy">—</div>
-          <div class="sync-action-badge sa-notset" id="sa-hy">Not set</div>
-        </div>
-        <div class="sync-row2">
-          <div><div class="sync-file">04-INVOICE-SCAN-APP_Data.csv</div><div class="sync-path-txt" id="sp-inv">No path set</div></div>
-          <div class="sync-mod" id="sm-inv">—</div>
-          <div class="sync-action-badge sa-notset" id="sa-inv">Not set</div>
-        </div>
-        <div class="sync-row2">
-          <div><div class="sync-file">04E-INVOICE-SCAN-APP_Data.csv</div><div class="sync-path-txt" id="sp-inve">No path set</div></div>
-          <div class="sync-mod" id="sm-inve">—</div>
-          <div class="sync-action-badge sa-notset" id="sa-inve">Not set</div>
-        </div>
-      </div>
-
-      <button class="big-sync-btn" onclick="syncNow()">Sync &amp; Push to All Devices</button>
     </div>
 
   </div><!-- /main -->
@@ -562,6 +363,7 @@ function fmtDate(ts){ const d=new Date(ts); return d.toLocaleDateString("en-AU",
 function getDateFrom(){
   const now=Date.now();
   if(filters.date==="today"){ const t=new Date(); t.setHours(0,0,0,0); return t.getTime(); }
+  if(filters.date==="yesterday"){ const t=new Date(); t.setHours(0,0,0,0); return t.getTime()-86400000; }
   if(filters.date==="week") return now - 7*86400000;
   return now - 14*86400000;
 }
@@ -569,14 +371,14 @@ function getDateFrom(){
 // ── Pages ─────────────────────────────────────────────────────────────────
 let boardsInterval = null;
 function showPage(p){
-  ["log","import","paths","boards"].forEach(x=>{
+  ["log","import","boards"].forEach(x=>{
     const el = document.getElementById("page-"+x);
     if(el) el.style.display = x===p ? "block" : "none";
     const nav = document.getElementById("nav-"+x);
     if(nav) nav.classList.toggle("active", x===p);
   });
   if(p==="import") loadFileMeta();
-  if(p==="paths") loadPathsUI();
+
   if(p==="boards"){
     let pg = document.getElementById("page-boards");
     if(!pg){
@@ -1038,7 +840,7 @@ async function loadBoards(){
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────
-document.getElementById("log-date").textContent="KIA (L-invoices) & Hyundai (F-invoices)";
+
 const now=new Date();
 document.getElementById("date-chip").textContent=now.toLocaleDateString("en-AU",{weekday:"short",day:"2-digit",month:"short",year:"numeric"});
 
