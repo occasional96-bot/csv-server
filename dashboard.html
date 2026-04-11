@@ -154,35 +154,37 @@ a{color:inherit;text-decoration:none}
 
 /* ── Paths page ── */
 .paths-page{display:none}
-.path-card{background:#0C1420;border:1px solid #1A2740;border-radius:14px;padding:18px;margin-bottom:12px}
-.path-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.import-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.import-col{}
+.path-card{background:#0C1420;border:1px solid #1A2740;border-radius:10px;padding:10px 14px;margin-bottom:8px}
+.path-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
 .path-title-row{display:flex;align-items:center;gap:8px}
-.path-dot2{width:8px;height:8px;border-radius:50%}
-.path-name{font-size:13px;font-weight:800;color:#8BA3BE}
-.pbadge{font-size:9px;font-weight:800;border-radius:5px;padding:3px 8px}
+.path-dot2{width:7px;height:7px;border-radius:50%}
+.path-name{font-size:12px;font-weight:800;color:#8BA3BE}
+.pbadge{font-size:9px;font-weight:800;border-radius:5px;padding:2px 7px}
 .pb-set{background:#00E67615;color:#00E676;border:1px solid #00E67630}
 .pb-notset{background:#F4433615;color:#F44336;border:1px solid #F4433630}
-.path-input-row{display:flex;gap:8px;margin-bottom:8px}
-.path-input{flex:1;background:#080C14;border:1px solid #1E2D42;border-radius:8px;padding:9px 12px;color:#8BA3BE;font-size:11px;font-family:monospace;outline:none}
+.path-input-row{display:flex;gap:6px;margin-bottom:4px}
+.path-input{flex:1;background:#080C14;border:1px solid #1E2D42;border-radius:7px;padding:6px 10px;color:#8BA3BE;font-size:10px;font-family:monospace;outline:none}
 .path-input::placeholder{color:#7A9AB8}
-.browse-btn2{background:#131E2E;border:1px solid #1E2D42;border-radius:8px;padding:9px 14px;font-size:11px;font-weight:700;color:#8AAAC4;cursor:pointer;white-space:nowrap}
-.path-meta{font-size:11px;color:#7A9AB8}
-.sync-card{background:#0C1420;border:1px solid #1A2740;border-radius:12px;overflow:hidden;margin-bottom:20px}
-.sync-header{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #1A2740;background:#080C14}
-.sync-title{font-size:13px;font-weight:800;color:#8BA3BE}
-.sync-sub{font-size:11px;color:#7A9AB8;margin-top:2px}
-.sync-now-btn{background:#29B6F620;border:1px solid #29B6F640;border-radius:8px;padding:7px 14px;font-size:11px;font-weight:800;color:#29B6F6;cursor:pointer}
-.sync-row2{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:11px 16px;border-bottom:1px solid #0F1820}
+.browse-btn2{background:#131E2E;border:1px solid #1E2D42;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;color:#8AAAC4;cursor:pointer;white-space:nowrap}
+.path-meta{font-size:10px;color:#7A9AB8}
+.sync-card{background:#0C1420;border:1px solid #1A2740;border-radius:10px;overflow:hidden;margin-bottom:12px}
+.sync-header{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #1A2740;background:#080C14}
+.sync-title{font-size:12px;font-weight:800;color:#8BA3BE}
+.sync-sub{font-size:10px;color:#7A9AB8;margin-top:1px}
+.sync-now-btn{background:#29B6F620;border:1px solid #29B6F640;border-radius:7px;padding:5px 12px;font-size:11px;font-weight:800;color:#29B6F6;cursor:pointer}
+.sync-row2{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:8px 14px;border-bottom:1px solid #0F1820}
 .sync-row2:last-child{border-bottom:none}
 .sync-file{font-size:11px;font-weight:700;color:#8AAAC4;font-family:monospace}
-.sync-path-txt{font-size:11px;color:#7A9AB8;margin-top:2px;font-family:monospace;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sync-mod{font-size:11px;color:#7A9AB8;white-space:nowrap}
-.sync-action-badge{font-size:11px;font-weight:700;border-radius:6px;padding:4px 10px;white-space:nowrap}
+.sync-path-txt{font-size:10px;color:#7A9AB8;margin-top:1px;font-family:monospace;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sync-mod{font-size:10px;color:#7A9AB8;white-space:nowrap}
+.sync-action-badge{font-size:10px;font-weight:700;border-radius:6px;padding:3px 8px;white-space:nowrap}
 .sa-ready{background:#00E67615;color:#00E676;border:1px solid #00E67630}
 .sa-notset{background:#1A2740;color:#7A9AB8;border:1px solid #1A2740}
-.big-sync-btn{width:100%;background:#29B6F6;border:none;border-radius:10px;padding:14px;font-size:14px;font-weight:800;color:#080C14;cursor:pointer;margin-bottom:12px;letter-spacing:0.3px;transition:opacity 0.15s}
+.big-sync-btn{width:100%;background:#29B6F6;border:none;border-radius:10px;padding:11px;font-size:13px;font-weight:800;color:#080C14;cursor:pointer;margin-bottom:8px;letter-spacing:0.3px;transition:opacity 0.15s}
 .big-sync-btn:hover{opacity:0.85}
-.info-bar2{background:#29B6F610;border:1px solid #29B6F625;border-radius:10px;padding:10px 14px;display:flex;align-items:flex-start;gap:10px;margin-bottom:20px;font-size:11px;color:#29B6F6;line-height:1.5}
+.info-bar2{background:#29B6F610;border:1px solid #29B6F625;border-radius:8px;padding:8px 12px;display:flex;align-items:flex-start;gap:8px;margin-bottom:12px;font-size:10px;color:#29B6F6;line-height:1.5}
 .boards-page{display:none}
 .boards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:20px}
 .board-card{background:#0C1420;border:1px solid #1A2740;border-radius:14px;padding:16px;position:relative;overflow:hidden}
@@ -221,11 +223,11 @@ a{color:inherit;text-decoration:none}
       <div class="logo-title">Warehouse PRO</div>
       <div class="logo-sub">KIA &amp; Hyundai Dashboard</div>
     </div>
-    <div class="nav-item active" onclick="showPage('log')" id="nav-log">
+    <div class="nav-item" onclick="showPage('log')" id="nav-log">
       <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="2" rx="1" fill="#8BA3BE"/><rect x="2" y="7" width="8" height="2" rx="1" fill="#8BA3BE"/><rect x="2" y="12" width="10" height="2" rx="1" fill="#8BA3BE"/></svg>
       Scan Log
     </div>
-    <div class="nav-item" onclick="showPage('import')" id="nav-import">
+    <div class="nav-item active" onclick="showPage('import')" id="nav-import">
       <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 7l3 3 3-3" stroke="#8BA3BE" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 12h10" stroke="#8BA3BE" stroke-width="1.5" stroke-linecap="round"/></svg>
       Import CSV
     </div>
@@ -311,7 +313,7 @@ a{color:inherit;text-decoration:none}
       </div>
 
       <div class="section-label">SERVER STATUS</div>
-      <div class="status-card" id="server-status-card">
+      <div class="status-card" id="server-status-card" style="margin-bottom:16px">
         <div class="status-row">
           <div class="status-left"><div class="status-dot2" style="background:#29B6F6"></div><div><div class="status-name">stdpartski.csv</div><div class="status-meta" id="meta-kia">Checking...</div></div></div>
           <div class="status-right"><div class="file-size" id="size-kia"></div><div class="sbadge sb-unknown" id="sbadge-kia">Unknown</div></div>
@@ -330,94 +332,90 @@ a{color:inherit;text-decoration:none}
         </div>
       </div>
 
-      <div class="section-label" style="margin-top:20px">FILE PATHS</div>
-      <div class="info-bar2">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0;margin-top:1px"><circle cx="7" cy="7" r="6" stroke="#29B6F6" stroke-width="1.2"/><path d="M7 6v4" stroke="#29B6F6" stroke-width="1.2" stroke-linecap="round"/><circle cx="7" cy="4.5" r="0.6" fill="#29B6F6"/></svg>
-        Browse each file once — next time just hit Restore &amp; Auto-Sync to push all files in one click.
-      </div>
-      <button id="restore-btn" onclick="restoreAndSync()" style="width:100%;padding:14px;background:#29B6F620;border:1px solid #29B6F640;border-radius:10px;color:#29B6F6;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:20px;letter-spacing:0.5px">Restore &amp; Auto-Sync</button>
+      <div class="import-cols">
+        <div class="import-col">
+          <div class="section-label">FILE PATHS</div>
+          <div class="path-card">
+            <div class="path-header">
+              <div class="path-title-row"><div class="path-dot2" style="background:#29B6F6"></div><div class="path-name">KIA Parts</div></div>
+              <div class="pbadge" id="pbadge-kia">Not set</div>
+            </div>
+            <div class="path-input-row">
+              <input class="path-input" id="pi-kia" placeholder="stdpartski.csv" oninput="savePaths()" />
+              <div class="browse-btn2" onclick="browseDirect('kia')">Browse</div>
+              <input type="file" id="pf-kia" class="dz-input" accept=".csv" onchange="pathBrowse(this,'kia')" />
+            </div>
+            <div class="path-meta" id="pmeta-kia">—</div>
+          </div>
+          <div class="path-card">
+            <div class="path-header">
+              <div class="path-title-row"><div class="path-dot2" style="background:#FFB300"></div><div class="path-name">Hyundai Parts</div></div>
+              <div class="pbadge" id="pbadge-hy">Not set</div>
+            </div>
+            <div class="path-input-row">
+              <input class="path-input" id="pi-hy" placeholder="stdpartshy.csv" oninput="savePaths()" />
+              <div class="browse-btn2" onclick="browseDirect('hy')">Browse</div>
+              <input type="file" id="pf-hy" class="dz-input" accept=".csv" onchange="pathBrowse(this,'hy')" />
+            </div>
+            <div class="path-meta" id="pmeta-hy">—</div>
+          </div>
+          <div class="path-card">
+            <div class="path-header">
+              <div class="path-title-row"><div class="path-dot2" style="background:#00E676"></div><div class="path-name">Invoice Data</div></div>
+              <div class="pbadge" id="pbadge-inv">Not set</div>
+            </div>
+            <div class="path-input-row">
+              <input class="path-input" id="pi-inv" placeholder="04-INVOICE-SCAN-APP_Data.csv" oninput="savePaths()" />
+              <div class="browse-btn2" onclick="browseDirect('inv')">Browse</div>
+              <input type="file" id="pf-inv" class="dz-input" accept=".csv" onchange="pathBrowse(this,'inv')" />
+            </div>
+            <div class="path-meta" id="pmeta-inv">—</div>
+          </div>
+          <div class="path-card">
+            <div class="path-header">
+              <div class="path-title-row"><div class="path-dot2" style="background:#E040FB"></div><div class="path-name">Invoice Data E</div></div>
+              <div class="pbadge" id="pbadge-inve">Not set</div>
+            </div>
+            <div class="path-input-row">
+              <input class="path-input" id="pi-inve" placeholder="04E-INVOICE-SCAN-APP_Data.csv" oninput="savePaths()" />
+              <div class="browse-btn2" onclick="browseDirect('inve')">Browse</div>
+              <input type="file" id="pf-inve" class="dz-input" accept=".csv" onchange="pathBrowse(this,'inve')" />
+            </div>
+            <div class="path-meta" id="pmeta-inve">—</div>
+          </div>
+        </div>
 
-      <div class="path-card">
-        <div class="path-header">
-          <div class="path-title-row"><div class="path-dot2" style="background:#29B6F6"></div><div class="path-name">KIA Parts</div></div>
-          <div class="pbadge" id="pbadge-kia">Not set</div>
-        </div>
-        <div class="path-input-row">
-          <input class="path-input" id="pi-kia" placeholder="C:\Users\kaine\Downloads\stdpartski.csv" oninput="savePaths()" />
-          <div class="browse-btn2" onclick="browseDirect('kia')">Browse</div>
-          <input type="file" id="pf-kia" class="dz-input" accept=".csv" onchange="pathBrowse(this,'kia')" />
-        </div>
-        <div class="path-meta" id="pmeta-kia">—</div>
-      </div>
-
-      <div class="path-card">
-        <div class="path-header">
-          <div class="path-title-row"><div class="path-dot2" style="background:#FFB300"></div><div class="path-name">Hyundai Parts</div></div>
-          <div class="pbadge" id="pbadge-hy">Not set</div>
-        </div>
-        <div class="path-input-row">
-          <input class="path-input" id="pi-hy" placeholder="C:\Users\kaine\Downloads\stdpartshy.csv" oninput="savePaths()" />
-          <div class="browse-btn2" onclick="browseDirect('hy')">Browse</div>
-          <input type="file" id="pf-hy" class="dz-input" accept=".csv" onchange="pathBrowse(this,'hy')" />
-        </div>
-        <div class="path-meta" id="pmeta-hy">—</div>
-      </div>
-
-      <div class="path-card">
-        <div class="path-header">
-          <div class="path-title-row"><div class="path-dot2" style="background:#00E676"></div><div class="path-name">Invoice Data</div></div>
-          <div class="pbadge" id="pbadge-inv">Not set</div>
-        </div>
-        <div class="path-input-row">
-          <input class="path-input" id="pi-inv" placeholder="C:\Users\kaine\Downloads\04-INVOICE-SCAN-APP_Data.csv" oninput="savePaths()" />
-          <div class="browse-btn2" onclick="browseDirect('inv')">Browse</div>
-          <input type="file" id="pf-inv" class="dz-input" accept=".csv" onchange="pathBrowse(this,'inv')" />
-        </div>
-        <div class="path-meta" id="pmeta-inv">—</div>
-      </div>
-
-      <div class="path-card">
-        <div class="path-header">
-          <div class="path-title-row"><div class="path-dot2" style="background:#E040FB"></div><div class="path-name">Invoice Data E</div></div>
-          <div class="pbadge" id="pbadge-inve">Not set</div>
-        </div>
-        <div class="path-input-row">
-          <input class="path-input" id="pi-inve" placeholder="C:\Users\kaine\Downloads\04E-INVOICE-SCAN-APP_Data.csv" oninput="savePaths()" />
-          <div class="browse-btn2" onclick="browseDirect('inve')">Browse</div>
-          <input type="file" id="pf-inve" class="dz-input" accept=".csv" onchange="pathBrowse(this,'inve')" />
-        </div>
-        <div class="path-meta" id="pmeta-inve">—</div>
-      </div>
-
-      <div class="section-label" style="margin-top:20px">SYNC STATUS</div>
-      <div class="sync-card">
-        <div class="sync-header">
-          <div><div class="sync-title">Sync from saved paths</div><div class="sync-sub">Reads latest files and pushes to Railway</div></div>
-          <div class="sync-now-btn" onclick="syncNow()">Sync now</div>
-        </div>
-        <div class="sync-row2">
-          <div><div class="sync-file">stdpartski.csv</div><div class="sync-path-txt" id="sp-kia">No path set</div></div>
-          <div class="sync-mod" id="sm-kia">—</div>
-          <div class="sync-action-badge sa-notset" id="sa-kia">Not set</div>
-        </div>
-        <div class="sync-row2">
-          <div><div class="sync-file">stdpartshy.csv</div><div class="sync-path-txt" id="sp-hy">No path set</div></div>
-          <div class="sync-mod" id="sm-hy">—</div>
-          <div class="sync-action-badge sa-notset" id="sa-hy">Not set</div>
-        </div>
-        <div class="sync-row2">
-          <div><div class="sync-file">04-INVOICE-SCAN-APP_Data.csv</div><div class="sync-path-txt" id="sp-inv">No path set</div></div>
-          <div class="sync-mod" id="sm-inv">—</div>
-          <div class="sync-action-badge sa-notset" id="sa-inv">Not set</div>
-        </div>
-        <div class="sync-row2">
-          <div><div class="sync-file">04E-INVOICE-SCAN-APP_Data.csv</div><div class="sync-path-txt" id="sp-inve">No path set</div></div>
-          <div class="sync-mod" id="sm-inve">—</div>
-          <div class="sync-action-badge sa-notset" id="sa-inve">Not set</div>
+        <div class="import-col">
+          <div class="section-label">SYNC STATUS</div>
+          <div class="sync-card">
+            <div class="sync-header">
+              <div><div class="sync-title">Sync from saved paths</div><div class="sync-sub">Reads latest files and pushes to Railway</div></div>
+              <div class="sync-now-btn" onclick="syncNow()">Sync now</div>
+            </div>
+            <div class="sync-row2">
+              <div><div class="sync-file">stdpartski.csv</div><div class="sync-path-txt" id="sp-kia">No path set</div></div>
+              <div class="sync-mod" id="sm-kia">—</div>
+              <div class="sync-action-badge sa-notset" id="sa-kia">Not set</div>
+            </div>
+            <div class="sync-row2">
+              <div><div class="sync-file">stdpartshy.csv</div><div class="sync-path-txt" id="sp-hy">No path set</div></div>
+              <div class="sync-mod" id="sm-hy">—</div>
+              <div class="sync-action-badge sa-notset" id="sa-hy">Not set</div>
+            </div>
+            <div class="sync-row2">
+              <div><div class="sync-file">04-INVOICE-SCAN-APP_Data.csv</div><div class="sync-path-txt" id="sp-inv">No path set</div></div>
+              <div class="sync-mod" id="sm-inv">—</div>
+              <div class="sync-action-badge sa-notset" id="sa-inv">Not set</div>
+            </div>
+            <div class="sync-row2">
+              <div><div class="sync-file">04E-INVOICE-SCAN-APP_Data.csv</div><div class="sync-path-txt" id="sp-inve">No path set</div></div>
+              <div class="sync-mod" id="sm-inve">—</div>
+              <div class="sync-action-badge sa-notset" id="sa-inve">Not set</div>
+            </div>
+          </div>
+          <button class="big-sync-btn" onclick="syncNow()">Sync &amp; Push to All Devices</button>
         </div>
       </div>
-      <button class="big-sync-btn" onclick="syncNow()">Sync &amp; Push to All Devices</button>
-    </div>
 
   </div><!-- /main -->
 </div><!-- /shell -->
@@ -715,7 +713,10 @@ async function loadFileMeta(){
       const badge = document.getElementById("sbadge-"+ids[i]);
       if(d.uploadedAt){
         const age = Date.now()-d.uploadedAt;
-        const label = age<86400000 ? "Today "+new Date(d.uploadedAt).toLocaleTimeString("en-AU",{hour:"2-digit",minute:"2-digit"}) : fmtDate(d.uploadedAt);
+        const days = Math.floor(age/86400000);
+        const timeStr = new Date(d.uploadedAt).toLocaleTimeString("en-AU",{hour:"2-digit",minute:"2-digit"});
+        const dateStr = fmtDate(d.uploadedAt);
+        const label = age<86400000 ? "Today at "+timeStr : days===1 ? "Yesterday at "+timeStr : dateStr+" at "+timeStr+" ("+days+" days ago)";
         el.textContent="Last uploaded: "+label;
         badge.className="sbadge "+(age<86400000?"sb-live":"sb-outdated");
         badge.textContent=age<86400000?"Live":"Outdated";
@@ -837,38 +838,20 @@ async function browseDirect(k){
   }
 }
 
-async function restoreAndSync(){
-  const btn = document.getElementById("restore-btn");
-  btn.textContent="Restoring...";
-  btn.disabled=true;
-  let restored=0;
+async function syncNow(){
+  // First try to restore any saved file handles
   for(const k of ["kia","hy","inv","inve"]){
-    const handle = await loadHandle(k);
-    if(handle){
-      try{
-        const perm = await handle.queryPermission({mode:"read"});
-        const granted = perm==="granted" || await handle.requestPermission({mode:"read"})==="granted";
-        if(granted){
-          const file = await handle.getFile();
-          fileHandles[k]=handle; pathFiles[k]=file;
-          setPathUI(k, file.name, "✓ Restored — "+Math.round(file.size/1024)+" KB");
-          restored++;
-        }
-      }catch{}
+    if(!pathFiles[k]){
+      const handle = await loadHandle(k);
+      if(handle){
+        try{
+          const perm = await handle.queryPermission({mode:"read"});
+          const granted = perm==="granted" || await handle.requestPermission({mode:"read"})==="granted";
+          if(granted){ const file=await handle.getFile(); fileHandles[k]=handle; pathFiles[k]=file; setPathUI(k,file.name,"✓ Restored — "+Math.round(file.size/1024)+" KB"); }
+        }catch{}
+      }
     }
   }
-  if(restored>0){
-    btn.textContent="✓ Restored — syncing...";
-    await syncNow();
-    btn.textContent="✓ Done!";
-    setTimeout(()=>{ btn.textContent="Restore & Auto-Sync"; btn.disabled=false; },3000);
-  } else {
-    btn.textContent="No saved files — use Browse first";
-    setTimeout(()=>{ btn.textContent="Restore & Auto-Sync"; btn.disabled=false; },3000);
-  }
-}
-
-async function syncNow(){
   let uploaded=0;
   const keys=["kia","hy","inv","inve"];
   const filenames=["stdpartski.csv","stdpartshy.csv","04-INVOICE-SCAN-APP_Data.csv","04E-INVOICE-SCAN-APP_Data.csv"];
@@ -938,7 +921,7 @@ async function loadBoards(){
 const now=new Date();
 document.getElementById("date-chip").textContent=now.toLocaleDateString("en-AU",{weekday:"short",day:"2-digit",month:"short",year:"numeric"});
 
-showPage("log");
+showPage("import");
 setTimeout(connectWS, 800); // slight delay lets ping wake the server first
 loadLogs();
 loadStats();
