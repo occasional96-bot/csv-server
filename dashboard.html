@@ -838,15 +838,24 @@ function checkStaleWarning(k){
   if(!saved){ el.style.display="none"; return; }
   const now = new Date();
   const savedDate = new Date(saved);
-  if(now.toDateString()===savedDate.toDateString()){ el.style.display="none"; return; }
-  const diffDays = Math.floor((now-savedDate)/86400000);
-  const label = diffDays<=1 ? "YESTERDAY" : diffDays+" DAYS AGO";
-  const isRed = diffDays>=2;
+  const isToday = now.toDateString()===savedDate.toDateString();
   el.style.display="block";
-  el.style.background=isRed?"#F4433622":"#FFB30022";
-  el.style.borderColor=isRed?"#F44336":"#FFB300";
-  el.style.color=isRed?"#F44336":"#FFB300";
-  el.textContent="⚠ FILE PATH SAVED "+label+" — BROWSE TO UPDATE";
+  if(isToday){
+    const diffMins = Math.floor((now-savedDate)/60000);
+    const timeLabel = diffMins < 1 ? "just now" : diffMins < 60 ? diffMins+"m ago" : Math.floor(diffMins/60)+"h ago";
+    el.style.background="#00E67614";
+    el.style.borderColor="#00E67644";
+    el.style.color="#00E676";
+    el.textContent="✓ PATH SAVED TODAY — "+timeLabel;
+  } else {
+    const diffDays = Math.floor((now-savedDate)/86400000);
+    const label = diffDays<=1 ? "YESTERDAY" : diffDays+" DAYS AGO";
+    const isRed = diffDays>=2;
+    el.style.background=isRed?"#F4433622":"#FFB30022";
+    el.style.borderColor=isRed?"#F44336":"#FFB300";
+    el.style.color=isRed?"#F44336":"#FFB300";
+    el.textContent="⚠ FILE PATH SAVED "+label+" — BROWSE TO UPDATE";
+  }
 }
 
 async function pathBrowse(input,k){
