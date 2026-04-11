@@ -308,7 +308,7 @@ a{color:inherit;text-decoration:none}
       <div class="topbar">
         <div>
           <div class="page-title">Import CSV</div>
-          <div class="page-sub">Upload files directly to Railway — all devices update instantly</div>
+          <div class="page-sub">Upload files directly to server — all devices update instantly</div>
         </div>
       </div>
 
@@ -389,7 +389,7 @@ a{color:inherit;text-decoration:none}
           <div class="section-label">SYNC STATUS</div>
           <div class="sync-card">
             <div class="sync-header">
-              <div><div class="sync-title">Sync from saved paths</div><div class="sync-sub">Reads latest files and pushes to Railway</div></div>
+              <div><div class="sync-title">Sync from saved paths</div><div class="sync-sub">Reads latest files and pushes to server</div></div>
               <div class="sync-now-btn" onclick="syncNow()">Sync now</div>
             </div>
             <div class="sync-row2">
@@ -432,7 +432,7 @@ a{color:inherit;text-decoration:none}
 </template>
 
 <script>
-const SERVER = (location.protocol === "file:" || location.hostname === "localhost") ? "https://csv-server-production-efc6.up.railway.app" : location.origin;
+const SERVER = (location.protocol === "file:" || location.hostname === "localhost") ? "https://csv-server-production-efc6.up.server.app" : location.origin;
 const WS_URL = SERVER.replace(/^http/, "ws");
 
 // ── State ──────────────────────────────────────────────────────────────────
