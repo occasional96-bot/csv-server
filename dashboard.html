@@ -329,6 +329,94 @@ a{color:inherit;text-decoration:none}
           <div class="status-right"><div class="file-size" id="size-inve"></div><div class="sbadge sb-unknown" id="sbadge-inve">Unknown</div></div>
         </div>
       </div>
+
+      <div class="section-label" style="margin-top:20px">FILE PATHS</div>
+      <div class="info-bar2">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0;margin-top:1px"><circle cx="7" cy="7" r="6" stroke="#29B6F6" stroke-width="1.2"/><path d="M7 6v4" stroke="#29B6F6" stroke-width="1.2" stroke-linecap="round"/><circle cx="7" cy="4.5" r="0.6" fill="#29B6F6"/></svg>
+        Browse each file once — next time just hit Restore &amp; Auto-Sync to push all files in one click.
+      </div>
+      <button id="restore-btn" onclick="restoreAndSync()" style="width:100%;padding:14px;background:#29B6F620;border:1px solid #29B6F640;border-radius:10px;color:#29B6F6;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:20px;letter-spacing:0.5px">Restore &amp; Auto-Sync</button>
+
+      <div class="path-card">
+        <div class="path-header">
+          <div class="path-title-row"><div class="path-dot2" style="background:#29B6F6"></div><div class="path-name">KIA Parts</div></div>
+          <div class="pbadge" id="pbadge-kia">Not set</div>
+        </div>
+        <div class="path-input-row">
+          <input class="path-input" id="pi-kia" placeholder="C:\Users\kaine\Downloads\stdpartski.csv" oninput="savePaths()" />
+          <div class="browse-btn2" onclick="browseDirect('kia')">Browse</div>
+          <input type="file" id="pf-kia" class="dz-input" accept=".csv" onchange="pathBrowse(this,'kia')" />
+        </div>
+        <div class="path-meta" id="pmeta-kia">—</div>
+      </div>
+
+      <div class="path-card">
+        <div class="path-header">
+          <div class="path-title-row"><div class="path-dot2" style="background:#FFB300"></div><div class="path-name">Hyundai Parts</div></div>
+          <div class="pbadge" id="pbadge-hy">Not set</div>
+        </div>
+        <div class="path-input-row">
+          <input class="path-input" id="pi-hy" placeholder="C:\Users\kaine\Downloads\stdpartshy.csv" oninput="savePaths()" />
+          <div class="browse-btn2" onclick="browseDirect('hy')">Browse</div>
+          <input type="file" id="pf-hy" class="dz-input" accept=".csv" onchange="pathBrowse(this,'hy')" />
+        </div>
+        <div class="path-meta" id="pmeta-hy">—</div>
+      </div>
+
+      <div class="path-card">
+        <div class="path-header">
+          <div class="path-title-row"><div class="path-dot2" style="background:#00E676"></div><div class="path-name">Invoice Data</div></div>
+          <div class="pbadge" id="pbadge-inv">Not set</div>
+        </div>
+        <div class="path-input-row">
+          <input class="path-input" id="pi-inv" placeholder="C:\Users\kaine\Downloads\04-INVOICE-SCAN-APP_Data.csv" oninput="savePaths()" />
+          <div class="browse-btn2" onclick="browseDirect('inv')">Browse</div>
+          <input type="file" id="pf-inv" class="dz-input" accept=".csv" onchange="pathBrowse(this,'inv')" />
+        </div>
+        <div class="path-meta" id="pmeta-inv">—</div>
+      </div>
+
+      <div class="path-card">
+        <div class="path-header">
+          <div class="path-title-row"><div class="path-dot2" style="background:#E040FB"></div><div class="path-name">Invoice Data E</div></div>
+          <div class="pbadge" id="pbadge-inve">Not set</div>
+        </div>
+        <div class="path-input-row">
+          <input class="path-input" id="pi-inve" placeholder="C:\Users\kaine\Downloads\04E-INVOICE-SCAN-APP_Data.csv" oninput="savePaths()" />
+          <div class="browse-btn2" onclick="browseDirect('inve')">Browse</div>
+          <input type="file" id="pf-inve" class="dz-input" accept=".csv" onchange="pathBrowse(this,'inve')" />
+        </div>
+        <div class="path-meta" id="pmeta-inve">—</div>
+      </div>
+
+      <div class="section-label" style="margin-top:20px">SYNC STATUS</div>
+      <div class="sync-card">
+        <div class="sync-header">
+          <div><div class="sync-title">Sync from saved paths</div><div class="sync-sub">Reads latest files and pushes to Railway</div></div>
+          <div class="sync-now-btn" onclick="syncNow()">Sync now</div>
+        </div>
+        <div class="sync-row2">
+          <div><div class="sync-file">stdpartski.csv</div><div class="sync-path-txt" id="sp-kia">No path set</div></div>
+          <div class="sync-mod" id="sm-kia">—</div>
+          <div class="sync-action-badge sa-notset" id="sa-kia">Not set</div>
+        </div>
+        <div class="sync-row2">
+          <div><div class="sync-file">stdpartshy.csv</div><div class="sync-path-txt" id="sp-hy">No path set</div></div>
+          <div class="sync-mod" id="sm-hy">—</div>
+          <div class="sync-action-badge sa-notset" id="sa-hy">Not set</div>
+        </div>
+        <div class="sync-row2">
+          <div><div class="sync-file">04-INVOICE-SCAN-APP_Data.csv</div><div class="sync-path-txt" id="sp-inv">No path set</div></div>
+          <div class="sync-mod" id="sm-inv">—</div>
+          <div class="sync-action-badge sa-notset" id="sa-inv">Not set</div>
+        </div>
+        <div class="sync-row2">
+          <div><div class="sync-file">04E-INVOICE-SCAN-APP_Data.csv</div><div class="sync-path-txt" id="sp-inve">No path set</div></div>
+          <div class="sync-mod" id="sm-inve">—</div>
+          <div class="sync-action-badge sa-notset" id="sa-inve">Not set</div>
+        </div>
+      </div>
+      <button class="big-sync-btn" onclick="syncNow()">Sync &amp; Push to All Devices</button>
     </div>
 
   </div><!-- /main -->
@@ -354,7 +442,7 @@ let allLogs = [];
 let allInvoices = [];
 let filters = { brand:"", user:"", invoice:"", part:"", date:"today" };
 let hiddenActions = new Set();
-let pathFiles = { kia: null, hy: null, inv: null };
+let pathFiles = { kia: null, hy: null, inv: null, inve: null };
 let ws = null;
 
 // ── Date helpers ──────────────────────────────────────────────────────────
@@ -377,7 +465,7 @@ function showPage(p){
     const nav = document.getElementById("nav-"+x);
     if(nav) nav.classList.toggle("active", x===p);
   });
-  if(p==="import") loadFileMeta();
+  if(p==="import"){ loadFileMeta(); loadPathsUI(); }
 
   if(p==="boards"){
     let pg = document.getElementById("page-boards");
@@ -432,10 +520,10 @@ async function loadStats(){
   try{
     const r = await fetch(SERVER+"/scan-log-stats");
     const d = await r.json();
-    document.getElementById("stat-confirmed").textContent = d.confirmed ?? 0;
-    document.getElementById("stat-manual").textContent = d.manual ?? 0;
-    document.getElementById("stat-notfound").textContent = d.not_found ?? 0;
-    document.getElementById("stat-users").textContent = (d.users||[]).length;
+    const sc=document.getElementById("stat-confirmed"); if(sc) sc.textContent=d.confirmed??0;
+    const sm=document.getElementById("stat-manual");    if(sm) sm.textContent=d.manual??0;
+    const sn=document.getElementById("stat-notfound"); if(sn) sn.textContent=d.not_found??0;
+    const su=document.getElementById("stat-users");    if(su) su.textContent=(d.users||[]).length;
   }catch{}
 }
 
@@ -488,9 +576,12 @@ function populateUserFilter(){
 // ── Render table ──────────────────────────────────────────────────────────
 function getFiltered(){
   const from = getDateFrom();
+  const isYesterday = filters.date==="yesterday";
+  const todayStart = (()=>{ const t=new Date(); t.setHours(0,0,0,0); return t.getTime(); })();
   return allLogs.filter(e=>{
-    if(e.action==="unscanned") return false; // handled by getUnscannedRows
+    if(e.action==="unscanned") return false;
     if(e.timestamp < from) return false;
+    if(isYesterday && e.timestamp >= todayStart) return false;
     if(filters.brand && e.brand !== filters.brand) return false;
     if(filters.user && e.initials !== filters.user) return false;
     if(filters.invoice && !e.invoiceId.includes(filters.invoice.toUpperCase())) return false;
@@ -542,13 +633,14 @@ function setBrand(b){
   filters.brand = b;
   document.querySelectorAll(".brand-tabs .tab").forEach(t=>t.classList.remove("active"));
   const cls = b===""?"t-all":b==="KIA"?"t-kia":"t-hy";
-  document.querySelector(".tab."+cls).classList.add("active");
+  const el = document.querySelector(".tab."+cls);
+  if(el) el.classList.add("active");
   renderTable(false);
 }
 
 function toggleAction(action){
-  if(hiddenActions.has(action)){ hiddenActions.delete(action); document.getElementById("tog-"+action).className="toggle on-"+action; }
-  else{ hiddenActions.add(action); document.getElementById("tog-"+action).className="toggle off"; }
+  if(hiddenActions.has(action)){ hiddenActions.delete(action); const el=document.getElementById("tog-"+action); if(el) el.className="toggle on-"+action; }
+  else{ hiddenActions.add(action); const el=document.getElementById("tog-"+action); if(el) el.className="toggle off"; }
   renderTable(false);
 }
 
@@ -584,30 +676,32 @@ function dzDrop(e,id){ e.preventDefault(); dzLeave(id); const f=e.dataTransfer.f
 function dzFile(input,id){ if(input.files[0]) uploadFile(input.files[0],id); }
 
 async function uploadFile(file, hint){
-  const dz = document.getElementById("dz-"+hint);
-  dz.className="drop-zone dz-uploading";
-  document.getElementById("dz-"+hint+"-sub").textContent="Uploading...";
   try{
     const fd = new FormData();
     fd.append("file", file, file.name);
     const r = await fetch(SERVER+"/upload", { method:"POST", body:fd });
     const d = await r.json();
     if(d.filename){
-      dz.className="drop-zone dz-success";
-      document.getElementById("dz-"+hint+"-sub").textContent=file.name+" · Uploaded "+new Date().toLocaleTimeString("en-AU",{hour:"2-digit",minute:"2-digit"});
       showNotify("Uploaded "+file.name+" — pushing to all devices");
       loadFileMeta();
     } else { throw new Error(d.error||"Upload failed"); }
   }catch(e){
-    dz.className="drop-zone dz-error";
-    document.getElementById("dz-"+hint+"-sub").textContent="Upload failed — "+e.message;
+    alert("Upload failed — "+e.message);
   }
 }
 
 function showNotify(msg){
-  document.getElementById("notify-upload").style.display="flex";
-  document.getElementById("notify-txt").textContent=msg;
-  document.getElementById("notify-time").textContent=new Date().toLocaleTimeString("en-AU",{hour:"2-digit",minute:"2-digit"});
+  let bar = document.getElementById("notify-toast");
+  if(!bar){
+    bar = document.createElement("div");
+    bar.id="notify-toast";
+    bar.style.cssText="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#0C1420;border:1px solid #00E67640;border-radius:10px;padding:10px 18px;display:flex;align-items:center;gap:10px;z-index:9999;font-size:12px;color:#00E676;font-weight:600;box-shadow:0 4px 20px #00000060";
+    document.body.appendChild(bar);
+  }
+  bar.textContent=msg;
+  bar.style.opacity="1";
+  clearTimeout(bar._t);
+  bar._t=setTimeout(()=>{ bar.style.opacity="0"; },3000);
 }
 
 async function loadFileMeta(){
@@ -637,7 +731,7 @@ async function loadFileMeta(){
 // ── Saved paths (File System Access API — persists across sessions) ──────────
 const PATH_KEY    = "wh_pro_paths";
 const HANDLE_KEY  = "wh_pro_handles";
-let fileHandles   = { kia: null, hy: null, inv: null };
+let fileHandles   = { kia: null, hy: null, inv: null, inve: null };
 
 // IndexedDB helpers to store file handles
 function openHandleDB(){
