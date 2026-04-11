@@ -111,6 +111,10 @@ a{color:inherit;text-decoration:none}
 .b-manual{background:#FFB30020;color:#FFB300;border:1px solid #FFB30050}
 .b-not_found{background:#F4433620;color:#F44336;border:1px solid #F4433650}
 .b-unscanned{background:#9C27B015;color:#CE93D8;border:1px solid #9C27B035}
+.b-undo{background:#CE93D820;color:#CE93D8;border:1px solid #CE93D850}
+.b-short{background:#FFB30020;color:#FFB300;border:1px solid #FFB30050}
+.b-over{background:#29B6F620;color:#29B6F6;border:1px solid #29B6F650}
+.b-missing{background:#F4433620;color:#F44336;border:1px solid #F4433650}
 
 .empty-state{padding:48px;text-align:center;color:#7A9AB8;font-size:13px}
 .footer-bar{display:flex;align-items:center;justify-content:space-between;margin-top:12px}
@@ -169,6 +173,7 @@ a{color:inherit;text-decoration:none}
 .path-input::placeholder{color:#7A9AB8}
 .browse-btn2{background:#131E2E;border:1px solid #1E2D42;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;color:#8AAAC4;cursor:pointer;white-space:nowrap}
 .path-meta{font-size:10px;color:#7A9AB8}
+.path-stale{margin-top:6px;border-radius:7px;padding:7px 10px;font-size:11px;font-weight:900;letter-spacing:0.5px;border-width:1.5px;border-style:solid}
 .sync-card{background:#0C1420;border:1px solid #1A2740;border-radius:10px;overflow:hidden;margin-bottom:12px}
 .sync-header{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #1A2740;background:#080C14}
 .sync-title{font-size:12px;font-weight:800;color:#8BA3BE}
@@ -346,6 +351,7 @@ a{color:inherit;text-decoration:none}
               <input type="file" id="pf-kia" class="dz-input" accept=".csv" onchange="pathBrowse(this,'kia')" />
             </div>
             <div class="path-meta" id="pmeta-kia">—</div>
+            <div class="path-stale" id="pstale-kia" style="display:none"></div>
           </div>
           <div class="path-card">
             <div class="path-header">
@@ -358,6 +364,7 @@ a{color:inherit;text-decoration:none}
               <input type="file" id="pf-hy" class="dz-input" accept=".csv" onchange="pathBrowse(this,'hy')" />
             </div>
             <div class="path-meta" id="pmeta-hy">—</div>
+            <div class="path-stale" id="pstale-hy" style="display:none"></div>
           </div>
           <div class="path-card">
             <div class="path-header">
@@ -370,6 +377,7 @@ a{color:inherit;text-decoration:none}
               <input type="file" id="pf-inv" class="dz-input" accept=".csv" onchange="pathBrowse(this,'inv')" />
             </div>
             <div class="path-meta" id="pmeta-inv">—</div>
+            <div class="path-stale" id="pstale-inv" style="display:none"></div>
           </div>
           <div class="path-card">
             <div class="path-header">
@@ -382,6 +390,7 @@ a{color:inherit;text-decoration:none}
               <input type="file" id="pf-inve" class="dz-input" accept=".csv" onchange="pathBrowse(this,'inve')" />
             </div>
             <div class="path-meta" id="pmeta-inve">—</div>
+            <div class="path-stale" id="pstale-inve" style="display:none"></div>
           </div>
         </div>
 
@@ -602,8 +611,8 @@ function renderTable(flashFirst){
     const prog = e.progress ? `<div class="inv-progress"><div class="prog-bar-wrap"><div class="prog-bar" style="width:${Math.round(e.progress.done/e.progress.total*100)}%;background:${e.brand==='KIA'?'#29B6F6':'#FFB300'}"></div></div><span class="prog-text">${e.progress.done}/${e.progress.total}</span></div>` : "";
     const avatarStyle = `background:${e.color}20;border:1.5px solid ${e.color}40;color:${e.color}`;
     const badgeClass = "b-"+(e.action||"confirmed");
-    const badgeLabel = e.action==="confirmed"?"Confirmed":e.action==="manual"?"Manual":e.action==="not_found"?"Not found":e.action==="unscanned"?"Unscanned":"Undo";
-    const dotColor = e.action==="confirmed"?"#00E676":e.action==="manual"?"#FFB300":e.action==="not_found"?"#F44336":"#CE93D8";
+    const badgeLabel = e.action==="confirmed"?"Confirmed":e.action==="manual"?"Manual":e.action==="not_found"?"Not found":e.action==="unscanned"?"Unscanned":e.action==="short"?"Short supply":e.action==="over"?"Over supply":e.action==="missing"?"Missing":"Undo";
+    const dotColor = e.action==="confirmed"?"#00E676":e.action==="manual"?"#FFB300":e.action==="not_found"?"#F44336":e.action==="short"?"#FFB300":e.action==="over"?"#29B6F6":e.action==="missing"?"#F44336":"#CE93D8";
     return `<div class="row${isNew?" flash-new":""}${isUnscan?" unscanned-row":""}">
       <div><div class="brand-chip">${e.brand||"?"}</div></div>
       <div class="time-cell">${isUnscan?"—":fmtTime(e.timestamp)}</div>
@@ -731,6 +740,7 @@ async function loadFileMeta(){
 
 // ── Saved paths (File System Access API — persists across sessions) ──────────
 const PATH_KEY    = "wh_pro_paths";
+const PATH_TS_KEY = "wh_pro_path_timestamps";
 const HANDLE_KEY  = "wh_pro_handles";
 let fileHandles   = { kia: null, hy: null, inv: null, inve: null };
 
@@ -799,15 +809,44 @@ async function loadPathsUI(){
     // Fall back to just showing the name (needs re-browse)
     setPathUI(k, name, name ? "Click Browse to re-select file" : "");
   }
+  // Check stale warnings for all paths
+  for(const k of ["kia","hy","inv","inve"]) checkStaleWarning(k);
 }
 
 function savePaths(){
   const obj={};
+  const ts = JSON.parse(localStorage.getItem(PATH_TS_KEY)||"{}");
   ["kia","hy","inv","inve"].forEach(k=>{
     const v=document.getElementById("pi-"+k).value.trim();
-    if(v) obj[k]=v;
+    if(v){ obj[k]=v; if(!ts[k]) ts[k]=Date.now(); }
   });
   localStorage.setItem(PATH_KEY,JSON.stringify(obj));
+  localStorage.setItem(PATH_TS_KEY,JSON.stringify(ts));
+}
+
+function savePathTimestamp(k){
+  const ts = JSON.parse(localStorage.getItem(PATH_TS_KEY)||"{}");
+  ts[k] = Date.now();
+  localStorage.setItem(PATH_TS_KEY,JSON.stringify(ts));
+}
+
+function checkStaleWarning(k){
+  const ts = JSON.parse(localStorage.getItem(PATH_TS_KEY)||"{}");
+  const el = document.getElementById("pstale-"+k);
+  if(!el) return;
+  const saved = ts[k];
+  if(!saved){ el.style.display="none"; return; }
+  const now = new Date();
+  const savedDate = new Date(saved);
+  if(now.toDateString()===savedDate.toDateString()){ el.style.display="none"; return; }
+  const diffDays = Math.floor((now-savedDate)/86400000);
+  const label = diffDays<=1 ? "YESTERDAY" : diffDays+" DAYS AGO";
+  const isRed = diffDays>=2;
+  el.style.display="block";
+  el.style.background=isRed?"#F4433622":"#FFB30022";
+  el.style.borderColor=isRed?"#F44336":"#FFB300";
+  el.style.color=isRed?"#F44336":"#FFB300";
+  el.textContent="⚠ FILE PATH SAVED "+label+" — BROWSE TO UPDATE";
 }
 
 async function pathBrowse(input,k){
@@ -815,6 +854,8 @@ async function pathBrowse(input,k){
   pathFiles[k]=f;
   setPathUI(k, f.name, "File selected: "+f.name+" ("+Math.round(f.size/1024)+" KB)");
   savePaths();
+  savePathTimestamp(k);
+  document.getElementById("pstale-"+k).style.display="none";
   document.getElementById("sm-"+k).textContent="Now";
 }
 
@@ -831,6 +872,8 @@ async function browseDirect(k){
       pathFiles[k] = file;
       setPathUI(k, file.name, "✓ Saved — next time just hit Restore & Sync");
       savePaths();
+      savePathTimestamp(k);
+      document.getElementById("pstale-"+k).style.display="none";
       document.getElementById("sm-"+k).textContent="Now";
     }catch{}
   } else {
