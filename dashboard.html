@@ -529,6 +529,10 @@ function connectWS(){
           loadInvoices().then(()=>renderTable(true));
           loadStats();
         }
+        if(msg.type==="new_file"){
+          checkAllStale();
+          loadFiles();
+        }
       }catch{}
     };
   }catch{ setTimeout(connectWS,3000); }
@@ -863,33 +867,90 @@ function savePathTimestamp(k){
   localStorage.setItem(PATH_TS_KEY,JSON.stringify(ts));
 }
 
-function checkStaleWarning(k){
-  const ts = JSON.parse(localStorage.getItem(PATH_TS_KEY)||"{}");
+const KEY_TO_FILENAME = {
+  kia:  "stdpartski.csv",
+  hy:   "stdpartshy.csv",
+  inv:  "04-INVOICE-SCAN-APP_Data.csv",
+  inve: "04E-INVOICE-SCAN-APP_Data.csv"
+};
+
+async function checkStaleWarning(k){
   const el = document.getElementById("pstale-"+k);
   if(!el) return;
-  const saved = ts[k];
-  if(!saved){ el.style.display="none"; return; }
-  const now = new Date();
-  const savedDate = new Date(saved);
-  const isToday = now.toDateString()===savedDate.toDateString();
-  el.style.display="block";
-  if(isToday){
-    const diffMins = Math.floor((now-savedDate)/60000);
-    const timeLabel = diffMins < 1 ? "just now" : diffMins < 60 ? diffMins+"m ago" : Math.floor(diffMins/60)+"h ago";
-    el.style.background="#00E67614";
-    el.style.borderColor="#00E67644";
-    el.style.color="#00E676";
-    el.textContent="✓ PATH SAVED TODAY — "+timeLabel;
-  } else {
-    const diffDays = Math.floor((now-savedDate)/86400000);
-    const label = diffDays<=1 ? "YESTERDAY" : diffDays+" DAYS AGO";
-    const isRed = diffDays>=2;
-    el.style.background=isRed?"#F4433622":"#FFB30022";
-    el.style.borderColor=isRed?"#F44336":"#FFB300";
-    el.style.color=isRed?"#F44336":"#FFB300";
-    el.textContent="⚠ FILE PATH SAVED "+label+" — BROWSE TO UPDATE";
+
+  // Get local file's lastModified via file handle
+  let localModified = null;
+  try {
+    if(fileHandles[k]){
+      const fresh = await fileHandles[k].getFile();
+      localModified = fresh.lastModified;
+      pathFiles[k] = fresh;
+    } else if(pathFiles[k]){
+      localModified = pathFiles[k].lastModified;
+    }
+  } catch(e){ localModified = null; }
+
+  // No file handle at all — hide bar silently
+  if(localModified === null){ el.style.display="none"; return; }
+
+  // Fetch server upload time
+  let uploadedAt = null;
+  try {
+    const r = await fetch(SERVER+"/file-meta/"+encodeURIComponent(KEY_TO_FILENAME[k]));
+    const d = await r.json();
+    uploadedAt = d.uploadedAt || null;
+  } catch(e){ uploadedAt = null; }
+
+  el.style.display = "block";
+
+  if(!uploadedAt){
+    // Can't reach server — show neutral
+    el.style.background="#1A2740"; el.style.borderColor="#2A3D5A"; el.style.color="#8AAAC4";
+    el.textContent="Cannot reach server to compare file";
+    return;
   }
+
+  if(localModified > uploadedAt){
+    // LOCAL IS NEWER — re-upload needed
+    const diffMins = Math.floor((Date.now()-localModified)/60000);
+    const age = diffMins < 1 ? "just now" : diffMins < 60 ? diffMins+"m ago" : Math.floor(diffMins/60)+"h ago";
+    el.style.background="#FFB30018"; el.style.borderColor="#FFB300"; el.style.color="#FFB300";
+    el.textContent="⚠ Local file updated "+age+" — server is outdated, re-upload needed";
+    return;
+  }
+
+  // Check if server upload was yesterday or older
+  const now = new Date();
+  const upDate = new Date(uploadedAt);
+  const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+  const yesterdayStart = new Date(todayStart - 86400000);
+
+  if(upDate < todayStart && upDate >= yesterdayStart){
+    el.style.background="#FFB30018"; el.style.borderColor="#FFB300"; el.style.color="#FFB300";
+    el.textContent="⚠ Server last updated yesterday — check if a newer file is available";
+    return;
+  }
+
+  if(upDate < yesterdayStart){
+    el.style.background="#F4433618"; el.style.borderColor="#F44336"; el.style.color="#F44336";
+    const days = Math.floor((now - upDate)/86400000);
+    el.textContent="⚠ Server last updated "+days+" days ago — check if a newer file is available";
+    return;
+  }
+
+  // UP TO DATE — subtle green tick
+  const diffMins = Math.floor((Date.now()-uploadedAt)/60000);
+  const age = diffMins < 1 ? "just now" : diffMins < 60 ? diffMins+"m ago" : Math.floor(diffMins/60)+"h ago";
+  el.style.background="#00E67614"; el.style.borderColor="#00E67644"; el.style.color="#00E676";
+  el.textContent="✓ Server is up to date (uploaded "+age+")";
 }
+
+function checkAllStale(){ for(const k of ["kia","hy","inv","inve"]) checkStaleWarning(k); }
+
+// Trigger 1: on page load (runs via loadPaths)
+// Trigger 2: after upload (WS new_file event — already wired)
+// Trigger 3: every 10 seconds
+setInterval(checkAllStale, 10000);
 
 async function pathBrowse(input,k){
   const f=input.files[0]; if(!f) return;
@@ -897,7 +958,7 @@ async function pathBrowse(input,k){
   setPathUI(k, f.name, "File selected: "+f.name+" ("+Math.round(f.size/1024)+" KB)");
   savePaths();
   savePathTimestamp(k);
-  document.getElementById("pstale-"+k).style.display="none";
+  checkStaleWarning(k);
   document.getElementById("sm-"+k).textContent="Now";
 }
 
@@ -915,7 +976,7 @@ async function browseDirect(k){
       setPathUI(k, file.name, "✓ Saved — next time just hit Restore & Sync");
       savePaths();
       savePathTimestamp(k);
-      document.getElementById("pstale-"+k).style.display="none";
+      checkStaleWarning(k);
       document.getElementById("sm-"+k).textContent="Now";
     }catch{}
   } else {
