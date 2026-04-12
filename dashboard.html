@@ -507,6 +507,11 @@ function connectWS(){
           loadInvoices().then(()=>renderTable(true));
           loadStats();
         }
+        if(msg.type==="new_file"){
+          // Re-check stale warnings after any file upload so status updates immediately
+          for(const k of ["kia","hy","inv","inve"]) checkStaleWarning(k);
+          loadFiles();
+        }
       }catch{}
     };
   }catch{ setTimeout(connectWS,3000); }
@@ -809,7 +814,7 @@ async function loadPathsUI(){
     // Fall back to just showing the name (needs re-browse)
     setPathUI(k, name, name ? "Click Browse to re-select file" : "");
   }
-  // Check stale warnings for all paths
+  // Check stale warnings for all paths (async — compare local vs server)
   for(const k of ["kia","hy","inv","inve"]) checkStaleWarning(k);
 }
 
@@ -830,12 +835,71 @@ function savePathTimestamp(k){
   localStorage.setItem(PATH_TS_KEY,JSON.stringify(ts));
 }
 
-function checkStaleWarning(k){
+const KEY_TO_FILENAME = {
+  kia:  "stdpartski.csv",
+  hy:   "stdpartshy.csv",
+  inv:  "04-INVOICE-SCAN-APP_Data.csv",
+  inve: "04E-INVOICE-SCAN-APP_Data.csv"
+};
+
+async function checkStaleWarning(k){
   const ts = JSON.parse(localStorage.getItem(PATH_TS_KEY)||"{}");
   const el = document.getElementById("pstale-"+k);
   if(!el) return;
   const saved = ts[k];
   if(!saved){ el.style.display="none"; return; }
+
+  // Try to get local file's lastModified
+  let localModified = null;
+  try {
+    if(fileHandles[k]){
+      const freshFile = await fileHandles[k].getFile();
+      localModified = freshFile.lastModified;
+      pathFiles[k] = freshFile; // keep in sync
+    } else if(pathFiles[k]){
+      localModified = pathFiles[k].lastModified;
+    }
+  } catch(e){ localModified = null; }
+
+  // If we have local file info, compare against server upload time
+  if(localModified !== null){
+    let uploadedAt = null;
+    try {
+      const r = await fetch(SERVER+"/file-meta/"+encodeURIComponent(KEY_TO_FILENAME[k]));
+      const d = await r.json();
+      uploadedAt = d.uploadedAt || null;
+    } catch(e){ uploadedAt = null; }
+
+    el.style.display="block";
+
+    if(uploadedAt && localModified > uploadedAt){
+      // Local file is NEWER than server — needs re-upload
+      const diffMins = Math.floor((Date.now()-localModified)/60000);
+      const ageLabel = diffMins < 1 ? "just now" : diffMins < 60 ? diffMins+"m ago" : Math.floor(diffMins/60)+"h ago";
+      el.style.background="#FFB30022";
+      el.style.borderColor="#FFB300";
+      el.style.color="#FFB300";
+      el.textContent="⚠ LOCAL FILE IS NEWER — RE-UPLOAD (local changed "+ageLabel+")";
+    } else if(uploadedAt){
+      // Server is up to date
+      const diffMins = Math.floor((Date.now()-uploadedAt)/60000);
+      const ageLabel = diffMins < 1 ? "just now" : diffMins < 60 ? diffMins+"m ago" : Math.floor(diffMins/60)+"h ago";
+      el.style.background="#00E67614";
+      el.style.borderColor="#00E67644";
+      el.style.color="#00E676";
+      el.textContent="✓ UP TO DATE — server matches local (uploaded "+ageLabel+")";
+    } else {
+      // Can't reach server — fall back to path-saved date
+      _showPathSavedAge(el, saved);
+    }
+    return;
+  }
+
+  // No file handle — fall back to showing when path was saved
+  _showPathSavedAge(el, saved);
+}
+
+function _showPathSavedAge(el, saved){
   const now = new Date();
   const savedDate = new Date(saved);
   const isToday = now.toDateString()===savedDate.toDateString();
