@@ -629,7 +629,7 @@ app.get("/room/:roomId/updates", (req, res) => {
 
 // ── Scan log endpoints ────────────────────────────────────────────────────────
 app.post("/log-scan", (req, res) => {
-  const { initials, color, invoiceId, brand, partNumber, description, action, note } = req.body;
+  const { initials, color, invoiceId, orderRef, brand, partNumber, description, action, note, qty, confirmed } = req.body;
   if (!initials || !invoiceId || !partNumber || !action) return res.status(400).json({ error: "Missing fields" });
   let log = purgeScanLog(readScanLog());
   const entry = {
@@ -638,11 +638,14 @@ app.post("/log-scan", (req, res) => {
     initials: initials || "?",
     color: color || "#8BA3BE",
     invoiceId,
+    orderRef: orderRef || "",
     brand: brand || (invoiceId.startsWith("L") ? "KIA" : invoiceId.startsWith("F") ? "HY" : "?"),
     partNumber,
     description: description || "",
-    action, // "confirmed" | "manual" | "not_found" | "undo"
+    action, // "confirmed" | "manual" | "not_found" | "short" | "over" | "missing" | "undo"
     note: note || "",
+    qty: qty || 0,
+    confirmed: confirmed || 0,
   };
   log.unshift(entry);
   saveScanLog(log);

@@ -77,10 +77,10 @@ a{color:inherit;text-decoration:none}
 
 /* ── Table ── */
 .table-wrap{background:#0C1420;border-radius:14px;border:1px solid #1A2740;overflow:hidden}
-.thead{display:grid;grid-template-columns:52px 78px 38px 150px 1fr 90px 120px;padding:10px 16px;border-bottom:1px solid #131E2E;background:#080C14}
+.thead{display:grid;grid-template-columns:52px 78px 38px 150px 1fr 110px 180px 120px;padding:10px 16px;border-bottom:1px solid #131E2E;background:#080C14}
 .th{font-size:9px;font-weight:700;color:#7A9AB8;letter-spacing:1.5px}
 .tbody{}
-.row{display:grid;grid-template-columns:52px 78px 38px 150px 1fr 90px 120px;padding:12px 16px;border-bottom:1px solid #0C1420;align-items:center;transition:background 0.1s}
+.row{display:grid;grid-template-columns:52px 78px 38px 150px 1fr 110px 180px 120px;padding:12px 16px;border-bottom:1px solid #0C1420;align-items:center;transition:background 0.1s}
 .row:last-child{border-bottom:none}
 .row:hover{background:#0F1E30}
 .row.flash-new{animation:flashrow 1.5s ease-out}
@@ -102,8 +102,15 @@ a{color:inherit;text-decoration:none}
 .part-num{font-size:12px;font-weight:800;color:#EDF2FF;letter-spacing:0.3px}
 .part-num.dim{color:#4A4060}
 .part-desc{font-size:11px;color:#364D66;margin-top:2px}
+.part-qty{color:#5A7A9A;font-weight:700;font-style:normal}
+.order-ref{font-size:11px;font-weight:700;color:#5A7A9A;letter-spacing:0.3px}
+.order-ref.dim{color:#2A3A4A}
+.status-filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.sf-btn{font-size:10px;font-weight:800;letter-spacing:0.8px;padding:5px 10px;border-radius:20px;cursor:pointer;border:1.5px solid;transition:all 0.15s;user-select:none;opacity:0.45}
+.sf-btn.active{opacity:1}
+.sf-label{font-size:9px;font-weight:700;color:#7A9AB8;letter-spacing:1.5px;align-self:center;margin-right:4px}
 .part-desc.dim{color:#2A1E3A}
-.note-cell{font-size:11px;color:#FFB300;font-style:italic;line-height:1.3;max-width:88px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.note-cell{font-size:11px;color:#FFB300;font-style:italic;line-height:1.4;max-width:175px;word-break:break-word;white-space:normal}
 .note-empty{font-size:11px;color:#1A2740}
 .badge{display:inline-flex;align-items:center;gap:5px;border-radius:7px;padding:5px 10px;font-size:11px;font-weight:800;white-space:nowrap}
 .badge-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
@@ -213,8 +220,9 @@ a{color:inherit;text-decoration:none}
   .sidebar{display:none}
   .stats{grid-template-columns:repeat(2,1fr)}
   .import-grid{grid-template-columns:1fr}
-  .thead,.row{grid-template-columns:44px 70px 32px 110px 1fr 100px}
+  .thead,.row{grid-template-columns:44px 70px 32px 110px 1fr 140px}
   .th:nth-child(6),.row>*:nth-child(6){display:none}
+  .th:nth-child(7),.row>*:nth-child(7){display:none}
 }
 </style>
 </head>
@@ -288,6 +296,19 @@ a{color:inherit;text-decoration:none}
         </div>
       </div>
 
+      <div class="status-filters">
+        <span class="sf-label">STATUS:</span>
+        <div class="sf-btn active" id="sf-all" onclick="setStatusFilter('')" style="background:#1A2740;border-color:#2A3D5A;color:#8AAAC4">ALL</div>
+        <div class="sf-btn" id="sf-confirmed" onclick="setStatusFilter('confirmed')" style="background:#00E67614;border-color:#00E676;color:#00E676">● Confirmed</div>
+        <div class="sf-btn" id="sf-manual" onclick="setStatusFilter('manual')" style="background:#FFB30014;border-color:#FFB300;color:#FFB300">● Manual</div>
+        <div class="sf-btn" id="sf-short" onclick="setStatusFilter('short')" style="background:#FFB30014;border-color:#FFB300;color:#FFB300">● Short supply</div>
+        <div class="sf-btn" id="sf-over" onclick="setStatusFilter('over')" style="background:#29B6F614;border-color:#29B6F6;color:#29B6F6">● Over supply</div>
+        <div class="sf-btn" id="sf-missing" onclick="setStatusFilter('missing')" style="background:#F4433614;border-color:#F44336;color:#F44336">● Missing</div>
+        <div class="sf-btn" id="sf-not_found" onclick="setStatusFilter('not_found')" style="background:#F4433614;border-color:#F44336;color:#F44336">● Not found</div>
+        <div class="sf-btn" id="sf-undo" onclick="setStatusFilter('undo')" style="background:#CE93D814;border-color:#CE93D8;color:#CE93D8">● Undo</div>
+        <div class="sf-btn" id="sf-unscanned" onclick="setStatusFilter('unscanned')" style="background:#3A2A5014;border-color:#4A3A6A;color:#7A6A9A">● Unscanned</div>
+      </div>
+
       <div class="table-wrap">
         <div class="thead">
           <div class="th">BRAND</div>
@@ -295,6 +316,7 @@ a{color:inherit;text-decoration:none}
           <div class="th">USER</div>
           <div class="th">INVOICE</div>
           <div class="th">PART / DESCRIPTION</div>
+          <div class="th">ORDER REF</div>
           <div class="th">NOTE</div>
           <div class="th">STATUS</div>
         </div>
@@ -447,7 +469,7 @@ const WS_URL = SERVER.replace(/^http/, "ws");
 // ── State ──────────────────────────────────────────────────────────────────
 let allLogs = [];
 let allInvoices = [];
-let filters = { brand:"", user:"", invoice:"", part:"", date:"today" };
+let filters = { brand:"", user:"", invoice:"", part:"", date:"today", action:"" };
 let hiddenActions = new Set();
 let pathFiles = { kia: null, hy: null, inv: null, inve: null };
 let ws = null;
@@ -506,11 +528,6 @@ function connectWS(){
           allLogs.unshift(msg.entry);
           loadInvoices().then(()=>renderTable(true));
           loadStats();
-        }
-        if(msg.type==="new_file"){
-          // Re-check stale warnings after any file upload so status updates immediately
-          for(const k of ["kia","hy","inv","inve"]) checkStaleWarning(k);
-          loadFiles();
         }
       }catch{}
     };
@@ -598,6 +615,7 @@ function getFiltered(){
     if(filters.user && e.initials !== filters.user) return false;
     if(filters.invoice && !e.invoiceId.includes(filters.invoice.toUpperCase())) return false;
     if(filters.part && !e.partNumber.includes(filters.part.toUpperCase())) return false;
+    if(filters.action && e.action !== filters.action) return false;
     const act = e.action || "confirmed";
     if(hiddenActions.has(act)) return false;
     return true;
@@ -623,7 +641,8 @@ function renderTable(flashFirst){
       <div class="time-cell">${isUnscan?"—":fmtTime(e.timestamp)}</div>
       <div><div class="avatar" style="${isUnscan?"background:#1A1A2A;border:1px solid #2A2A3A;color:#3A3A5A":avatarStyle}">${isUnscan?"—":e.initials}</div></div>
       <div class="inv-block"><div class="inv-num ${invClass}">${e.invoiceId}</div>${prog}</div>
-      <div class="part-cell"><div class="part-num${isUnscan?" dim":""}">${e.partNumber}</div><div class="part-desc${isUnscan?" dim":""}">${e.description||""}</div></div>
+      <div class="part-cell"><div class="part-num${isUnscan?" dim":""}">${e.partNumber}</div><div class="part-desc${isUnscan?" dim":""}">${e.description||""}${(e.qty&&e.qty>0)?`<span class="part-qty"> · ${e.confirmed??0}/${e.qty}</span>`:""}</div></div>
+      <div>${e.orderRef?`<div class="order-ref${isUnscan?" dim":""}">${e.orderRef}</div>`:`<div class="order-ref dim">—</div>`}</div>
       <div>${e.note?`<div class="note-cell" title="${e.note}">${e.note}</div>`:'<div class="note-empty">—</div>'}</div>
       <div><span class="badge ${badgeClass}"><span class="badge-dot" style="background:${dotColor}"></span>${badgeLabel}</span></div>
     </div>`;
@@ -646,6 +665,15 @@ function setBrand(b){
   document.querySelectorAll(".brand-tabs .tab").forEach(t=>t.classList.remove("active"));
   const cls = b===""?"t-all":b==="KIA"?"t-kia":"t-hy";
   const el = document.querySelector(".tab."+cls);
+  if(el) el.classList.add("active");
+  renderTable(false);
+}
+
+function setStatusFilter(action){
+  filters.action = action;
+  document.querySelectorAll(".sf-btn").forEach(b=>b.classList.remove("active"));
+  const id = action===""?"sf-all":"sf-"+action;
+  const el = document.getElementById(id);
   if(el) el.classList.add("active");
   renderTable(false);
 }
@@ -814,7 +842,7 @@ async function loadPathsUI(){
     // Fall back to just showing the name (needs re-browse)
     setPathUI(k, name, name ? "Click Browse to re-select file" : "");
   }
-  // Check stale warnings for all paths (async — compare local vs server)
+  // Check stale warnings for all paths
   for(const k of ["kia","hy","inv","inve"]) checkStaleWarning(k);
 }
 
@@ -835,71 +863,12 @@ function savePathTimestamp(k){
   localStorage.setItem(PATH_TS_KEY,JSON.stringify(ts));
 }
 
-const KEY_TO_FILENAME = {
-  kia:  "stdpartski.csv",
-  hy:   "stdpartshy.csv",
-  inv:  "04-INVOICE-SCAN-APP_Data.csv",
-  inve: "04E-INVOICE-SCAN-APP_Data.csv"
-};
-
-async function checkStaleWarning(k){
+function checkStaleWarning(k){
   const ts = JSON.parse(localStorage.getItem(PATH_TS_KEY)||"{}");
   const el = document.getElementById("pstale-"+k);
   if(!el) return;
   const saved = ts[k];
   if(!saved){ el.style.display="none"; return; }
-
-  // Try to get local file's lastModified
-  let localModified = null;
-  try {
-    if(fileHandles[k]){
-      const freshFile = await fileHandles[k].getFile();
-      localModified = freshFile.lastModified;
-      pathFiles[k] = freshFile; // keep in sync
-    } else if(pathFiles[k]){
-      localModified = pathFiles[k].lastModified;
-    }
-  } catch(e){ localModified = null; }
-
-  // If we have local file info, compare against server upload time
-  if(localModified !== null){
-    let uploadedAt = null;
-    try {
-      const r = await fetch(SERVER+"/file-meta/"+encodeURIComponent(KEY_TO_FILENAME[k]));
-      const d = await r.json();
-      uploadedAt = d.uploadedAt || null;
-    } catch(e){ uploadedAt = null; }
-
-    el.style.display="block";
-
-    if(uploadedAt && localModified > uploadedAt){
-      // Local file is NEWER than server — needs re-upload
-      const diffMins = Math.floor((Date.now()-localModified)/60000);
-      const ageLabel = diffMins < 1 ? "just now" : diffMins < 60 ? diffMins+"m ago" : Math.floor(diffMins/60)+"h ago";
-      el.style.background="#FFB30022";
-      el.style.borderColor="#FFB300";
-      el.style.color="#FFB300";
-      el.textContent="⚠ LOCAL FILE IS NEWER — RE-UPLOAD (local changed "+ageLabel+")";
-    } else if(uploadedAt){
-      // Server is up to date
-      const diffMins = Math.floor((Date.now()-uploadedAt)/60000);
-      const ageLabel = diffMins < 1 ? "just now" : diffMins < 60 ? diffMins+"m ago" : Math.floor(diffMins/60)+"h ago";
-      el.style.background="#00E67614";
-      el.style.borderColor="#00E67644";
-      el.style.color="#00E676";
-      el.textContent="✓ UP TO DATE — server matches local (uploaded "+ageLabel+")";
-    } else {
-      // Can't reach server — fall back to path-saved date
-      _showPathSavedAge(el, saved);
-    }
-    return;
-  }
-
-  // No file handle — fall back to showing when path was saved
-  _showPathSavedAge(el, saved);
-}
-
-function _showPathSavedAge(el, saved){
   const now = new Date();
   const savedDate = new Date(saved);
   const isToday = now.toDateString()===savedDate.toDateString();
