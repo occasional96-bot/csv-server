@@ -34,10 +34,11 @@ const readRooms  = () => {
 const saveRooms  = () => {
   try {
     const toSave = {};
-    const midnight = new Date(); midnight.setHours(0,0,0,0);
+    const STALE_MS = 24 * 60 * 60 * 1000; // 24h of silence = stale
+    const now = Date.now();
     for (const [id, room] of Object.entries(rooms)) {
-      // Only persist today's rooms
-      if (room.createdAt < midnight.getTime()) continue;
+      const lastActivity = Math.max(room.createdAt || 0, ...room.members.map(m => m.lastSeen || 0));
+      if (now - lastActivity > STALE_MS) continue;
       toSave[id] = { ...room, members: room.members.map(m => ({ ...m })) };
     }
     // Write to temp then rename for atomic write
@@ -53,9 +54,11 @@ function getRoomByClient(clientId) {
 }
 
 function cleanRooms() {
-  const midnight = new Date(); midnight.setHours(0,0,0,0);
+  const STALE_MS = 24 * 60 * 60 * 1000; // 24h of silence = purge
+  const now = Date.now();
   for (const [id, room] of Object.entries(rooms)) {
-    if (room.createdAt < midnight.getTime()) delete rooms[id];
+    const lastActivity = Math.max(room.createdAt || 0, ...room.members.map(m => m.lastSeen || 0));
+    if (now - lastActivity > STALE_MS) delete rooms[id];
   }
 }
 setInterval(cleanRooms, 60 * 1000);
@@ -600,9 +603,13 @@ app.post("/expo-link", (req, res) => {
 
 // ── Room info endpoint (for QR deep link fallback) ─────────────────────────
 app.get("/rooms", (req, res) => {
-  const midnight = new Date(); midnight.setHours(0,0,0,0);
+  const ACTIVE_MS = 30 * 60 * 1000; // any member seen in last 30 min = live
+  const now = Date.now();
   const active = Object.entries(rooms)
-    .filter(([, room]) => room.createdAt >= midnight.getTime())
+    .filter(([, room]) => {
+      const lastSeen = Math.max(room.createdAt || 0, ...room.members.map(m => m.lastSeen || 0));
+      return (now - lastSeen) <= ACTIVE_MS;
+    })
     .map(([roomId, room]) => ({
       roomId,
       roomName: room.name,
