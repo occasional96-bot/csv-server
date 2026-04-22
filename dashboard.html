@@ -83,10 +83,10 @@ a{color:inherit;text-decoration:none}
 
 /* ── Table ── */
 .table-wrap{background:#0C1420;border-radius:14px;border:1px solid #1A2740;overflow:hidden}
-.thead{display:grid;grid-template-columns:52px 78px 38px 150px 1fr 110px 180px 120px;padding:10px 16px;border-bottom:1px solid #131E2E;background:#080C14}
+.thead{display:grid;grid-template-columns:52px 78px 38px 150px 1fr 70px 110px 180px 120px;padding:10px 16px;border-bottom:1px solid #131E2E;background:#080C14}
 .th{font-size:9px;font-weight:700;color:#7A9AB8;letter-spacing:1.5px}
 .tbody{}
-.row{display:grid;grid-template-columns:52px 78px 38px 150px 1fr 110px 180px 120px;padding:12px 16px;border-bottom:1px solid #0C1420;align-items:center;transition:background 0.1s}
+.row{display:grid;grid-template-columns:52px 78px 38px 150px 1fr 70px 110px 180px 120px;padding:12px 16px;border-bottom:1px solid #0C1420;align-items:center;transition:background 0.1s}
 .row:last-child{border-bottom:none}
 .row:hover{background:#0F1E30}
 .row.flash-new{animation:flashrow 1.5s ease-out}
@@ -109,6 +109,12 @@ a{color:inherit;text-decoration:none}
 .part-num.dim{color:#4A4060}
 .part-desc{font-size:11px;color:#364D66;margin-top:2px}
 .part-qty{color:#5A7A9A;font-weight:700;font-style:normal}
+.qty-cell{font-size:12px;font-weight:700;color:#8AAAC4;font-variant-numeric:tabular-nums;text-align:center}
+.qty-cell .qty-done{color:#00E676}
+.qty-cell .qty-short{color:#FFB300}
+.qty-cell .qty-over{color:#29B6F6}
+.qty-cell .qty-sep{color:#3A5068;margin:0 2px}
+.qty-cell.dim{color:#4A4060}
 .order-ref{font-size:11px;font-weight:700;color:#5A7A9A;letter-spacing:0.3px}
 .order-ref.dim{color:#2A3A4A}
 /* ── Status filter: analytics tab bar ── */
@@ -258,7 +264,7 @@ a{color:inherit;text-decoration:none}
 .usync-btn.sa-ready{background:#00E67615;color:#00E676;border-color:#00E67640}
 .usync-btn.sa-ready:hover{background:#00E67628;box-shadow:0 0 12px #00E67630}
 .usync-btn.sa-notset{background:#1A2740;color:#5A7A9A;border-color:#2A3D5A;cursor:not-allowed;opacity:.7}
-.upath-stale{margin:0 16px 12px 50px;border-radius:7px;padding:7px 12px;font-size:11px;font-weight:700;letter-spacing:.3px;border-width:1px;border-style:solid}
+.upath-stale{margin:0 16px 12px 50px;border-radius:7px;padding:7px 12px;font-size:11px;font-weight:700;letter-spacing:.3px;border-width:1px;border-style:solid;display:inline-block;width:auto;max-width:calc(100% - 66px)}
 .urow.u-other .udot{background:transparent;border:2px dashed #3A5068;width:12px;height:12px}
 .urow.u-other .uname{color:#8AAAC4}
 .ubar{display:flex;align-items:center;gap:14px;padding:14px 18px;background:#0C1420;border:1px solid #1A2740;border-radius:12px;margin-bottom:10px}
@@ -273,9 +279,9 @@ a{color:inherit;text-decoration:none}
   .sidebar{display:none}
   .stats{grid-template-columns:repeat(2,1fr)}
   .import-grid{grid-template-columns:1fr}
-  .thead,.row{grid-template-columns:44px 70px 32px 110px 1fr 140px}
-  .th:nth-child(6),.row>*:nth-child(6){display:none}
+  .thead,.row{grid-template-columns:44px 70px 32px 110px 1fr 60px 140px}
   .th:nth-child(7),.row>*:nth-child(7){display:none}
+  .th:nth-child(8),.row>*:nth-child(8){display:none}
   .ufiles-head,.urow-main{grid-template-columns:20px 1fr 100px;gap:10px;padding:10px}
   .ufiles-head>*:nth-child(3),.urow-main>*:nth-child(3),
   .ufiles-head>*:nth-child(4),.urow-main>*:nth-child(4),
@@ -375,6 +381,7 @@ a{color:inherit;text-decoration:none}
           <div class="th">USER</div>
           <div class="th">INVOICE</div>
           <div class="th">PART / DESCRIPTION</div>
+          <div class="th" style="text-align:center">QTY</div>
           <div class="th">ORDER REF</div>
           <div class="th">NOTE</div>
           <div class="th">STATUS</div>
@@ -739,8 +746,34 @@ function getFiltered(){
   });
 }
 
+// Build part lookup (partNumber → {description, qty, orderRef}) from invoices.
+// Used as fallback when scan-log entries came in without description/orderRef.
+function buildPartLookup(){
+  const byInvPart = new Map(); // key: invoiceId||partNumber → {description, qty, orderRef}
+  const byPart = new Map();    // fallback: partNumber → {description}
+  for(const inv of allInvoices){
+    for(const p of (inv.parts||[])){
+      byInvPart.set(inv.id+"||"+p.partNumber, { description:p.description||"", qty:p.qty, orderRef:inv.orderRef||"" });
+      if(p.description && !byPart.has(p.partNumber)) byPart.set(p.partNumber, { description:p.description });
+    }
+  }
+  return { byInvPart, byPart };
+}
+
+function enrich(e, lookup){
+  if(e.description && e.orderRef) return e;
+  const hit = lookup.byInvPart.get(e.invoiceId+"||"+e.partNumber) || lookup.byPart.get(e.partNumber);
+  if(!hit) return e;
+  return {
+    ...e,
+    description: e.description || hit.description || "",
+    orderRef:    e.orderRef    || hit.orderRef    || "",
+  };
+}
+
 function renderTable(flashFirst){
-  const rows = [...getFiltered(), ...getUnscannedRows()];
+  const lookup = buildPartLookup();
+  const rows = [...getFiltered().map(e=>enrich(e,lookup)), ...getUnscannedRows()];
   const tbody = document.getElementById("log-tbody");
   if(!rows.length){ tbody.innerHTML='<div class="empty-state">No events match your filters</div>'; document.getElementById("footer-txt").textContent="No results"; return; }
 
@@ -758,7 +791,8 @@ function renderTable(flashFirst){
       <div class="time-cell">${isUnscan?"—":fmtTime(e.timestamp)}</div>
       <div><div class="avatar" style="${isUnscan?"background:#1A1A2A;border:1px solid #2A2A3A;color:#3A3A5A":avatarStyle}">${isUnscan?"—":e.initials}</div></div>
       <div class="inv-block"><div class="inv-num ${invClass}">${e.invoiceId}</div>${prog}</div>
-      <div class="part-cell"><div class="part-num${isUnscan?" dim":""}">${e.partNumber}</div><div class="part-desc${isUnscan?" dim":""}">${e.description||""}${(e.qty&&e.qty>0)?`<span class="part-qty"> · ${e.confirmed??0}/${e.qty}</span>`:""}</div></div>
+      <div class="part-cell"><div class="part-num${isUnscan?" dim":""}">${e.partNumber}</div><div class="part-desc${isUnscan?" dim":""}">${e.description||""}</div></div>
+      <div class="qty-cell${isUnscan?" dim":""}">${(e.qty&&e.qty>0)?(()=>{const c=e.confirmed??0;const cls=c===e.qty?"qty-done":c>e.qty?"qty-over":c<e.qty&&c>0?"qty-short":"";return `<span class="${cls}">${c}</span><span class="qty-sep">/</span>${e.qty}`;})():"—"}</div>
       <div>${e.orderRef?`<div class="order-ref${isUnscan?" dim":""}">${e.orderRef}</div>`:`<div class="order-ref dim">—</div>`}</div>
       <div>${e.note?`<div class="note-cell" title="${e.note}">${e.note}</div>`:'<div class="note-empty">—</div>'}</div>
       <div><span class="badge ${badgeClass}"><span class="badge-dot" style="background:${dotColor}"></span>${badgeLabel}</span></div>
@@ -806,8 +840,8 @@ function toggleFilter(action){ toggleAction(action); }
 // ── Export ────────────────────────────────────────────────────────────────
 function exportCSV(){
   const rows = getFiltered();
-  const header = ["Time","User","Brand","Invoice","PartNumber","Description","Note","Status"];
-  const lines = rows.map(e=>[fmtTime(e.timestamp),e.initials,e.brand,e.invoiceId,e.partNumber,`"${(e.description||"").replace(/"/g,'""')}"`,`"${(e.note||"").replace(/"/g,'""')}"`,e.action].join(","));
+  const header = ["Time","User","Brand","Invoice","PartNumber","Description","Confirmed","Qty","OrderRef","Note","Status"];
+  const lines = rows.map(e=>[fmtTime(e.timestamp),e.initials,e.brand,e.invoiceId,e.partNumber,`"${(e.description||"").replace(/"/g,'""')}"`,e.confirmed??0,e.qty||0,`"${(e.orderRef||"").replace(/"/g,'""')}"`,`"${(e.note||"").replace(/"/g,'""')}"`,e.action].join(","));
   download("scan-log-"+new Date().toISOString().slice(0,10)+".csv", [header.join(","),...lines].join("\n"));
 }
 
@@ -1060,7 +1094,7 @@ async function checkStaleWarning(k){
     uploadedAt = d.uploadedAt || null;
   } catch(e){ uploadedAt = null; }
 
-  el.style.display = "block";
+  el.style.display = "inline-block";
 
   if(!uploadedAt){
     // Can't reach server — show neutral
