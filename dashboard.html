@@ -241,10 +241,21 @@ a{color:inherit;text-decoration:none}
 .ufiles{background:#0C1420;border:1px solid #1A2740;border-radius:14px;overflow:hidden;margin-bottom:14px}
 .ufiles-head{display:grid;grid-template-columns:28px 1.3fr 1.2fr 1.8fr 90px 110px;gap:14px;align-items:center;padding:12px 16px;background:#080C14;border-bottom:1px solid #141E30}
 .ufiles-head div{font-size:9px;font-weight:700;color:#5A7A9A;letter-spacing:1.5px}
-.urow{border-bottom:1px solid #141E30;transition:background .15s}
+.urow{border-bottom:1px solid #141E30;transition:background .15s;position:relative}
 .urow:last-child{border-bottom:none}
 .urow:hover{background:#0F1E30}
-.urow-main{display:grid;grid-template-columns:28px 1.3fr 1.2fr 1.8fr 90px 110px;gap:14px;align-items:center;padding:14px 16px}
+.urow-main{display:grid;grid-template-columns:28px 1.3fr 1.2fr 1.8fr 90px 110px;gap:14px;align-items:center;padding:14px 36px 14px 16px}
+.urow-toggle{position:absolute;top:12px;right:10px;width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#5A7A9A;cursor:pointer;user-select:none;transition:all .15s;z-index:3}
+.urow-toggle:hover{background:#1A2740;color:#C8D8EC}
+.urow-toggle svg{width:12px;height:12px;transition:transform .2s;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.urow.collapsed .urow-toggle svg{transform:rotate(-90deg)}
+.urow.collapsed{background:#0A121C}
+.urow.collapsed .urow-main{grid-template-columns:28px 1fr;padding:8px 36px 8px 16px;opacity:.55}
+.urow.collapsed .urow-main > *:nth-child(n+3){display:none}
+.urow.collapsed .ufile .ufname{display:none}
+.urow.collapsed .upath-stale{display:none !important}
+.urow.collapsed:hover{background:#0F1A2A}
+.urow.collapsed:hover .urow-main{opacity:.8}
 .udot{width:10px;height:10px;border-radius:50%;margin:0 auto;box-shadow:0 0 0 3px #0C1420}
 .ufile{min-width:0}
 .uname{font-size:13px;font-weight:700;color:#EDF2FF}
@@ -1286,11 +1297,50 @@ async function loadBoards(){
   }
 }
 
+// ── Row hide/show (persisted) ─────────────────────────────────────────────
+const HIDDEN_ROWS_KEY = "wh_pro_hidden_rows";
+const CHEVRON_SVG = '<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>';
+function getHiddenRows(){ try{ return JSON.parse(localStorage.getItem(HIDDEN_ROWS_KEY)||"[]"); }catch{ return []; } }
+function setHiddenRows(arr){ localStorage.setItem(HIDDEN_ROWS_KEY, JSON.stringify(arr)); }
+function toggleRowHidden(k, ev){
+  if(ev) ev.stopPropagation();
+  const hidden = new Set(getHiddenRows());
+  hidden.has(k) ? hidden.delete(k) : hidden.add(k);
+  setHiddenRows([...hidden]);
+  applyHiddenRows();
+}
+function applyHiddenRows(){
+  const hidden = new Set(getHiddenRows());
+  document.querySelectorAll(".ufiles .urow").forEach(row=>{
+    const k = row.getAttribute("data-rowkey");
+    if(!k) return;
+    row.classList.toggle("collapsed", hidden.has(k));
+  });
+  updateImportSummary && updateImportSummary();
+}
+function initRowToggles(){
+  const rows = document.querySelectorAll(".ufiles .urow");
+  rows.forEach((row, i)=>{
+    const k = KEYS[i]; if(!k) return;
+    row.setAttribute("data-rowkey", k);
+    if(!row.querySelector(".urow-toggle")){
+      const btn = document.createElement("div");
+      btn.className = "urow-toggle";
+      btn.title = "Show/hide this file";
+      btn.innerHTML = CHEVRON_SVG;
+      btn.addEventListener("click", (ev)=>toggleRowHidden(k, ev));
+      row.appendChild(btn);
+    }
+  });
+  applyHiddenRows();
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────
 
 const now=new Date();
 document.getElementById("date-chip").textContent=now.toLocaleDateString("en-AU",{weekday:"short",day:"2-digit",month:"short",year:"numeric"});
 
+initRowToggles();
 showPage("import");
 setHealth("wake");
 pingServer().finally(()=>{ loadLogs(); loadStats(); });
