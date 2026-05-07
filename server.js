@@ -503,23 +503,34 @@ wss.on("connection", (ws) => {
 
       // ── Clear ALL data (admin wipe from dashboard — keeps scan logs) ──
       if (msg.type === "clear_all_data") {
-        const roomId = msg.roomId || getRoomIdForClient(clientInfo, msg.userId);
-        const room = rooms[roomId];
-        if (!room) return;
-        room.focusList = [];
-        room.pinnedIds = [];
-        room.invoices = [];
-        room.invoiceUpdates = {};
-        room.dataClearedAt = Date.now();
-        saveRooms();
-        // Wipe global invoices.json (NOT scanlog.json)
-        saveInvoices([]);
-        // Broadcast to ALL in room
-        const clearMsg = JSON.stringify({ type: "clear_all_data", clearedAt: room.dataClearedAt, clearedBy: msg.initials || "ADMIN" });
-        for (const [cws, info] of clients.entries()) {
-          if (info.roomId === roomId && cws.readyState === 1) cws.send(clearMsg);
+        const now = Date.now();
+        // Wipe ALL rooms (not just one)
+        for (const [rid, room] of Object.entries(rooms)) {
+          room.focusList = [];
+          room.pinnedIds = [];
+          room.invoices = [];
+          room.invoiceUpdates = {};
+          room.dataClearedAt = now;
         }
-        console.log(`[clear_all_data] Room ${roomId} wiped by ${msg.initials || "ADMIN"} (scan logs preserved)`);
+        saveRooms();
+        // Wipe invoices.json (NOT scanlog.json)
+        saveInvoices([]);
+        // Wipe all CSV files from uploads/
+        try {
+          const csvFiles = fs.readdirSync(UPLOAD).filter(f => f.endsWith(".csv"));
+          csvFiles.forEach(f => { try { fs.unlinkSync(path.join(UPLOAD, f)); } catch {} });
+          // Clear file timestamps in meta
+          const meta = readMeta();
+          meta.fileTimes = {};
+          writeMeta(meta);
+          console.log(`[clear_all_data] Deleted ${csvFiles.length} CSV files from uploads/`);
+        } catch(e) { console.error("[clear_all_data] CSV cleanup error:", e); }
+        // Broadcast to ALL connected clients (every room)
+        const clearMsg = JSON.stringify({ type: "clear_all_data", clearedAt: now, clearedBy: msg.initials || "ADMIN" });
+        for (const [cws] of clients.entries()) {
+          if (cws.readyState === 1) cws.send(clearMsg);
+        }
+        console.log(`[clear_all_data] All rooms + invoices + CSVs wiped by ${msg.initials || "ADMIN"} (scan logs preserved)`);
         return;
       }
 
@@ -738,11 +749,29 @@ app.post("/sync-invoices", (req, res) => {
   res.json({ ok: true, stored: stored.length });
 });
 
-// Clear all invoices (HTTP fallback for dashboard when no active rooms)
+// Clear all data (HTTP fallback for dashboard when no active rooms)
 app.post("/clear-invoices", (req, res) => {
+  // Wipe invoices.json
   saveInvoices([]);
-  console.log("[clear-invoices] invoices.json wiped via HTTP");
-  res.json({ ok: true, message: "All invoices cleared" });
+  // Wipe all CSV files from uploads/
+  try {
+    const csvFiles = fs.readdirSync(UPLOAD).filter(f => f.endsWith(".csv"));
+    csvFiles.forEach(f => { try { fs.unlinkSync(path.join(UPLOAD, f)); } catch {} });
+    const meta = readMeta();
+    meta.fileTimes = {};
+    writeMeta(meta);
+  } catch {}
+  // Wipe all rooms' data too
+  for (const [rid, room] of Object.entries(rooms)) {
+    room.focusList = [];
+    room.pinnedIds = [];
+    room.invoices = [];
+    room.invoiceUpdates = {};
+    room.dataClearedAt = Date.now();
+  }
+  saveRooms();
+  console.log("[clear-invoices] Everything wiped via HTTP (scan logs preserved)");
+  res.json({ ok: true, message: "All data cleared" });
 });
 
 app.get("/invoices", (req, res) => {
