@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Status Filter — Mock Ideas</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:#050810;color:#EDF2FF;min-height:100vh;padding:32px;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  font-size:14px;line-height:1.5
+}
+.page-title{font-size:22px;font-weight:800;color:#EDF2FF;margin-bottom:6px;letter-spacing:-0.02em}
+.page-sub{font-size:13px;color:#7A9AB8;margin-bottom:32px}
+
+.mock{
+  background:#0C1420;border:1px solid #1A2740;border-radius:14px;
+  padding:20px 22px;margin-bottom:20px;box-shadow:0 4px 20px rgba(0,0,0,.3)
+}
+.mock-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px}
+.mock-name{font-size:13px;font-weight:800;color:#EDF2FF;letter-spacing:.02em}
+.mock-tag{
+  font-size:10px;font-weight:700;color:#29B6F6;background:#29B6F614;
+  border:1px solid #29B6F640;border-radius:999px;padding:3px 10px;letter-spacing:.1em
+}
+.mock-note{font-size:11.5px;color:#7A9AB8;margin-top:8px}
+
+/* ============================================================
+   MOCK 1 — Segmented Control (unified bar with dividers)
+   ============================================================ */
+.m1-bar{
+  display:inline-flex;align-items:stretch;background:#080C14;
+  border:1px solid #1A2740;border-radius:10px;overflow:hidden;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.02)
+}
+.m1-label{
+  display:flex;align-items:center;padding:0 14px;font-size:10px;font-weight:700;
+  color:#5A7A9A;letter-spacing:1.5px;border-right:1px solid #1A2740;background:#060A12
+}
+.m1-item{
+  display:flex;align-items:center;gap:6px;padding:9px 14px;font-size:11.5px;
+  font-weight:700;color:#7A9AB8;cursor:pointer;transition:all .15s;
+  border-right:1px solid #1A2740;user-select:none
+}
+.m1-item:last-child{border-right:none}
+.m1-item:hover{background:#0F1E30;color:#C8D8EC}
+.m1-item .d{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.m1-item.active{background:#101D32;color:#EDF2FF;box-shadow:inset 0 -2px 0 currentColor}
+.m1-item.active.c-all{color:#C8D8EC;box-shadow:inset 0 -2px 0 #8AAAC4}
+.m1-item.c-confirmed.active{color:#00E676;box-shadow:inset 0 -2px 0 #00E676}
+.m1-item.c-manual.active,.m1-item.c-short.active{color:#FFB300;box-shadow:inset 0 -2px 0 #FFB300}
+.m1-item.c-over.active{color:#29B6F6;box-shadow:inset 0 -2px 0 #29B6F6}
+.m1-item.c-missing.active,.m1-item.c-not_found.active{color:#F44336;box-shadow:inset 0 -2px 0 #F44336}
+.m1-item.c-undo.active,.m1-item.c-unscanned.active{color:#CE93D8;box-shadow:inset 0 -2px 0 #CE93D8}
+
+/* ============================================================
+   MOCK 2 — Chip + Count Badge (data-aware, subtle)
+   ============================================================ */
+.m2-wrap{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.m2-label{font-size:10px;font-weight:700;color:#5A7A9A;letter-spacing:1.5px;margin-right:4px}
+.m2-chip{
+  display:inline-flex;align-items:center;gap:8px;padding:7px 12px 7px 10px;
+  border-radius:10px;font-size:11.5px;font-weight:700;cursor:pointer;
+  background:#0F1A2E;border:1px solid #1A2740;color:#7A9AB8;
+  transition:all .15s;user-select:none
+}
+.m2-chip:hover{border-color:#243650;color:#C8D8EC}
+.m2-chip .d{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.m2-chip .cnt{
+  font-size:10px;font-weight:800;background:#1A2740;color:#8AAAC4;
+  padding:1px 7px;border-radius:999px;margin-left:2px;font-variant-numeric:tabular-nums
+}
+.m2-chip.active{background:#101D32;border-color:#2A3D5A;color:#EDF2FF}
+.m2-chip.active .cnt{background:currentColor;color:#050810}
+.m2-chip.c-all.active{color:#C8D8EC;border-color:#3A5068}
+.m2-chip.c-confirmed.active{color:#00E676;border-color:#00E67650;background:#00E67610}
+.m2-chip.c-manual.active,.m2-chip.c-short.active{color:#FFB300;border-color:#FFB30050;background:#FFB30010}
+.m2-chip.c-over.active{color:#29B6F6;border-color:#29B6F650;background:#29B6F610}
+.m2-chip.c-missing.active,.m2-chip.c-not_found.active{color:#F44336;border-color:#F4433650;background:#F4433610}
+.m2-chip.c-undo.active,.m2-chip.c-unscanned.active{color:#CE93D8;border-color:#CE93D850;background:#CE93D810}
+
+/* ============================================================
+   MOCK 3 — Ghost pills with neon LED dot (minimal, uniform)
+   ============================================================ */
+.m3-wrap{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.m3-label{font-size:10px;font-weight:700;color:#5A7A9A;letter-spacing:1.5px;margin-right:6px}
+.m3-pill{
+  display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:999px;
+  font-size:11.5px;font-weight:600;cursor:pointer;color:#7A9AB8;
+  background:transparent;border:1px solid #1A2740;
+  transition:all .15s;user-select:none
+}
+.m3-pill:hover{color:#C8D8EC;border-color:#2A3D5A;background:#0C1420}
+.m3-pill .d{
+  width:7px;height:7px;border-radius:50%;flex-shrink:0;background:#3A5068;
+  box-shadow:0 0 0 2px #0C1420
+}
+.m3-pill.active{color:#EDF2FF;background:#0F1E30;border-color:#2A3D5A;font-weight:700}
+.m3-pill.active .d{box-shadow:0 0 8px currentColor,0 0 0 2px #0C1420}
+.m3-pill.c-confirmed .d{background:#00E676}
+.m3-pill.c-manual .d,.m3-pill.c-short .d{background:#FFB300}
+.m3-pill.c-over .d{background:#29B6F6}
+.m3-pill.c-missing .d,.m3-pill.c-not_found .d{background:#F44336}
+.m3-pill.c-undo .d,.m3-pill.c-unscanned .d{background:#CE93D8}
+.m3-pill.c-all.active{color:#C8D8EC}
+.m3-pill.c-all .d{background:#8AAAC4}
+
+/* ============================================================
+   MOCK 4 — Tab bar with underline (analytics-style)
+   ============================================================ */
+.m4-bar{
+  display:flex;align-items:center;gap:4px;border-bottom:1px solid #1A2740;
+  padding:0 4px;overflow-x:auto;flex-wrap:wrap
+}
+.m4-label{
+  font-size:10px;font-weight:700;color:#5A7A9A;letter-spacing:1.5px;
+  padding:14px 10px 12px;flex-shrink:0
+}
+.m4-tab{
+  display:inline-flex;align-items:center;gap:7px;padding:12px 14px;
+  font-size:12px;font-weight:600;color:#7A9AB8;cursor:pointer;
+  border-bottom:2px solid transparent;margin-bottom:-1px;
+  transition:color .15s,border-color .15s;white-space:nowrap;user-select:none
+}
+.m4-tab:hover{color:#C8D8EC}
+.m4-tab .d{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.m4-tab .cnt{font-size:10px;font-weight:700;color:#5A7A9A;margin-left:2px;font-variant-numeric:tabular-nums}
+.m4-tab.active{color:#EDF2FF;font-weight:700}
+.m4-tab.active.c-all{border-bottom-color:#8AAAC4}
+.m4-tab.c-confirmed.active{border-bottom-color:#00E676;color:#00E676}
+.m4-tab.c-manual.active,.m4-tab.c-short.active{border-bottom-color:#FFB300;color:#FFB300}
+.m4-tab.c-over.active{border-bottom-color:#29B6F6;color:#29B6F6}
+.m4-tab.c-missing.active,.m4-tab.c-not_found.active{border-bottom-color:#F44336;color:#F44336}
+.m4-tab.c-undo.active,.m4-tab.c-unscanned.active{border-bottom-color:#CE93D8;color:#CE93D8}
+.m4-tab.active .cnt{color:currentColor;opacity:.7}
+</style>
+</head>
+<body>
+
+<div class="page-title">Status Filter — Mock Ideas</div>
+<div class="page-sub">4 professional takes on the status filter bar · dark neon theme · click any to try it</div>
+
+<!-- ── MOCK 1: SEGMENTED CONTROL ─────────────────────────────────────── -->
+<div class="mock">
+  <div class="mock-head">
+    <div class="mock-name">Option 1 — Segmented control</div>
+    <div class="mock-tag">UNIFIED BAR</div>
+  </div>
+  <div class="m1-bar">
+    <div class="m1-label">STATUS</div>
+    <div class="m1-item c-all active">All</div>
+    <div class="m1-item c-confirmed"><span class="d" style="background:#00E676"></span>Confirmed</div>
+    <div class="m1-item c-manual"><span class="d" style="background:#FFB300"></span>Manual</div>
+    <div class="m1-item c-short"><span class="d" style="background:#FFB300"></span>Short</div>
+    <div class="m1-item c-over"><span class="d" style="background:#29B6F6"></span>Over</div>
+    <div class="m1-item c-missing"><span class="d" style="background:#F44336"></span>Missing</div>
+    <div class="m1-item c-not_found"><span class="d" style="background:#F44336"></span>Not found</div>
+    <div class="m1-item c-undo"><span class="d" style="background:#CE93D8"></span>Undo</div>
+    <div class="m1-item c-unscanned"><span class="d" style="background:#CE93D8"></span>Unscanned</div>
+  </div>
+  <div class="mock-note">Tight, enterprise feel · one bar · active shows colored underline · good on wide screens</div>
+</div>
+
+<!-- ── MOCK 2: CHIP + COUNT BADGE ────────────────────────────────────── -->
+<div class="mock">
+  <div class="mock-head">
+    <div class="mock-name">Option 2 — Chips with counts</div>
+    <div class="mock-tag">DATA-AWARE</div>
+  </div>
+  <div class="m2-wrap">
+    <div class="m2-label">STATUS</div>
+    <div class="m2-chip c-all active">All<span class="cnt">248</span></div>
+    <div class="m2-chip c-confirmed"><span class="d" style="background:#00E676"></span>Confirmed<span class="cnt">187</span></div>
+    <div class="m2-chip c-manual"><span class="d" style="background:#FFB300"></span>Manual<span class="cnt">24</span></div>
+    <div class="m2-chip c-short"><span class="d" style="background:#FFB300"></span>Short supply<span class="cnt">8</span></div>
+    <div class="m2-chip c-over"><span class="d" style="background:#29B6F6"></span>Over supply<span class="cnt">3</span></div>
+    <div class="m2-chip c-missing"><span class="d" style="background:#F44336"></span>Missing<span class="cnt">6</span></div>
+    <div class="m2-chip c-not_found"><span class="d" style="background:#F44336"></span>Not found<span class="cnt">14</span></div>
+    <div class="m2-chip c-undo"><span class="d" style="background:#CE93D8"></span>Undo<span class="cnt">2</span></div>
+    <div class="m2-chip c-unscanned"><span class="d" style="background:#CE93D8"></span>Unscanned<span class="cnt">4</span></div>
+  </div>
+  <div class="mock-note">Each chip shows live count · colored only when active · most informative option</div>
+</div>
+
+<!-- ── MOCK 3: GHOST PILLS WITH LED DOT ──────────────────────────────── -->
+<div class="mock">
+  <div class="mock-head">
+    <div class="mock-name">Option 3 — Ghost pills + LED dot</div>
+    <div class="mock-tag">MINIMAL</div>
+  </div>
+  <div class="m3-wrap">
+    <div class="m3-label">STATUS</div>
+    <div class="m3-pill c-all active"><span class="d"></span>All</div>
+    <div class="m3-pill c-confirmed"><span class="d"></span>Confirmed</div>
+    <div class="m3-pill c-manual"><span class="d"></span>Manual</div>
+    <div class="m3-pill c-short"><span class="d"></span>Short supply</div>
+    <div class="m3-pill c-over"><span class="d"></span>Over supply</div>
+    <div class="m3-pill c-missing"><span class="d"></span>Missing</div>
+    <div class="m3-pill c-not_found"><span class="d"></span>Not found</div>
+    <div class="m3-pill c-undo"><span class="d"></span>Undo</div>
+    <div class="m3-pill c-unscanned"><span class="d"></span>Unscanned</div>
+  </div>
+  <div class="mock-note">Clean · uniform neutral chips · colored LED glow signals status · very professional</div>
+</div>
+
+<!-- ── MOCK 4: TAB BAR WITH UNDERLINE ────────────────────────────────── -->
+<div class="mock">
+  <div class="mock-head">
+    <div class="mock-name">Option 4 — Analytics tab bar</div>
+    <div class="mock-tag">SAAS STYLE</div>
+  </div>
+  <div class="m4-bar">
+    <div class="m4-label">STATUS</div>
+    <div class="m4-tab c-all active">All<span class="cnt">248</span></div>
+    <div class="m4-tab c-confirmed"><span class="d" style="background:#00E676"></span>Confirmed<span class="cnt">187</span></div>
+    <div class="m4-tab c-manual"><span class="d" style="background:#FFB300"></span>Manual<span class="cnt">24</span></div>
+    <div class="m4-tab c-short"><span class="d" style="background:#FFB300"></span>Short<span class="cnt">8</span></div>
+    <div class="m4-tab c-over"><span class="d" style="background:#29B6F6"></span>Over<span class="cnt">3</span></div>
+    <div class="m4-tab c-missing"><span class="d" style="background:#F44336"></span>Missing<span class="cnt">6</span></div>
+    <div class="m4-tab c-not_found"><span class="d" style="background:#F44336"></span>Not found<span class="cnt">14</span></div>
+    <div class="m4-tab c-undo"><span class="d" style="background:#CE93D8"></span>Undo<span class="cnt">2</span></div>
+    <div class="m4-tab c-unscanned"><span class="d" style="background:#CE93D8"></span>Unscanned<span class="cnt">4</span></div>
+  </div>
+  <div class="mock-note">Underline indicator · counts optional · fits best under the page title bar</div>
+</div>
+
+<script>
+// Click any mock item to toggle its active state so you can preview interactions
+document.querySelectorAll('.m1-bar, .m2-wrap, .m3-wrap, .m4-bar').forEach(group=>{
+  group.addEventListener('click', e=>{
+    const clickable = e.target.closest('.m1-item, .m2-chip, .m3-pill, .m4-tab');
+    if(!clickable) return;
+    group.querySelectorAll('.active').forEach(el=>el.classList.remove('active'));
+    clickable.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>

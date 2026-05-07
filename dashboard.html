@@ -235,6 +235,12 @@ a{color:inherit;text-decoration:none}
 .board-count{font-size:11px;color:#7A9AB8}
 .board-age{font-size:11px;color:#7A9AB8}
 .no-boards{background:#0C1420;border:1px solid #1A2740;border-radius:14px;padding:48px;text-align:center;color:#7A9AB8;font-size:13px}
+.board-actions{display:flex;gap:8px;margin-top:10px}
+.board-act-btn{flex:1;padding:7px 10px;border-radius:8px;font-size:10px;font-weight:800;cursor:pointer;border:1px solid transparent;transition:all .15s;text-align:center;letter-spacing:.5px}
+.btn-clear-board{background:#F4433612;color:#F44336;border-color:#F4433630}
+.btn-clear-board:hover{background:#F4433625;border-color:#F4433660}
+.btn-clear-invoices{background:#FF6D0012;color:#FF6D00;border-color:#FF6D0030}
+.btn-clear-invoices:hover{background:#FF6D0025;border-color:#FF6D0060}
 .boards-sub{font-size:11px;color:#7A9AB8;margin-bottom:16px}
 
 /* ── Unified import rows (Option A) ── */
@@ -1289,12 +1295,30 @@ async function loadBoards(){
         <div class="board-footer">
           <div class="board-count">${room.memberCount} member${room.memberCount!==1?"s":""}</div>
         </div>
+        <div class="board-actions">
+          <div class="board-act-btn btn-clear-board" onclick="clearAllBoards('${room.roomId}','${(room.roomName||"").replace(/'/g,"\\'")}')">CLEAR BOARD</div>
+          <div class="board-act-btn btn-clear-invoices" onclick="clearAllInvoices('${room.roomId}','${(room.roomName||"").replace(/'/g,"\\'")}')">CLEAR INVOICES</div>
+        </div>
       </div>`;
     }).join("");
   }catch(e){
     const grid=document.getElementById("boards-grid");
     if(grid) grid.innerHTML='<div class="no-boards">Could not load boards — is the server running?</div>';
   }
+}
+
+// ── Clear All Actions (from dashboard) ────────────────────────────────────
+function clearAllBoards(roomId, roomName){
+  if(!confirm(`Clear ALL focus boards & part confirmations for "${roomName}"?\n\nThis will wipe every user's board in this room. They'll see a toast on their phone.`)) return;
+  if(!ws || ws.readyState !== 1){ alert("Not connected to server. Try again in a moment."); return; }
+  ws.send(JSON.stringify({ type: "clear_all_boards", roomId, initials: "ADMIN" }));
+  alert(`Board "${roomName}" cleared! All connected devices will be wiped now. Offline users will be cleared when they next open the app.`);
+}
+function clearAllInvoices(roomId, roomName){
+  if(!confirm(`Clear ALL invoices for "${roomName}"?\n\n⚠️ This will delete:\n• All invoices from the server\n• All focus boards\n• All part confirmations\n\nThis cannot be undone.`)) return;
+  if(!ws || ws.readyState !== 1){ alert("Not connected to server. Try again in a moment."); return; }
+  ws.send(JSON.stringify({ type: "clear_all_invoices", roomId, initials: "ADMIN" }));
+  alert(`All invoices for "${roomName}" cleared! Devices will be wiped now.`);
 }
 
 // ── Row hide/show (persisted) ─────────────────────────────────────────────
