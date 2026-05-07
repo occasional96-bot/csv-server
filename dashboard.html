@@ -235,12 +235,6 @@ a{color:inherit;text-decoration:none}
 .board-count{font-size:11px;color:#7A9AB8}
 .board-age{font-size:11px;color:#7A9AB8}
 .no-boards{background:#0C1420;border:1px solid #1A2740;border-radius:14px;padding:48px;text-align:center;color:#7A9AB8;font-size:13px}
-.board-actions{display:flex;gap:8px;margin-top:10px}
-.board-act-btn{flex:1;padding:7px 10px;border-radius:8px;font-size:10px;font-weight:800;cursor:pointer;border:1px solid transparent;transition:all .15s;text-align:center;letter-spacing:.5px}
-.btn-clear-board{background:#F4433612;color:#F44336;border-color:#F4433630}
-.btn-clear-board:hover{background:#F4433625;border-color:#F4433660}
-.btn-clear-invoices{background:#FF6D0012;color:#FF6D00;border-color:#FF6D0030}
-.btn-clear-invoices:hover{background:#FF6D0025;border-color:#FF6D0060}
 .boards-sub{font-size:11px;color:#7A9AB8;margin-bottom:16px}
 
 /* ── Unified import rows (Option A) ── */
@@ -290,6 +284,8 @@ a{color:inherit;text-decoration:none}
 .ubar-info .warn{color:#FFB300}
 .ubar-info .bad{color:#F44336}
 .ubar .big-sync-btn{width:auto;margin:0;padding:10px 22px;font-size:12px;flex-shrink:0}
+.clear-all-btn{width:auto;margin:0;padding:10px 22px;font-size:12px;flex-shrink:0;background:#F44336;border:none;border-radius:10px;font-weight:800;color:#fff;cursor:pointer;letter-spacing:0.3px;transition:opacity 0.15s}
+.clear-all-btn:hover{opacity:0.85}
 
 /* ── Responsive ── */
 @media(max-width:900px){
@@ -540,6 +536,7 @@ a{color:inherit;text-decoration:none}
       <div class="ubar">
         <div class="ubar-info" id="import-summary">Checking file status…</div>
         <button class="big-sync-btn" onclick="syncNow()">Sync &amp; Push to All Devices</button>
+        <button class="clear-all-btn" onclick="clearAllData()">Clear All Data</button>
       </div>
 
   </div><!-- /main -->
@@ -1295,10 +1292,6 @@ async function loadBoards(){
         <div class="board-footer">
           <div class="board-count">${room.memberCount} member${room.memberCount!==1?"s":""}</div>
         </div>
-        <div class="board-actions">
-          <div class="board-act-btn btn-clear-board" onclick="clearAllBoards('${room.roomId}','${(room.roomName||"").replace(/'/g,"\\'")}')">CLEAR BOARD</div>
-          <div class="board-act-btn btn-clear-invoices" onclick="clearAllInvoices('${room.roomId}','${(room.roomName||"").replace(/'/g,"\\'")}')">CLEAR INVOICES</div>
-        </div>
       </div>`;
     }).join("");
   }catch(e){
@@ -1307,18 +1300,23 @@ async function loadBoards(){
   }
 }
 
-// ── Clear All Actions (from dashboard) ────────────────────────────────────
-function clearAllBoards(roomId, roomName){
-  if(!confirm(`Clear ALL focus boards & part confirmations for "${roomName}"?\n\nThis will wipe every user's board in this room. They'll see a toast on their phone.`)) return;
+// ── Clear All Data (wipe boards + invoices, keep scan logs) ───────────────
+async function clearAllData(){
+  if(!confirm("Clear ALL Data?\n\nThis will:\n• Wipe every user's focus board\n• Clear all invoices from the server\n• Clear all AsyncStorage on phones\n\nScan logs will NOT be affected.\n\nThis cannot be undone.")) return;
   if(!ws || ws.readyState !== 1){ alert("Not connected to server. Try again in a moment."); return; }
-  ws.send(JSON.stringify({ type: "clear_all_boards", roomId, initials: "ADMIN" }));
-  alert(`Board "${roomName}" cleared! All connected devices will be wiped now. Offline users will be cleared when they next open the app.`);
-}
-function clearAllInvoices(roomId, roomName){
-  if(!confirm(`Clear ALL invoices for "${roomName}"?\n\n⚠️ This will delete:\n• All invoices from the server\n• All focus boards\n• All part confirmations\n\nThis cannot be undone.`)) return;
-  if(!ws || ws.readyState !== 1){ alert("Not connected to server. Try again in a moment."); return; }
-  ws.send(JSON.stringify({ type: "clear_all_invoices", roomId, initials: "ADMIN" }));
-  alert(`All invoices for "${roomName}" cleared! Devices will be wiped now.`);
+  // Fetch active rooms and send clear to each one
+  try{
+    const r = await fetch(SERVER+"/rooms");
+    const d = await r.json();
+    const rooms = d.rooms || [];
+    if(!rooms.length){ alert("No active boards found. Server invoices will still be cleared."); }
+    rooms.forEach(room => {
+      ws.send(JSON.stringify({ type: "clear_all_data", roomId: room.roomId, initials: "ADMIN" }));
+    });
+    // Also hit the server to clear invoices.json even if no rooms active
+    await fetch(SERVER+"/clear-invoices", { method: "POST" });
+    alert("Done! All boards and invoices cleared. Scan logs untouched.");
+  }catch(e){ alert("Error: "+e.message); }
 }
 
 // ── Row hide/show (persisted) ─────────────────────────────────────────────

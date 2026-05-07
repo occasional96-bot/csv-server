@@ -259,8 +259,7 @@ wss.on("connection", (ws) => {
           focusList: room.focusList,
           pinnedIds: room.pinnedIds,
           mergeMode: msg.mergeMode,
-          boardClearedAt: room.boardClearedAt || 0,
-          invoicesClearedAt: room.invoicesClearedAt || 0,
+          dataClearedAt: room.dataClearedAt || 0,
         });
         // Notify others
         broadcastToRoom(msg.roomId, {
@@ -502,49 +501,25 @@ wss.on("connection", (ws) => {
         return;
       }
 
-      // ── Clear ALL boards (admin wipe from dashboard) ─────────────────
-      if (msg.type === "clear_all_boards") {
+      // ── Clear ALL data (admin wipe from dashboard — keeps scan logs) ──
+      if (msg.type === "clear_all_data") {
         const roomId = msg.roomId || getRoomIdForClient(clientInfo, msg.userId);
         const room = rooms[roomId];
         if (!room) return;
         room.focusList = [];
         room.pinnedIds = [];
-        room.invoiceUpdates = {};
-        // Reset all part confirmations in room.invoices but keep invoice shells
-        room.invoices = (room.invoices || []).map(inv => ({
-          ...inv, complete: false, completedAt: 0, completedBy: "",
-          parts: inv.parts.map(p => ({ ...p, confirmed: 0, short: false, shortQty: null, confirmedBy: "", confirmedColor: "", confirmedAt: 0 }))
-        }));
-        room.boardClearedAt = Date.now();
-        saveRooms();
-        // Broadcast to ALL in room (including sender so dashboard gets confirmation)
-        const clearMsg = JSON.stringify({ type: "clear_all_boards", clearedAt: room.boardClearedAt, clearedBy: msg.initials || "ADMIN" });
-        for (const [cws, info] of clients.entries()) {
-          if (info.roomId === roomId && cws.readyState === 1) cws.send(clearMsg);
-        }
-        console.log(`[clear_all_boards] Room ${roomId} wiped by ${msg.initials || "ADMIN"}`);
-        return;
-      }
-
-      // ── Clear ALL invoices (admin wipe from dashboard) ────────────────
-      if (msg.type === "clear_all_invoices") {
-        const roomId = msg.roomId || getRoomIdForClient(clientInfo, msg.userId);
-        const room = rooms[roomId];
-        if (!room) return;
         room.invoices = [];
         room.invoiceUpdates = {};
-        room.focusList = [];
-        room.pinnedIds = [];
-        room.invoicesClearedAt = Date.now();
+        room.dataClearedAt = Date.now();
         saveRooms();
-        // Also wipe the global invoices.json store
+        // Wipe global invoices.json (NOT scanlog.json)
         saveInvoices([]);
         // Broadcast to ALL in room
-        const clearMsg = JSON.stringify({ type: "clear_all_invoices", clearedAt: room.invoicesClearedAt, clearedBy: msg.initials || "ADMIN" });
+        const clearMsg = JSON.stringify({ type: "clear_all_data", clearedAt: room.dataClearedAt, clearedBy: msg.initials || "ADMIN" });
         for (const [cws, info] of clients.entries()) {
           if (info.roomId === roomId && cws.readyState === 1) cws.send(clearMsg);
         }
-        console.log(`[clear_all_invoices] Room ${roomId} + invoices.json wiped by ${msg.initials || "ADMIN"}`);
+        console.log(`[clear_all_data] Room ${roomId} wiped by ${msg.initials || "ADMIN"} (scan logs preserved)`);
         return;
       }
 
@@ -761,6 +736,13 @@ app.post("/sync-invoices", (req, res) => {
   saveInvoices(stored);
   console.log("[sync-invoices] stored " + invoices.length + " invoices. Total: " + stored.length);
   res.json({ ok: true, stored: stored.length });
+});
+
+// Clear all invoices (HTTP fallback for dashboard when no active rooms)
+app.post("/clear-invoices", (req, res) => {
+  saveInvoices([]);
+  console.log("[clear-invoices] invoices.json wiped via HTTP");
+  res.json({ ok: true, message: "All invoices cleared" });
 });
 
 app.get("/invoices", (req, res) => {
