@@ -409,11 +409,11 @@ a{color:inherit;text-decoration:none}
       <div class="logo-title">Warehouse PRO</div>
       <div class="logo-sub">KIA &amp; Hyundai Dashboard</div>
     </div>
-    <div class="nav-item" onclick="showPage('log')" id="nav-log">
+    <div class="nav-item active" onclick="showPage('log')" id="nav-log">
       <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="2" rx="1" fill="#71717A"/><rect x="2" y="7" width="8" height="2" rx="1" fill="#71717A"/><rect x="2" y="12" width="10" height="2" rx="1" fill="#71717A"/></svg>
       Scan Log
     </div>
-    <div class="nav-item active" onclick="showPage('import')" id="nav-import">
+    <div class="nav-item" onclick="showPage('import')" id="nav-import">
       <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 7l3 3 3-3" stroke="#71717A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 12h10" stroke="#71717A" stroke-width="1.5" stroke-linecap="round"/></svg>
       Import CSV
     </div>
@@ -732,7 +732,7 @@ a{color:inherit;text-decoration:none}
 </div>
 
 <script>
-const SERVER = (location.protocol === "file:" || location.hostname === "localhost") ? "https://csv-server-production-efc6.up.server.app" : location.origin;
+const SERVER = (location.protocol === "file:" || location.hostname === "localhost") ? "https://csv-server-production-efc6.up.railway.app" : location.origin;
 const WS_URL = SERVER.replace(/^http/, "ws");
 
 // ── State ──────────────────────────────────────────────────────────────────
@@ -1626,11 +1626,6 @@ function initRowToggles(){
   applyHiddenRows();
 }
 
-// ── Init ──────────────────────────────────────────────────────────────────
-
-const now=new Date();
-document.getElementById("date-chip").textContent=now.toLocaleDateString("en-AU",{weekday:"short",day:"2-digit",month:"short",year:"numeric"});
-
 // ── Command Palette ──────────────────────────────────────────────────────
 function toggleCmdPalette(){
   const el=document.getElementById("cmd-overlay");
@@ -1770,7 +1765,7 @@ document.getElementById("date-chip").textContent=now.toLocaleDateString("en-AU",
 
 initRowToggles();
 applySettings();
-showPage("import");
+showPage("log");
 setHealth("wake");
 pingServer().finally(()=>{ loadInvoices().then(()=>{ loadLogs(); loadStats(); }); });
 setTimeout(connectWS, 800); // slight delay lets ping wake the server first
