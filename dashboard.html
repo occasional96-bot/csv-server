@@ -1390,7 +1390,7 @@ document.getElementById("date-chip").textContent=now.toLocaleDateString("en-AU",
 initRowToggles();
 showPage("import");
 setHealth("wake");
-pingServer().finally(()=>{ loadLogs(); loadStats(); });
+pingServer().finally(()=>{ loadInvoices().then(()=>{ loadLogs(); loadStats(); }); });
 setTimeout(connectWS, 800); // slight delay lets ping wake the server first
 setInterval(()=>{ loadLogs(); loadStats(); }, 5000);
 </script>
