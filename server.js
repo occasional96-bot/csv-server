@@ -790,7 +790,21 @@ app.get("/ping", (req, res) => res.json({ ok: true, ts: Date.now() }));
 app.get("/dashboard", (req, res) => {
   const fp = path.join(__dirname, "dashboard.html");
   if (!fs.existsSync(fp)) return res.status(404).send("dashboard.html not found — deploy it alongside server.js");
+  res.set("Cache-Control", "no-store, no-cache, must-revalidate");
+  res.set("Pragma", "no-cache");
   res.sendFile(fp);
+});
+
+// Debug: verify which dashboard is deployed
+app.get("/dashboard-check", (req, res) => {
+  const fp = path.join(__dirname, "dashboard.html");
+  try {
+    const content = fs.readFileSync(fp, "utf8");
+    const hasStat = content.includes("stat-confirmed");
+    const hasRailway = content.includes("railway.app");
+    const lines = content.split("\n").length;
+    res.json({ hasStat, hasRailway, lines, dirname: __dirname });
+  } catch(e) { res.json({ error: e.message }); }
 });
 
 app.get("/", (req, res) => res.json({ status: "ok", version: "4.0-rooms" }));
