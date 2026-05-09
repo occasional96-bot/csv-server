@@ -532,14 +532,12 @@ a{color:inherit;text-decoration:none}
         </div>
       </div>
 
-      <div class="ubar" style="flex-direction:column;align-items:stretch;gap:10px">
+      <div class="ubar">
         <div class="ubar-info" id="import-summary">Checking file status…</div>
-        <div style="display:flex;align-items:center;justify-content:flex-end;gap:10px">
-          <div class="clear-toggle-wrap">
-            <span class="clear-toggle-label" id="clear-toggle-label">Clear All Data</span>
-            <div class="clear-toggle" id="clear-toggle" onclick="toggleClearAll()">
-              <div class="clear-toggle-knob"></div>
-            </div>
+        <div class="clear-toggle-wrap">
+          <span class="clear-toggle-label" id="clear-toggle-label">Clear All Data</span>
+          <div class="clear-toggle" id="clear-toggle" onclick="toggleClearAll()">
+            <div class="clear-toggle-knob"></div>
           </div>
         </div>
         <button class="big-sync-btn" onclick="syncNow()">Sync &amp; Push to All Devices</button>
