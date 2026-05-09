@@ -325,6 +325,78 @@ a{color:inherit;text-decoration:none}
   .filters{grid-template-columns:repeat(2,1fr)}
   .status-filters{width:100%}
 }
+
+/* ── Invoice grouping ── */
+.grp-header{display:flex;align-items:center;padding:10px 16px;background:rgba(0,112,243,0.03);border-bottom:1px solid rgba(255,255,255,0.06);cursor:pointer;gap:8px;transition:background 0.15s;user-select:none}
+.grp-header:hover{background:rgba(0,112,243,0.05)}
+.grp-chev{width:12px;height:12px;color:#52525B;transition:transform 0.2s;flex-shrink:0}
+.grp-chev.open{transform:rotate(90deg)}
+.grp-inv{font-size:13px;font-weight:600;color:#3B82F6;letter-spacing:-0.01em}
+.grp-brand{font-size:10px;color:#3F3F46;font-weight:500}
+.grp-count{font-size:10px;color:#3F3F46}
+.grp-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.grp-frac{font-size:11px;font-weight:600;font-variant-numeric:tabular-nums}
+.grp-prog{width:60px;height:3px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden}
+.grp-prog-fill{height:100%;border-radius:2px;transition:width 0.3s}
+.grp-rows{overflow:hidden;transition:max-height 0.25s ease}
+.grp-rows.collapsed{max-height:0!important;overflow:hidden}
+
+/* ── Mini progress bar in qty ── */
+.qty-mini-bar{width:36px;height:3px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;margin:3px auto 0}
+.qty-mini-fill{height:100%;border-radius:2px}
+
+/* ── Hover quick actions ── */
+.row-actions{position:absolute;right:8px;top:50%;transform:translateY(-50%);display:none;gap:3px;align-items:center;background:rgba(9,9,11,0.92);backdrop-filter:blur(8px);padding:3px;border-radius:7px;border:1px solid rgba(255,255,255,0.08);z-index:5}
+.row{position:relative}
+.row:hover .row-actions{display:flex}
+.ra-btn{width:26px;height:26px;border-radius:5px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#52525B;transition:all 0.1s;border:none;background:transparent}
+.ra-btn:hover{background:rgba(255,255,255,0.08);color:#E4E4E7}
+.ra-btn svg{width:13px;height:13px}
+
+/* ── Command palette ── */
+.cmd-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);display:none;z-index:100;align-items:flex-start;justify-content:center;padding-top:15vh}
+.cmd-overlay.show{display:flex}
+.cmd-box{width:480px;max-width:90vw;background:rgba(20,20,22,0.98);border:1px solid rgba(255,255,255,0.08);border-radius:12px;overflow:hidden;box-shadow:0 16px 48px rgba(0,0,0,0.5)}
+.cmd-input{width:100%;padding:14px 18px;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,0.06);font-size:14px;color:#FAFAFA;outline:none;font-family:inherit}
+.cmd-input::placeholder{color:#3F3F46}
+.cmd-cat{font-size:10px;color:#3F3F46;padding:10px 16px 4px;text-transform:uppercase;letter-spacing:0.08em;font-weight:500}
+.cmd-list{padding:4px 6px}
+.cmd-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:7px;font-size:13px;color:#A1A1AA;cursor:pointer;transition:background 0.1s}
+.cmd-item:hover,.cmd-item.sel{background:rgba(0,112,243,0.08);color:#E4E4E7}
+.cmd-item svg{width:14px;height:14px;opacity:0.5;flex-shrink:0}
+.cmd-kbd{margin-left:auto;font-size:10px;color:#3F3F46;font-family:monospace;background:rgba(255,255,255,0.05);padding:2px 6px;border-radius:4px}
+.cmd-search-bar{display:flex;align-items:center;gap:8px;padding:6px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.025);cursor:pointer;transition:all 0.15s;margin-right:8px}
+.cmd-search-bar:hover{border-color:rgba(255,255,255,0.1);background:rgba(255,255,255,0.04)}
+.cmd-search-bar svg{width:13px;height:13px;color:#3F3F46}
+.cmd-search-bar span{font-size:11px;color:#3F3F46;min-width:100px}
+.cmd-search-bar kbd{font-size:10px;color:#3F3F46;background:rgba(255,255,255,0.06);padding:2px 6px;border-radius:4px;font-family:monospace;border:1px solid rgba(255,255,255,0.06)}
+
+/* ── Settings panel ── */
+.settings-overlay{position:fixed;top:0;right:0;bottom:0;width:280px;background:rgba(14,14,16,0.98);backdrop-filter:blur(16px) saturate(180%);border-left:1px solid rgba(255,255,255,0.06);z-index:90;padding:20px 16px;display:none;overflow-y:auto;box-shadow:-8px 0 32px rgba(0,0,0,0.3)}
+.settings-overlay.show{display:block}
+.sp-title{font-size:14px;font-weight:600;color:#FAFAFA;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between}
+.sp-close{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#52525B;border:none;background:transparent;transition:all 0.15s}
+.sp-close:hover{background:rgba(255,255,255,0.06);color:#E4E4E7}
+.sp-section{margin-bottom:18px}
+.sp-label{font-size:10px;color:#3F3F46;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;font-weight:500}
+.sp-row{display:flex;gap:4px;margin-bottom:6px}
+.sp-opt{flex:1;padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02);font-size:10px;color:#52525B;cursor:pointer;text-align:center;transition:all 0.15s;font-family:inherit;font-weight:600}
+.sp-opt:hover{border-color:rgba(255,255,255,0.1);color:#A1A1AA}
+.sp-opt.act{border-color:#0070F3;background:rgba(0,112,243,0.08);color:#3B82F6}
+.color-row{display:flex;gap:6px;flex-wrap:wrap}
+.color-swatch{width:22px;height:22px;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:all 0.15s}
+.color-swatch:hover{transform:scale(1.15)}
+.color-swatch.act{border-color:#FAFAFA;box-shadow:0 0 8px rgba(255,255,255,0.15)}
+.sp-divider{height:1px;background:rgba(255,255,255,0.06);margin:14px 0}
+.sp-toggle-row{display:flex;align-items:center;justify-content:space-between;padding:5px 0}
+.sp-toggle-txt{font-size:11px;color:#A1A1AA}
+.sp-switch{width:32px;height:18px;border-radius:9px;background:rgba(255,255,255,0.1);cursor:pointer;position:relative;transition:background 0.2s}
+.sp-switch.on{background:#0070F3}
+.sp-switch::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:white;transition:transform 0.2s}
+.sp-switch.on::after{transform:translateX(14px)}
+.gear-btn{width:30px;height:30px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.025);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s;color:#52525B}
+.gear-btn:hover{background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.1);color:#A1A1AA}
+.gear-btn svg{width:15px;height:15px}
 </style>
 </head>
 <body>
@@ -349,6 +421,10 @@ a{color:inherit;text-decoration:none}
       <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="#71717A" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="#71717A" stroke-width="1.5"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="#71717A" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="#71717A" stroke-width="1.5"/></svg>
       Focus Boards
     </div>
+    <div class="nav-item" onclick="toggleSettings()" style="margin-top:auto">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="#71717A" stroke-width="1.3"><circle cx="8" cy="8" r="2.5"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.3 3.3l1.4 1.4M11.3 11.3l1.4 1.4M3.3 12.7l1.4-1.4M11.3 4.7l1.4-1.4"/></svg>
+      Settings
+    </div>
     <div class="sidebar-bottom">
       <div class="server-status">
         <div class="status-dot" id="conn-dot"></div>
@@ -368,9 +444,17 @@ a{color:inherit;text-decoration:none}
           <div class="page-sub" id="log-date"></div>
         </div>
         <div class="topbar-right">
+          <div class="cmd-search-bar" onclick="toggleCmdPalette()">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg>
+            <span>Search...</span>
+            <kbd>Ctrl K</kbd>
+          </div>
           <div class="date-chip" id="date-chip"></div>
           <div class="health-badge hb-wake" id="health-badge" title="Server status"><div class="hb-dot"></div><span id="health-text">Checking…</span></div>
           <div class="live-badge"><div class="pulse"></div>Live</div>
+          <div class="gear-btn" onclick="toggleSettings()" title="Settings">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="2.5"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.3 3.3l1.4 1.4M11.3 11.3l1.4 1.4M3.3 12.7l1.4-1.4M11.3 4.7l1.4-1.4"/></svg>
+          </div>
         </div>
       </div>
 
@@ -552,6 +636,7 @@ a{color:inherit;text-decoration:none}
         <button class="big-sync-btn" onclick="syncNow()">Sync &amp; Push to All Devices</button>
       </div>
       <div class="toast-container" id="toast-container"></div>
+    </div><!-- /page-import -->
 
   </div><!-- /main -->
 </div><!-- /shell -->
@@ -566,6 +651,85 @@ a{color:inherit;text-decoration:none}
 </div>
 <div class="boards-grid" id="boards-grid"><div class="no-boards">Loading boards...</div></div>
 </template>
+
+<!-- Command Palette Overlay -->
+<div class="cmd-overlay" id="cmd-overlay" onclick="if(event.target===this)toggleCmdPalette()">
+  <div class="cmd-box">
+    <input class="cmd-input" id="cmd-input" placeholder="Type a command or search..." oninput="filterCmdPalette()" onkeydown="cmdKeyNav(event)" autocomplete="off" />
+    <div class="cmd-cat">Navigation</div>
+    <div class="cmd-list" id="cmd-list">
+      <div class="cmd-item" data-cmd="scan-log" onclick="runCmd('scan-log')"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="2" rx="1" fill="currentColor"/><rect x="2" y="7" width="8" height="2" rx="1" fill="currentColor"/><rect x="2" y="12" width="10" height="2" rx="1" fill="currentColor"/></svg>Go to Scan Log<span class="cmd-kbd">1</span></div>
+      <div class="cmd-item" data-cmd="import" onclick="runCmd('import')"><svg viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M3 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Go to Import CSV<span class="cmd-kbd">2</span></div>
+      <div class="cmd-item" data-cmd="boards" onclick="runCmd('boards')"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>Go to Focus Boards<span class="cmd-kbd">3</span></div>
+      <div class="cmd-item" data-cmd="settings" onclick="runCmd('settings')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="2.5"/><path d="M8 2v2M8 12v2M2 8h2M12 8h2"/></svg>Open Settings<span class="cmd-kbd">S</span></div>
+      <div class="cmd-item" data-cmd="export-csv" onclick="runCmd('export-csv')"><svg viewBox="0 0 16 16" fill="none"><path d="M4 12h8M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Export CSV</div>
+      <div class="cmd-item" data-cmd="export-disc" onclick="runCmd('export-disc')"><svg viewBox="0 0 16 16" fill="none"><path d="M4 12h8M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Export Discrepancy Report</div>
+      <div class="cmd-item" data-cmd="filter-confirmed" onclick="runCmd('filter-confirmed')"><svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M6 8l2 2 3-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Filter: Confirmed only</div>
+      <div class="cmd-item" data-cmd="filter-unscanned" onclick="runCmd('filter-unscanned')"><svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M6 6l4 4M10 6l-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Filter: Unscanned only</div>
+      <div class="cmd-item" data-cmd="filter-clear" onclick="runCmd('filter-clear')"><svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="5" stroke="currentColor" stroke-width="1.5"/></svg>Clear all filters</div>
+      <div class="cmd-item" data-cmd="sync" onclick="runCmd('sync')"><svg viewBox="0 0 16 16" fill="none"><path d="M2 8a6 6 0 0111.5-2M14 8a6 6 0 01-11.5 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Sync &amp; Push All Files</div>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Panel Overlay -->
+<div class="settings-overlay" id="settings-overlay">
+  <div class="sp-title">Settings <button class="sp-close" onclick="toggleSettings()">&times;</button></div>
+
+  <div class="sp-section">
+    <div class="sp-label">Table Density</div>
+    <div class="sp-row">
+      <button class="sp-opt" onclick="setDensity('compact',this)">Compact</button>
+      <button class="sp-opt act" onclick="setDensity('default',this)">Default</button>
+      <button class="sp-opt" onclick="setDensity('relaxed',this)">Relaxed</button>
+    </div>
+  </div>
+
+  <div class="sp-section">
+    <div class="sp-label">Accent Color</div>
+    <div class="color-row" id="accent-colors">
+      <div class="color-swatch act" style="background:#0070F3" onclick="setAccent('#0070F3',this)" title="Vercel Blue"></div>
+      <div class="color-swatch" style="background:#22C55E" onclick="setAccent('#22C55E',this)" title="Green"></div>
+      <div class="color-swatch" style="background:#F97316" onclick="setAccent('#F97316',this)" title="Orange"></div>
+      <div class="color-swatch" style="background:#EF4444" onclick="setAccent('#EF4444',this)" title="Red"></div>
+      <div class="color-swatch" style="background:#06B6D4" onclick="setAccent('#06B6D4',this)" title="Cyan"></div>
+      <div class="color-swatch" style="background:#FBBF24" onclick="setAccent('#FBBF24',this)" title="Amber"></div>
+    </div>
+  </div>
+
+  <div class="sp-section">
+    <div class="sp-label">Invoice Color</div>
+    <div class="color-row" id="invoice-colors">
+      <div class="color-swatch act" style="background:#3B82F6" onclick="setInvColor('#3B82F6',this)" title="Blue"></div>
+      <div class="color-swatch" style="background:#22C55E" onclick="setInvColor('#22C55E',this)" title="Green"></div>
+      <div class="color-swatch" style="background:#F97316" onclick="setInvColor('#F97316',this)" title="Orange"></div>
+      <div class="color-swatch" style="background:#FAFAFA" onclick="setInvColor('#FAFAFA',this)" title="White"></div>
+      <div class="color-swatch" style="background:#06B6D4" onclick="setInvColor('#06B6D4',this)" title="Cyan"></div>
+    </div>
+  </div>
+
+  <div class="sp-section">
+    <div class="sp-label">Part Number Color</div>
+    <div class="color-row" id="part-colors">
+      <div class="color-swatch act" style="background:#E4E4E7" onclick="setPartColor('#E4E4E7',this)" title="Default"></div>
+      <div class="color-swatch" style="background:#22C55E" onclick="setPartColor('#22C55E',this)" title="Green"></div>
+      <div class="color-swatch" style="background:#3B82F6" onclick="setPartColor('#3B82F6',this)" title="Blue"></div>
+      <div class="color-swatch" style="background:#F97316" onclick="setPartColor('#F97316',this)" title="Orange"></div>
+      <div class="color-swatch" style="background:#FBBF24" onclick="setPartColor('#FBBF24',this)" title="Amber"></div>
+    </div>
+  </div>
+
+  <div class="sp-divider"></div>
+
+  <div class="sp-section">
+    <div class="sp-label">Features</div>
+    <div class="sp-toggle-row"><span class="sp-toggle-txt">Group by Invoice</span><div class="sp-switch on" id="sw-grouping" onclick="toggleSwitch('grouping',this)"></div></div>
+    <div class="sp-toggle-row"><span class="sp-toggle-txt">Mini Qty Bars</span><div class="sp-switch on" id="sw-minibars" onclick="toggleSwitch('minibars',this)"></div></div>
+    <div class="sp-toggle-row"><span class="sp-toggle-txt">Hover Actions</span><div class="sp-switch on" id="sw-hoveractions" onclick="toggleSwitch('hoveractions',this)"></div></div>
+    <div class="sp-toggle-row"><span class="sp-toggle-txt">Show Progress in Groups</span><div class="sp-switch on" id="sw-groupprog" onclick="toggleSwitch('groupprog',this)"></div></div>
+    <div class="sp-toggle-row"><span class="sp-toggle-txt">Compact Sidebar</span><div class="sp-switch" id="sw-compactsidebar" onclick="toggleSwitch('compactsidebar',this)"></div></div>
+  </div>
+</div>
 
 <script>
 const SERVER = (location.protocol === "file:" || location.hostname === "localhost") ? "https://csv-server-production-efc6.up.server.app" : location.origin;
@@ -800,33 +964,104 @@ function enrich(e, lookup){
   };
 }
 
+// Collapsed groups state
+let collapsedGroups = new Set();
+function toggleGroup(invId){
+  if(collapsedGroups.has(invId)) collapsedGroups.delete(invId);
+  else collapsedGroups.add(invId);
+  renderTable(false);
+}
+
+function renderRow(e, isNew){
+  const isUnscan = e.action==="unscanned";
+  const avatarStyle = `background:${e.color}20;border:1.5px solid ${e.color}40;color:${e.color}`;
+  const badgeClass = "b-"+(e.action||"confirmed");
+  const badgeLabel = e.action==="confirmed"?"Confirmed":e.action==="manual"?"Manual":e.action==="not_found"?"Not found":e.action==="unscanned"?"Unscanned":e.action==="short"?"Short supply":e.action==="over"?"Over supply":e.action==="missing"?"Missing":"Undo";
+  const dotColor = e.action==="confirmed"?"#22C55E":e.action==="manual"?"#3B82F6":e.action==="not_found"?"#EF4444":e.action==="short"?"#FBBF24":e.action==="over"?"#3B82F6":e.action==="missing"?"#EF4444":"#52525B";
+  const partColor = settingsState.partColor||"#E4E4E7";
+  // Mini progress bar for qty
+  let qtyHtml = "—";
+  let miniBar = "";
+  if(e.qty && e.qty > 0){
+    const c = e.confirmed ?? 0;
+    const cls = c===e.qty?"qty-done":c>e.qty?"qty-over":c<e.qty&&c>0?"qty-short":"";
+    qtyHtml = `<span class="${cls}">${c}</span><span class="qty-sep">/</span>${e.qty}`;
+    if(settingsState.minibars){
+      const pct = Math.min(Math.round(c/e.qty*100),100);
+      const barCol = c>=e.qty?"#22C55E":c>0?"#FBBF24":"rgba(255,255,255,0.06)";
+      miniBar = `<div class="qty-mini-bar"><div class="qty-mini-fill" style="width:${pct}%;background:${barCol}"></div></div>`;
+    }
+  }
+  // Hover quick actions
+  const safePart = (e.partNumber||"").replace(/'/g,"\\'");
+  const safeInv = (e.invoiceId||"").replace(/'/g,"\\'");
+  const actions = settingsState.hoveractions ? `<div class="row-actions">
+    <button class="ra-btn" title="Copy Part #" onclick="event.stopPropagation();navigator.clipboard.writeText('${safePart}');showToast('Copied ${safePart}','success')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="8" height="8" rx="1.5"/><path d="M3 11V3a1 1 0 011-1h8"/></svg></button>
+    <button class="ra-btn" title="Copy Invoice" onclick="event.stopPropagation();navigator.clipboard.writeText('${safeInv}');showToast('Copied ${safeInv}','success')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 2h8l2 2v10a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z"/><path d="M6 8h4M6 11h2"/></svg></button>
+    <button class="ra-btn" title="Filter this invoice" onclick="event.stopPropagation();document.getElementById('f-invoice').value='${safeInv}';applyFilters()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 3h12L9 8.5V13l-2-1V8.5L2 3z"/></svg></button>
+  </div>` : "";
+  return `<div class="row${isNew?" flash-new":""}${isUnscan?" unscanned-row":""}">
+    <div><div class="brand-chip">${e.brand||"?"}</div></div>
+    <div class="time-cell">${isUnscan?"—":fmtTime(e.timestamp)}</div>
+    <div><div class="avatar" style="${isUnscan?"background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);color:#27272A":avatarStyle}">${isUnscan?"—":e.initials}</div></div>
+    <div class="inv-block"><div class="inv-num" style="color:${settingsState.invColor||'#3B82F6'}">${e.invoiceId}</div></div>
+    <div class="part-cell"><div class="part-num${isUnscan?" dim":""}" style="${isUnscan?"":"color:"+partColor}">${e.partNumber}</div><div class="part-desc${isUnscan?" dim":""}">${e.description||""}</div></div>
+    <div class="qty-cell${isUnscan?" dim":""}">${qtyHtml}${miniBar}</div>
+    <div>${e.orderRef?`<div class="order-ref${isUnscan?" dim":""}">${e.orderRef}</div>`:`<div class="order-ref dim">—</div>`}</div>
+    <div>${e.note?`<div class="note-cell" title="${(e.note||'').replace(/"/g,'&quot;')}">${e.note}</div>`:'<div class="note-empty">—</div>'}</div>
+    <div><span class="badge ${badgeClass}"><span class="badge-dot" style="background:${dotColor}"></span>${badgeLabel}</span></div>
+    ${actions}
+  </div>`;
+}
+
 function renderTable(flashFirst){
   const lookup = buildPartLookup();
   const rows = [...getFiltered().map(e=>enrich(e,lookup)), ...getUnscannedRows()];
   const tbody = document.getElementById("log-tbody");
   if(!rows.length){ tbody.innerHTML='<div class="empty-state">No events match your filters</div>'; document.getElementById("footer-txt").textContent="No results"; return; }
 
-  tbody.innerHTML = rows.map((e,i)=>{
-    const isNew = flashFirst && i===0;
-    const isUnscan = e.action==="unscanned";
-    const invClass = e.brand==="KIA" ? "inv-kia" : "inv-hy";
-    const prog = e.progress ? `<div class="inv-progress"><div class="prog-bar-wrap"><div class="prog-bar" style="width:${Math.round(e.progress.done/e.progress.total*100)}%;background:${e.brand==='KIA'?'#3B82F6':'#FBBF24'}"></div></div><span class="prog-text">${e.progress.done}/${e.progress.total}</span></div>` : "";
-    const avatarStyle = `background:${e.color}20;border:1.5px solid ${e.color}40;color:${e.color}`;
-    const badgeClass = "b-"+(e.action||"confirmed");
-    const badgeLabel = e.action==="confirmed"?"Confirmed":e.action==="manual"?"Manual":e.action==="not_found"?"Not found":e.action==="unscanned"?"Unscanned":e.action==="short"?"Short supply":e.action==="over"?"Over supply":e.action==="missing"?"Missing":"Undo";
-    const dotColor = e.action==="confirmed"?"#22C55E":e.action==="manual"?"#3B82F6":e.action==="not_found"?"#EF4444":e.action==="short"?"#FBBF24":e.action==="over"?"#3B82F6":e.action==="missing"?"#EF4444":"#52525B";
-    return `<div class="row${isNew?" flash-new":""}${isUnscan?" unscanned-row":""}">
-      <div><div class="brand-chip">${e.brand||"?"}</div></div>
-      <div class="time-cell">${isUnscan?"—":fmtTime(e.timestamp)}</div>
-      <div><div class="avatar" style="${isUnscan?"background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);color:#27272A":avatarStyle}">${isUnscan?"—":e.initials}</div></div>
-      <div class="inv-block"><div class="inv-num ${invClass}">${e.invoiceId}</div>${prog}</div>
-      <div class="part-cell"><div class="part-num${isUnscan?" dim":""}">${e.partNumber}</div><div class="part-desc${isUnscan?" dim":""}">${e.description||""}</div></div>
-      <div class="qty-cell${isUnscan?" dim":""}">${(e.qty&&e.qty>0)?(()=>{const c=e.confirmed??0;const cls=c===e.qty?"qty-done":c>e.qty?"qty-over":c<e.qty&&c>0?"qty-short":"";return `<span class="${cls}">${c}</span><span class="qty-sep">/</span>${e.qty}`;})():"—"}</div>
-      <div>${e.orderRef?`<div class="order-ref${isUnscan?" dim":""}">${e.orderRef}</div>`:`<div class="order-ref dim">—</div>`}</div>
-      <div>${e.note?`<div class="note-cell" title="${e.note}">${e.note}</div>`:'<div class="note-empty">—</div>'}</div>
-      <div><span class="badge ${badgeClass}"><span class="badge-dot" style="background:${dotColor}"></span>${badgeLabel}</span></div>
-    </div>`;
-  }).join("");
+  // Grouped mode
+  if(settingsState.grouping){
+    // Group by invoiceId
+    const groups = new Map();
+    rows.forEach(e=>{
+      const key = e.invoiceId||"Unknown";
+      if(!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(e);
+    });
+
+    let html = "";
+    for(const [invId, items] of groups){
+      const brand = items[0]?.brand || "?";
+      const isCollapsed = collapsedGroups.has(invId);
+      // Calculate group progress
+      const totalParts = items.length;
+      const doneParts = items.filter(e=>e.action==="confirmed"||e.action==="manual").length;
+      const pct = totalParts>0?Math.round(doneParts/totalParts*100):0;
+      const progColor = pct===100?"#22C55E":pct>0?"#FBBF24":"rgba(255,255,255,0.1)";
+      const fracColor = pct===100?"#22C55E":pct>0?"#FBBF24":"#3F3F46";
+      const showProg = settingsState.groupprog;
+
+      const safeGrpId = invId.replace(/'/g,"\\'");
+      html += `<div class="grp-header" onclick="toggleGroup('${safeGrpId}')">
+        <svg class="grp-chev${isCollapsed?"":" open"}" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2l4 4-4 4"/></svg>
+        <span class="grp-inv" style="color:${settingsState.invColor||'#3B82F6'}">${invId}</span>
+        <span class="grp-brand">${brand}</span>
+        <span class="grp-count">${totalParts} part${totalParts!==1?"s":""}</span>
+        <div class="grp-right">
+          ${showProg?`<span class="grp-frac" style="color:${fracColor}">${doneParts}/${totalParts}</span>
+          <div class="grp-prog"><div class="grp-prog-fill" style="width:${pct}%;background:${progColor}"></div></div>`:""}
+        </div>
+      </div>`;
+      html += `<div class="grp-rows${isCollapsed?" collapsed":""}" style="max-height:${isCollapsed?0:items.length*80+40}px">`;
+      items.forEach((e,i)=>{ html += renderRow(e, flashFirst && i===0 && !isCollapsed); });
+      html += `</div>`;
+    }
+    tbody.innerHTML = html;
+  } else {
+    // Flat mode
+    tbody.innerHTML = rows.map((e,i)=>renderRow(e, flashFirst && i===0)).join("");
+  }
 
   document.getElementById("footer-txt").textContent = `Showing ${rows.length} event${rows.length!==1?"s":""} · Auto-refreshes every 5s · Last 14 days retained`;
 }
@@ -1396,7 +1631,145 @@ function initRowToggles(){
 const now=new Date();
 document.getElementById("date-chip").textContent=now.toLocaleDateString("en-AU",{weekday:"short",day:"2-digit",month:"short",year:"numeric"});
 
+// ── Command Palette ──────────────────────────────────────────────────────
+function toggleCmdPalette(){
+  const el=document.getElementById("cmd-overlay");
+  el.classList.toggle("show");
+  if(el.classList.contains("show")){
+    const inp=document.getElementById("cmd-input");
+    inp.value=""; filterCmdPalette(); inp.focus();
+  }
+}
+function filterCmdPalette(){
+  const q=document.getElementById("cmd-input").value.toLowerCase();
+  document.querySelectorAll(".cmd-item").forEach(item=>{
+    const txt=item.textContent.toLowerCase();
+    item.style.display=(!q||txt.includes(q))?"flex":"none";
+  });
+  // highlight first visible
+  const vis=[...document.querySelectorAll(".cmd-item")].filter(i=>i.style.display!=="none");
+  document.querySelectorAll(".cmd-item").forEach(i=>i.classList.remove("sel"));
+  if(vis.length) vis[0].classList.add("sel");
+}
+function cmdKeyNav(e){
+  const items=[...document.querySelectorAll(".cmd-item")].filter(i=>i.style.display!=="none");
+  const cur=items.findIndex(i=>i.classList.contains("sel"));
+  if(e.key==="ArrowDown"){ e.preventDefault(); items.forEach(i=>i.classList.remove("sel")); items[Math.min(cur+1,items.length-1)].classList.add("sel"); }
+  else if(e.key==="ArrowUp"){ e.preventDefault(); items.forEach(i=>i.classList.remove("sel")); items[Math.max(cur-1,0)].classList.add("sel"); }
+  else if(e.key==="Enter"){ e.preventDefault(); const sel=items.find(i=>i.classList.contains("sel")); if(sel) sel.click(); }
+  else if(e.key==="Escape"){ e.stopPropagation(); toggleCmdPalette(); }
+}
+function runCmd(cmd){
+  toggleCmdPalette();
+  if(cmd==="scan-log") showPage("log");
+  else if(cmd==="import") showPage("import");
+  else if(cmd==="boards") showPage("boards");
+  else if(cmd==="settings") toggleSettings();
+  else if(cmd==="export-csv") exportCSV();
+  else if(cmd==="export-disc") exportDiscrepancy();
+  else if(cmd==="filter-confirmed"){ showPage("log"); setStatusFilter("confirmed"); }
+  else if(cmd==="filter-unscanned"){ showPage("log"); setStatusFilter("unscanned"); }
+  else if(cmd==="filter-clear"){ showPage("log"); setStatusFilter(""); }
+  else if(cmd==="sync") syncNow();
+}
+document.addEventListener("keydown",e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key==="k"){ e.preventDefault(); toggleCmdPalette(); }
+  if(e.key==="Escape"){ const co=document.getElementById("cmd-overlay"); if(co.classList.contains("show")) toggleCmdPalette(); const so=document.getElementById("settings-overlay"); if(so.classList.contains("show")) toggleSettings(); }
+});
+
+// ── Settings Panel ──────────────────────────────────────────────────────
+function toggleSettings(){
+  document.getElementById("settings-overlay").classList.toggle("show");
+}
+
+// Settings state
+let settingsState = {
+  density: "default",
+  accent: "#0070F3",
+  invColor: "#3B82F6",
+  partColor: "#E4E4E7",
+  grouping: true,
+  minibars: true,
+  hoveractions: true,
+  groupprog: true,
+  compactsidebar: false
+};
+// Load saved settings
+try{ const s=JSON.parse(localStorage.getItem("wh_pro_settings")||"{}"); Object.assign(settingsState, s); }catch{}
+
+function saveSettings(){ localStorage.setItem("wh_pro_settings", JSON.stringify(settingsState)); }
+
+function setDensity(d, btn){
+  settingsState.density=d; saveSettings();
+  btn.parentElement.querySelectorAll(".sp-opt").forEach(o=>o.classList.remove("act"));
+  btn.classList.add("act");
+  const pad = d==="compact"?"6px 16px":d==="relaxed"?"16px 16px":"12px 16px";
+  document.querySelectorAll(".row").forEach(r=>r.style.padding=pad);
+  document.querySelectorAll(".grp-header").forEach(r=>r.style.padding=d==="compact"?"6px 16px":d==="relaxed"?"14px 16px":"10px 16px");
+}
+
+function setAccent(c, btn){
+  settingsState.accent=c; saveSettings();
+  document.querySelectorAll("#accent-colors .color-swatch").forEach(s=>s.classList.remove("act"));
+  btn.classList.add("act");
+  // Update accent-driven elements
+  document.querySelectorAll(".nav-item.active").forEach(n=>n.style.borderLeftColor=c);
+  document.querySelectorAll(".row:hover").forEach(r=>r.style.background=c+"10");
+}
+
+function setInvColor(c, btn){
+  settingsState.invColor=c; saveSettings();
+  document.querySelectorAll("#invoice-colors .color-swatch").forEach(s=>s.classList.remove("act"));
+  btn.classList.add("act");
+  document.querySelectorAll(".inv-num").forEach(el=>el.style.color=c);
+  document.querySelectorAll(".grp-inv").forEach(el=>el.style.color=c);
+}
+
+function setPartColor(c, btn){
+  settingsState.partColor=c; saveSettings();
+  document.querySelectorAll("#part-colors .color-swatch").forEach(s=>s.classList.remove("act"));
+  btn.classList.add("act");
+  document.querySelectorAll(".part-num:not(.dim)").forEach(el=>el.style.color=c);
+}
+
+function toggleSwitch(key, el){
+  settingsState[key]=!settingsState[key]; saveSettings();
+  el.classList.toggle("on", settingsState[key]);
+  if(key==="compactsidebar"){
+    const sb=document.querySelector(".sidebar");
+    if(settingsState.compactsidebar){ sb.style.width="60px"; sb.querySelectorAll(".nav-item").forEach(n=>{n.style.fontSize="0";n.style.padding="12px 0";n.style.justifyContent="center";}); sb.querySelector(".logo-title").style.display="none"; sb.querySelector(".logo-sub").style.display="none"; }
+    else { sb.style.width="220px"; sb.querySelectorAll(".nav-item").forEach(n=>{n.style.fontSize="";n.style.padding="";n.style.justifyContent="";}); sb.querySelector(".logo-title").style.display=""; sb.querySelector(".logo-sub").style.display=""; }
+  }
+  if(key==="grouping"||key==="minibars"||key==="hoveractions"||key==="groupprog") renderTable(false);
+}
+
+// Apply saved settings on load
+function applySettings(){
+  // Density
+  const densBtns=document.querySelectorAll(".sp-section .sp-opt");
+  densBtns.forEach(b=>{ b.classList.remove("act"); if(b.textContent.toLowerCase()===settingsState.density) b.classList.add("act"); });
+  // Accent
+  document.querySelectorAll("#accent-colors .color-swatch").forEach(s=>{ s.classList.toggle("act",s.style.background===settingsState.accent||rgbToHex(s.style.backgroundColor)===settingsState.accent.toUpperCase()); });
+  // Invoice color
+  document.querySelectorAll("#invoice-colors .color-swatch").forEach(s=>{ s.classList.toggle("act",rgbToHex(s.style.backgroundColor)===settingsState.invColor.toUpperCase()); });
+  // Part color
+  document.querySelectorAll("#part-colors .color-swatch").forEach(s=>{ s.classList.toggle("act",rgbToHex(s.style.backgroundColor)===settingsState.partColor.toUpperCase()); });
+  // Switches
+  ["grouping","minibars","hoveractions","groupprog","compactsidebar"].forEach(k=>{
+    const sw=document.getElementById("sw-"+k);
+    if(sw) sw.classList.toggle("on", settingsState[k]);
+  });
+  if(settingsState.compactsidebar) toggleSwitch("compactsidebar", document.getElementById("sw-compactsidebar"));
+}
+function rgbToHex(rgb){ if(rgb.startsWith("#")) return rgb.toUpperCase(); const m=rgb.match(/(\d+)/g); if(!m||m.length<3) return rgb; return "#"+m.slice(0,3).map(n=>(+n).toString(16).padStart(2,"0")).join("").toUpperCase(); }
+
+// ── Init ──────────────────────────────────────────────────────────────────
+
+const now=new Date();
+document.getElementById("date-chip").textContent=now.toLocaleDateString("en-AU",{weekday:"short",day:"2-digit",month:"short",year:"numeric"});
+
 initRowToggles();
+applySettings();
 showPage("import");
 setHealth("wake");
 pingServer().finally(()=>{ loadInvoices().then(()=>{ loadLogs(); loadStats(); }); });
