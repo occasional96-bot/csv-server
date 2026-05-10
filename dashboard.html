@@ -291,7 +291,13 @@ a{color:inherit;text-decoration:none}
 .ubar-info .warn{color:#FBBF24}
 .ubar-info .bad{color:#EF4444}
 .ubar .big-sync-btn{width:auto;margin:0;padding:10px 22px;font-size:12px;flex-shrink:0}
-/* Clear All Data toggle */
+/* Hover tooltips */
+.hover-tip{position:relative}
+.hover-tip .tip-chip{position:absolute;top:calc(100% + 8px);right:0;min-width:180px;background:#18181b;border-radius:8px;padding:8px 11px;font-size:11px;line-height:1.5;color:#71717a;text-align:left;z-index:10;opacity:0;pointer-events:none;transition:opacity .2s;white-space:normal}
+.hover-tip .tip-chip::before{content:"";position:absolute;top:-4px;right:16px;width:8px;height:8px;background:#18181b;transform:rotate(45deg)}
+.hover-tip .tip-chip b{color:#a1a1aa;font-weight:600;display:block;margin-bottom:2px}
+.hover-tip:hover .tip-chip{opacity:1}
+/* Clear All Data button */
 .clear-toggle-wrap{display:flex;align-items:center;gap:10px;flex-shrink:0}
 .clear-toggle-label{font-size:11px;font-weight:600;color:#EF4444;letter-spacing:0.01em;white-space:nowrap}
 .clear-toggle-label.off{color:#52525B}
@@ -409,11 +415,11 @@ a{color:inherit;text-decoration:none}
       <div class="logo-title">Warehouse PRO</div>
       <div class="logo-sub">KIA &amp; Hyundai Dashboard</div>
     </div>
-    <div class="nav-item active" onclick="showPage('log')" id="nav-log">
+    <div class="nav-item" onclick="showPage('log')" id="nav-log">
       <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="2" rx="1" fill="#71717A"/><rect x="2" y="7" width="8" height="2" rx="1" fill="#71717A"/><rect x="2" y="12" width="10" height="2" rx="1" fill="#71717A"/></svg>
       Scan Log
     </div>
-    <div class="nav-item" onclick="showPage('import')" id="nav-import">
+    <div class="nav-item active" onclick="showPage('import')" id="nav-import">
       <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 7l3 3 3-3" stroke="#71717A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 12h10" stroke="#71717A" stroke-width="1.5" stroke-linecap="round"/></svg>
       Import CSV
     </div>
@@ -655,8 +661,14 @@ a{color:inherit;text-decoration:none}
 
       <div class="ubar">
         <div class="ubar-info" id="import-summary">Checking file status…</div>
-        <span class="clear-toggle-label" style="cursor:pointer;padding:4px 10px" onclick="confirmClearAll()">Clear All Data</span>
-        <button class="big-sync-btn" onclick="syncNow()">Sync &amp; Push to All Devices</button>
+        <div class="hover-tip" style="flex-shrink:0">
+          <span class="clear-toggle-label" style="cursor:pointer;padding:4px 10px" onclick="confirmClearAll()">Clear All Data</span>
+          <div class="tip-chip"><b>Clear All Data</b>Wipes boards and invoices on all devices. Scan logs kept. Cannot be undone.</div>
+        </div>
+        <div class="hover-tip" style="flex-shrink:0">
+          <button class="big-sync-btn" onclick="syncNow()">Sync &amp; Push to All Devices</button>
+          <div class="tip-chip"><b>Sync &amp; Push</b>Uploads your CSV files to the server and pushes updates to all connected devices instantly.</div>
+        </div>
       </div>
     </div><!-- /page-import -->
 
@@ -1813,7 +1825,7 @@ document.getElementById("date-chip").textContent=now.toLocaleDateString("en-AU",
 
 initRowToggles();
 applySettings();
-showPage("log");
+showPage("import");
 setHealth("wake");
 pingServer().finally(()=>{ loadInvoices().then(()=>{ loadLogs(); loadStats(); }); });
 setTimeout(connectWS, 800); // slight delay lets ping wake the server first
