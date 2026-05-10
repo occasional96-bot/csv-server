@@ -910,6 +910,8 @@ async function loadInvoices(){
 
 function getUnscannedRows(){
   if(hiddenActions.has("unscanned")) return [];
+  // Only show unscanned rows when "All" or "Unscanned" filter is active
+  if(filters.action && filters.action !== "unscanned") return [];
   const from = getDateFrom();
   // Build set of scanned part keys (invoiceId+partNumber) for today
   const scanned = new Set(
@@ -1781,7 +1783,16 @@ function applySettings(){
     const sw=document.getElementById("sw-"+k);
     if(sw) sw.classList.toggle("on", settingsState[k]);
   });
-  if(settingsState.compactsidebar) toggleSwitch("compactsidebar", document.getElementById("sw-compactsidebar"));
+  // Apply compact sidebar directly (don't use toggleSwitch which flips the boolean)
+  if(settingsState.compactsidebar){
+    const sb=document.querySelector(".sidebar");
+    sb.style.width="60px"; sb.querySelectorAll(".nav-item").forEach(n=>{n.style.fontSize="0";n.style.padding="12px 0";n.style.justifyContent="center";}); sb.querySelector(".logo-title").style.display="none"; sb.querySelector(".logo-sub").style.display="none";
+  }
+  // Apply density padding on load
+  if(settingsState.density!=="default"){
+    const pad = settingsState.density==="compact"?"6px 16px":"16px 16px";
+    document.querySelectorAll(".row").forEach(r=>r.style.padding=pad);
+  }
 }
 function rgbToHex(rgb){ if(rgb.startsWith("#")) return rgb.toUpperCase(); const m=rgb.match(/(\d+)/g); if(!m||m.length<3) return rgb; return "#"+m.slice(0,3).map(n=>(+n).toString(16).padStart(2,"0")).join("").toUpperCase(); }
 
@@ -1796,7 +1807,7 @@ showPage("log");
 setHealth("wake");
 pingServer().finally(()=>{ loadInvoices().then(()=>{ loadLogs(); loadStats(); }); });
 setTimeout(connectWS, 800); // slight delay lets ping wake the server first
-setInterval(()=>{ loadLogs(); loadStats(); }, 5000);
+setInterval(()=>{ loadInvoices().then(()=>{ loadLogs(); loadStats(); }); }, 5000);
 </script>
 </body>
 </html>
