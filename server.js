@@ -200,6 +200,7 @@ wss.on("connection", (ws) => {
       if (msg.type === "create_room") {
         cleanRooms();
         const roomId = msg.roomId; // client generates this
+        if (rooms[roomId]) { sendToClient(ws, { type: "room_error", error: "Room already exists" }); return; }
         rooms[roomId] = {
           name: msg.roomName,
           hostId: msg.userId,
@@ -339,7 +340,8 @@ wss.on("connection", (ws) => {
             });
             const done = parts.every(p => p.short || p.confirmed >= p.qty);
             return { ...inv, parts, complete: done || inv.complete,
-              completedAt: (done && !inv.complete) ? msg.timestamp : (inv.completedAt || 0) };
+              completedAt: (done && !inv.complete) ? msg.timestamp : (inv.completedAt || 0),
+              completedBy: (done && !inv.completedBy) ? msg.initials : (inv.completedBy || "") };
           });
         }
         // Count recipients before broadcast
@@ -578,10 +580,15 @@ app.use((req, res, next) => {
   next();
 });
 
+// ── Filename sanitizer (prevent path traversal) ──────────────────────────
+function safeName(raw) {
+  return path.basename(raw).replace(/[^a-zA-Z0-9._\-]/g, "_");
+}
+
 const storage = multer.diskStorage({
   destination: (_, __, cb) => cb(null, UPLOAD),
   filename:    (_, file, cb) => {
-    cb(null, file.originalname);
+    cb(null, safeName(file.originalname));
   },
 });
 const upload = multer({ storage });
@@ -603,19 +610,22 @@ app.post("/upload", upload.single("file"), (req, res) => {
 });
 
 app.get("/file-meta/:filename", (req, res) => {
+  const fn = safeName(req.params.filename);
   const meta = readMeta();
-  const uploadedAt = (meta.fileTimes || {})[req.params.filename] || null;
-  res.json({ filename: req.params.filename, uploadedAt });
+  const uploadedAt = (meta.fileTimes || {})[fn] || null;
+  res.json({ filename: fn, uploadedAt });
 });
 
 app.get("/file/:filename", (req, res) => {
-  const fp = path.join(UPLOAD, req.params.filename);
+  const fn = safeName(req.params.filename);
+  const fp = path.join(UPLOAD, fn);
   if (!fs.existsSync(fp)) return res.status(404).json({ error: "Not found" });
   res.sendFile(fp);
 });
 
 app.delete("/file/:filename", (req, res) => {
-  const fp = path.join(UPLOAD, req.params.filename);
+  const fn = safeName(req.params.filename);
+  const fp = path.join(UPLOAD, fn);
   if (!fs.existsSync(fp)) return res.status(404).json({ error: "Not found" });
   fs.unlinkSync(fp);
   res.json({ message: "Deleted" });

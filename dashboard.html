@@ -662,11 +662,11 @@ a{color:inherit;text-decoration:none}
         </div>
         <button class="big-sync-btn" onclick="syncNow()">Sync &amp; Push to All Devices</button>
       </div>
-      <div class="toast-container" id="toast-container"></div>
     </div><!-- /page-import -->
 
   </div><!-- /main -->
 </div><!-- /shell -->
+<div class="toast-container" id="toast-container"></div>
 
 <!-- BOARDS PAGE (injected into main on showPage) -->
 <template id="tpl-boards">
@@ -841,7 +841,7 @@ function connectWS(){
         }
         if(msg.type==="new_file"){
           checkAllStale();
-          loadFiles();
+          loadFileMeta();
         }
       }catch{}
     };
