@@ -48,7 +48,7 @@ a{color:inherit;text-decoration:none}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
 .stat{background:rgba(255,255,255,0.025);border-radius:12px;padding:16px 18px;border:1px solid rgba(255,255,255,0.06);position:relative;overflow:hidden;cursor:pointer;transition:all 0.2s}
 .stat:hover{border-color:rgba(255,255,255,0.1);background:rgba(255,255,255,0.035)}
-.stat-bar{position:absolute;top:0;left:0;width:3px;height:100%;border-radius:0 2px 2px 0}
+.stat-bar{position:absolute;top:0;left:0;width:3px;height:100%;border-radius:0 2px 2px 0;opacity:0;transition:opacity 0.4s ease}
 .stat-label{font-size:10px;color:#52525B;font-weight:500;letter-spacing:0.1em;margin-bottom:6px;text-transform:uppercase}
 .stat-val{font-size:28px;font-weight:600;line-height:1;letter-spacing:-0.03em;font-variant-numeric:tabular-nums}
 .stat-sub{font-size:11px;color:#3F3F46;margin-top:5px}
@@ -460,25 +460,25 @@ a{color:inherit;text-decoration:none}
 
       <div class="stats">
         <div class="stat">
-          <div class="stat-bar" style="background:#22C55E"></div>
+          <div class="stat-bar" id="bar-confirmed" style="background:#22C55E"></div>
           <div class="stat-label">Confirmed</div>
           <div class="stat-val" id="stat-confirmed">0</div>
           <div class="stat-sub">today</div>
         </div>
         <div class="stat">
-          <div class="stat-bar" style="background:#FBBF24"></div>
+          <div class="stat-bar" id="bar-manual" style="background:#FBBF24"></div>
           <div class="stat-label">Manual</div>
           <div class="stat-val" id="stat-manual">0</div>
           <div class="stat-sub">today</div>
         </div>
         <div class="stat">
-          <div class="stat-bar" style="background:#EF4444"></div>
+          <div class="stat-bar" id="bar-notfound" style="background:#EF4444"></div>
           <div class="stat-label">Not Found</div>
           <div class="stat-val" id="stat-notfound">0</div>
           <div class="stat-sub">today</div>
         </div>
         <div class="stat">
-          <div class="stat-bar" style="background:#3B82F6"></div>
+          <div class="stat-bar" id="bar-users" style="background:#3B82F6"></div>
           <div class="stat-label">Active Users</div>
           <div class="stat-val" id="stat-users">0</div>
           <div class="stat-sub">today</div>
@@ -893,6 +893,10 @@ async function loadStats(){
     const sm=document.getElementById("stat-manual");    if(sm) sm.textContent=d.manual??0;
     const sn=document.getElementById("stat-notfound"); if(sn) sn.textContent=d.not_found??0;
     const su=document.getElementById("stat-users");    if(su) su.textContent=(d.users||[]).length;
+    const bc=document.getElementById("bar-confirmed"); if(bc) bc.style.opacity=(d.confirmed??0)>0?"1":"0";
+    const bm=document.getElementById("bar-manual");    if(bm) bm.style.opacity=(d.manual??0)>0?"1":"0";
+    const bn=document.getElementById("bar-notfound"); if(bn) bn.style.opacity=(d.not_found??0)>0?"1":"0";
+    const bu=document.getElementById("bar-users");    if(bu) bu.style.opacity=(d.users||[]).length>0?"1":"0";
   }catch{}
 }
 
