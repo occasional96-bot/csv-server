@@ -85,7 +85,7 @@ a{color:inherit;text-decoration:none}
 
 /* ── Table ── */
 .table-wrap{background:rgba(255,255,255,0.015);border-radius:12px;border:1px solid rgba(255,255,255,0.06);overflow:hidden}
-.thead{display:grid;grid-template-columns:52px 78px 38px 150px 1fr 70px 110px 180px 120px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02)}
+.thead{display:grid;grid-template-columns:28px 52px 78px 38px 150px 1fr 70px 110px 180px 120px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02)}
 .th{font-size:10px;font-weight:500;color:#3F3F46;letter-spacing:0.1em;text-transform:uppercase}
 .tbody{}
 .row{display:grid;grid-template-columns:52px 78px 38px 150px 1fr 70px 110px 180px 120px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.025);align-items:center;transition:background 0.15s}
@@ -524,6 +524,7 @@ a{color:inherit;text-decoration:none}
 
       <div class="table-wrap">
         <div class="thead">
+          <div class="th" style="cursor:pointer;display:flex;align-items:center;justify-content:center" onclick="toggleAllGroups()" title="Collapse/Expand all"><svg id="collapse-all-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;color:#3B82F6;transition:transform .2s"><path d="M4 6l4 4 4-4"/></svg></div>
           <div class="th">BRAND</div>
           <div class="th">TIME</div>
           <div class="th">USER</div>
@@ -654,12 +655,7 @@ a{color:inherit;text-decoration:none}
 
       <div class="ubar">
         <div class="ubar-info" id="import-summary">Checking file status…</div>
-        <div class="clear-toggle-wrap">
-          <span class="clear-toggle-label" id="clear-toggle-label">Clear All Data</span>
-          <div class="clear-toggle" id="clear-toggle" onclick="toggleClearAll()">
-            <div class="clear-toggle-knob"></div>
-          </div>
-        </div>
+        <span class="clear-toggle-label" style="cursor:pointer;padding:4px 10px" onclick="confirmClearAll()">Clear All Data</span>
         <button class="big-sync-btn" onclick="syncNow()">Sync &amp; Push to All Devices</button>
       </div>
     </div><!-- /page-import -->
@@ -921,6 +917,7 @@ function getUnscannedRows(){
   );
   const rows = [];
   for(const inv of allInvoices){
+    if(inv.id && inv.id.startsWith("Q")) continue;
     if(filters.brand && inv.brand !== filters.brand) continue;
     if(filters.invoice && !inv.id.includes(filters.invoice.toUpperCase())) continue;
     for(const p of (inv.parts||[])){
@@ -955,6 +952,7 @@ function getFiltered(){
   const todayStart = (()=>{ const t=new Date(); t.setHours(0,0,0,0); return t.getTime(); })();
   return allLogs.filter(e=>{
     if(e.action==="unscanned") return false;
+    if(e.invoiceId && e.invoiceId.startsWith("Q")) return false;
     if(e.timestamp < from) return false;
     if(isYesterday && e.timestamp >= todayStart) return false;
     if(filters.brand && e.brand !== filters.brand) return false;
@@ -995,9 +993,24 @@ function enrich(e, lookup){
 
 // Collapsed groups state
 let collapsedGroups = new Set();
+let allCollapsed = false;
 function toggleGroup(invId){
   if(collapsedGroups.has(invId)) collapsedGroups.delete(invId);
   else collapsedGroups.add(invId);
+  renderTable(false);
+}
+function toggleAllGroups(){
+  allCollapsed = !allCollapsed;
+  const icon = document.getElementById("collapse-all-icon");
+  if(icon) icon.style.transform = allCollapsed ? "rotate(-90deg)" : "";
+  if(allCollapsed){
+    document.querySelectorAll(".grp-header").forEach(h=>{
+      const inv = h.querySelector(".grp-inv")?.textContent;
+      if(inv) collapsedGroups.add(inv);
+    });
+  } else {
+    collapsedGroups.clear();
+  }
   renderTable(false);
 }
 
@@ -1533,7 +1546,7 @@ async function syncNow(){
   if(uploaded>0){
     showNotify(uploaded+" file"+(uploaded!==1?"s":"")+" synced and pushed to all devices");
     loadFileMeta();
-    if(clearAllEnabled){ await clearAllData(); }
+    // Clear All Data is now manual-only (button click)
   } else {
     showToast("No files selected via Browse. Pick files first using the Browse button on each row.", "error");
   }
@@ -1590,16 +1603,9 @@ function showToast(msg, type="info"){
   setTimeout(()=>{ t.remove(); }, 3500);
 }
 
-// ── Clear All Data toggle (ON by default = will clear on sync) ───────────
-let clearAllEnabled = true;
-
-function toggleClearAll(){
-  clearAllEnabled = !clearAllEnabled;
-  const el = document.getElementById("clear-toggle");
-  const lbl = document.getElementById("clear-toggle-label");
-  el.classList.toggle("off", !clearAllEnabled);
-  lbl.classList.toggle("off", !clearAllEnabled);
-  showToast(clearAllEnabled ? "Clear All Data is ON — data will be wiped on next sync" : "Clear All Data is OFF", clearAllEnabled ? "info" : "info");
+// ── Clear All Data (manual button) ───────────────────────────────────────
+function confirmClearAll(){
+  if(confirm("Clear all board data and invoices? This cannot be undone.")) clearAllData();
 }
 
 async function clearAllData(){
