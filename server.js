@@ -682,6 +682,7 @@ app.get("/room/:roomId/updates", (req, res) => {
 app.post("/log-scan", (req, res) => {
   const { initials, color, invoiceId, orderRef, brand, partNumber, description, action, note, qty, confirmed, lineNo } = req.body;
   if (!initials || !invoiceId || !partNumber || !action) return res.status(400).json({ error: "Missing fields" });
+  if (action === "not_found") return res.json({ ok: true, skipped: true });
   let log = purgeScanLog(readScanLog());
   const entry = {
     id: Math.random().toString(36).slice(2, 10).toUpperCase(),

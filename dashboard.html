@@ -478,12 +478,6 @@ a{color:inherit;text-decoration:none}
           <div class="stat-sub">today</div>
         </div>
         <div class="stat">
-          <div class="stat-bar" id="bar-notfound" style="background:#EF4444"></div>
-          <div class="stat-label">Not Found</div>
-          <div class="stat-val" id="stat-notfound">0</div>
-          <div class="stat-sub">today</div>
-        </div>
-        <div class="stat">
           <div class="stat-bar" id="bar-users" style="background:#3B82F6"></div>
           <div class="stat-label">Active Users</div>
           <div class="stat-val" id="stat-users">0</div>
@@ -523,7 +517,6 @@ a{color:inherit;text-decoration:none}
         <div class="sf-btn sf-short" id="sf-short" onclick="setStatusFilter('short')">Short supply</div>
         <div class="sf-btn sf-over" id="sf-over" onclick="setStatusFilter('over')">Over supply</div>
         <div class="sf-btn sf-missing" id="sf-missing" onclick="setStatusFilter('missing')">Missing</div>
-        <div class="sf-btn sf-not_found" id="sf-not_found" onclick="setStatusFilter('not_found')">Not found</div>
         <div class="sf-btn sf-undo" id="sf-undo" onclick="setStatusFilter('undo')">Undo</div>
         <div class="sf-btn sf-unscanned" id="sf-unscanned" onclick="setStatusFilter('unscanned')">Unscanned</div>
       </div>
@@ -903,11 +896,9 @@ async function loadStats(){
     const d = await r.json();
     const sc=document.getElementById("stat-confirmed"); if(sc) sc.textContent=d.confirmed??0;
     const sm=document.getElementById("stat-manual");    if(sm) sm.textContent=d.manual??0;
-    const sn=document.getElementById("stat-notfound"); if(sn) sn.textContent=d.not_found??0;
     const su=document.getElementById("stat-users");    if(su) su.textContent=(d.users||[]).length;
     const bc=document.getElementById("bar-confirmed"); if(bc) bc.style.opacity=(d.confirmed??0)>0?"1":"0";
     const bm=document.getElementById("bar-manual");    if(bm) bm.style.opacity=(d.manual??0)>0?"1":"0";
-    const bn=document.getElementById("bar-notfound"); if(bn) bn.style.opacity=(d.not_found??0)>0?"1":"0";
     const bu=document.getElementById("bar-users");    if(bu) bu.style.opacity=(d.users||[]).length>0?"1":"0";
   }catch{}
 }
