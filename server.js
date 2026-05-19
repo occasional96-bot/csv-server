@@ -17,6 +17,16 @@ const META      = path.join(DATA_DIR, "meta.json");
 if (!fs.existsSync(UPLOAD)) fs.mkdirSync(UPLOAD, { recursive: true });
 console.log("[storage] using data dir:", DATA_DIR);
 
+// Loud warning if running on Railway without /data volume mounted — data will be lost on redeploy.
+if (DATA_DIR !== "/data" && (process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_PROJECT_ID)) {
+  console.error("!! WARNING: /data volume NOT mounted on Railway — all rooms/invoices/scan logs will be WIPED on every redeploy.");
+  console.error("!! Fix: Railway dashboard → Service → Settings → Volumes → New Volume → Mount Path: /data");
+}
+
+// Process-level safety net so one bad client message can't take the whole server down.
+process.on("uncaughtException", (err) => console.error("[uncaughtException]", err));
+process.on("unhandledRejection", (err) => console.error("[unhandledRejection]", err));
+
 const readMeta  = () => { try { return JSON.parse(fs.readFileSync(META, "utf8")); } catch { return {}; } };
 const writeMeta = (data) => fs.writeFileSync(META, JSON.stringify(data, null, 2));
 
@@ -47,6 +57,14 @@ const saveRooms  = () => {
   } catch(e) { console.error("saveRooms error:", e); }
 };
 const rooms = readRooms(); // Load persisted rooms on startup
+// Defensive backfill: rooms saved by older versions may be missing fields. Avoids crashes in handlers.
+for (const room of Object.values(rooms)) {
+  if (!Array.isArray(room.members)) room.members = [];
+  if (!room.invoiceUpdates || typeof room.invoiceUpdates !== "object") room.invoiceUpdates = {};
+  if (!Array.isArray(room.invoices)) room.invoices = [];
+  if (!Array.isArray(room.focusList)) room.focusList = [];
+  if (!Array.isArray(room.pinnedIds)) room.pinnedIds = [];
+}
 console.log(`Loaded ${Object.keys(rooms).length} persisted rooms`);
 
 function getRoomByClient(clientId) {
@@ -136,9 +154,15 @@ function getRoomIdForClient(clientInfo, userId) {
   return Object.keys(rooms).find(rid => rooms[rid].members.some(m => m.id === userId)) || null;
 }
 
+wss.on("error", (err) => console.error("[wss error]", err));
+
 wss.on("connection", (ws) => {
   console.log("WS client connected. Total:", wss.clients.size);
   ws.send(JSON.stringify({ type: "connected" }));
+
+  // Without this, a network error on any single socket throws an unhandled 'error' event
+  // and crashes the entire Node process — taking every other connected client down with it.
+  ws.on("error", (err) => console.error("[ws error]", err.message));
 
   ws.on("message", (raw) => {
     try {
@@ -233,7 +257,7 @@ wss.on("connection", (ws) => {
         const mergedForJoiner = (room.invoices || []).map(inv => {
           const upd = room.invoiceUpdates[inv.id];
           if (!upd) return inv;
-          const parts = inv.parts.map(p => {
+          const parts = (inv.parts || []).map(p => {
             const key = p.partNumber + "_" + (p.lineNo || "0");
             const pu = upd.parts?.[key];
             if (!pu) return p;
@@ -286,6 +310,7 @@ wss.on("connection", (ws) => {
           else broadcastToRoom(roomId, { type: "member_left", userId: msg.userId, presence: getRoomPresence(roomId) });
           const info = clients.get(ws) || {};
           clients.set(ws, { ...info, roomId: null });
+          saveRooms();
         }
         return;
       }
@@ -304,6 +329,7 @@ wss.on("connection", (ws) => {
           }
         }
         broadcastToRoom(roomId, { type: "member_left", userId: msg.targetId, presence: getRoomPresence(roomId) });
+        saveRooms();
         return;
       }
 
@@ -332,7 +358,7 @@ wss.on("connection", (ws) => {
         if (room.invoices && room.invoices.length > 0) {
           room.invoices = room.invoices.map(inv => {
             if (inv.id !== msg.invId) return inv;
-            const parts = inv.parts.map(p => {
+            const parts = (inv.parts || []).map(p => {
               const key = p.partNumber + "_" + (p.lineNo || "0");
               if (key !== msg.partKey) return p;
               return { ...p, confirmed: msg.confirmed, short: msg.short, shortQty: msg.shortQty,
@@ -376,7 +402,7 @@ wss.on("connection", (ws) => {
         const merged = incoming.map(inv => {
           const upd = room.invoiceUpdates[inv.id];
           if (!upd) return inv;
-          const parts = inv.parts.map(p => {
+          const parts = (inv.parts || []).map(p => {
             const key = p.partNumber + "_" + (p.lineNo || "0");
             const pu = upd.parts?.[key];
             if (!pu) return p;
@@ -411,7 +437,7 @@ wss.on("connection", (ws) => {
             complete: upd.complete || inv.complete,
             completedAt: upd.completedAt || inv.completedAt,
             completedBy: upd.completedBy || inv.completedBy,
-            parts: inv.parts.map(p => {
+            parts: (inv.parts || []).map(p => {
               const key = p.partNumber + "_" + (p.lineNo || "0");
               const pu = upd.parts?.[key];
               if (!pu) return p;
@@ -466,7 +492,7 @@ wss.on("connection", (ws) => {
           room.invoices = room.invoices.map(inv =>
             inv.id !== msg.invId ? inv : {
               ...inv, complete: false, completedAt: 0, completedBy: "",
-              parts: inv.parts.map(p => ({ ...p, confirmed: 0, short: false, shortQty: null, confirmedBy: "", confirmedColor: "", confirmedAt: 0 }))
+              parts: (inv.parts || []).map(p => ({ ...p, confirmed: 0, short: false, shortQty: null, confirmedBy: "", confirmedColor: "", confirmedAt: 0 }))
             }
           );
         }
@@ -571,7 +597,7 @@ wss.on("connection", (ws) => {
 setInterval(() => broadcast({ type: "ping" }), 5000);
 
 // ── Middleware ─────────────────────────────────────────────────────────────
-app.use(express.json());
+app.use(express.json({ limit: "25mb" }));
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,DELETE,PUT,OPTIONS");
