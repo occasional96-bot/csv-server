@@ -158,6 +158,7 @@ wss.on("error", (err) => console.error("[wss error]", err));
 
 wss.on("connection", (ws) => {
   console.log("WS client connected. Total:", wss.clients.size);
+  ws.isAlive = true; // liveness flag — any inbound frame re-arms it; sweep terminates stale sockets
   ws.send(JSON.stringify({ type: "connected" }));
 
   // Without this, a network error on any single socket throws an unhandled 'error' event
@@ -165,6 +166,7 @@ wss.on("connection", (ws) => {
   ws.on("error", (err) => console.error("[ws error]", err.message));
 
   ws.on("message", (raw) => {
+    ws.isAlive = true; // any message proves the socket is alive
     try {
       const msg = JSON.parse(raw.toString());
       const clientInfo = clients.get(ws) || {};
@@ -389,6 +391,8 @@ wss.on("connection", (ws) => {
           color: msg.color,
           timestamp: msg.timestamp,
         }, msg.userId);
+        // Ack back to sender so its reliable-send queue can clear this update
+        if (msg.seq != null) sendToClient(ws, { type: "ack", seq: msg.seq });
         return;
       }
 
@@ -593,8 +597,17 @@ wss.on("connection", (ws) => {
   });
 });
 
-// Heartbeat ping every 5s
+// Heartbeat ping every 5s (keeps Railway from closing idle sockets; clients reply "pong")
 setInterval(() => broadcast({ type: "ping" }), 5000);
+
+// Liveness sweep every 30s: terminate sockets that sent nothing since the last sweep.
+// terminate() fires 'close', which runs the existing presence-cleanup handler.
+setInterval(() => {
+  wss.clients.forEach((ws) => {
+    if (ws.isAlive === false) { try { ws.terminate(); } catch (_e) {} return; }
+    ws.isAlive = false;
+  });
+}, 30000);
 
 // ── Middleware ─────────────────────────────────────────────────────────────
 app.use(express.json({ limit: "25mb" }));
