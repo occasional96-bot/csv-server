@@ -1618,14 +1618,11 @@ function confirmClearAll(){
 async function clearAllData(){
   if(!ws || ws.readyState !== 1){ showToast("Not connected to server. Try again in a moment.", "error"); return; }
   try{
-    const r = await fetch(SERVER+"/rooms");
-    const d = await r.json();
-    const rooms = d.rooms || [];
-    if(!rooms.length){ showToast("No active boards found. Server invoices will still be cleared.", "info"); }
-    rooms.forEach(room => {
-      ws.send(JSON.stringify({ type: "clear_all_data", roomId: room.roomId, initials: "ADMIN" }));
-    });
-    await fetch(SERVER+"/clear-invoices", { method: "POST" });
+    // ONE authoritative wipe. The server clears every room + invoices + CSVs and broadcasts
+    // a single clearedAt to all devices. Do NOT loop per-room (server already wipes all rooms)
+    // and do NOT also POST /clear-invoices — that stamped a newer timestamp the apps never saw,
+    // which made every phone wipe a second time on its next reconnect.
+    ws.send(JSON.stringify({ type: "clear_all_data", initials: "ADMIN" }));
     showToast("All boards and invoices cleared. Scan logs untouched.", "success");
   }catch(e){ showToast("Error: "+e.message, "error"); }
 }
