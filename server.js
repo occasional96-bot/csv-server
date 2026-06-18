@@ -868,6 +868,12 @@ app.get("/precount/:invoiceId", (req, res) => {
   res.json({ ok: true, snapshot: snap });
 });
 
+// List all non-expired snapshots, newest first (for the Restore picker).
+app.get("/precounts", (req, res) => {
+  const list = purgePrecounts(readPrecounts()).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+  res.json({ ok: true, snapshots: list });
+});
+
 // ── Health / keep-alive ───────────────────────────────────────────────────────
 app.get("/ping", (req, res) => res.json({ ok: true, ts: Date.now() }));
 
