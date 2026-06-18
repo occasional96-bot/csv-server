@@ -115,6 +115,21 @@ const purgeInvoices = (list) => {
   return list.filter(inv => inv.savedAt >= midnight.getTime());
 };
 
+// ── Precount snapshots (resumable panel-counter sessions) ─────────────────────
+// A full snapshot of a partly-counted dispatch invoice (every part + its count),
+// keyed by invoice id. Lives in its own file so "Clear All Data" does NOT wipe it.
+// Auto-expires after 14 days. Lets a cleared invoice be pulled back exactly where left off.
+const PRECOUNTS_FILE = path.join(DATA_DIR, "precounts.json");
+const PRECOUNTS_TMP  = path.join(DATA_DIR, "precounts.tmp.json");
+const readPrecounts  = () => { try { return JSON.parse(fs.readFileSync(PRECOUNTS_FILE, "utf8")); } catch { return []; } };
+const savePrecounts  = (list) => {
+  try {
+    fs.writeFileSync(PRECOUNTS_TMP, JSON.stringify(list, null, 2));
+    fs.renameSync(PRECOUNTS_TMP, PRECOUNTS_FILE);
+  } catch(e) { console.error("savePrecounts error:", e); }
+};
+const purgePrecounts = (list) => list.filter(e => Date.now() - (e.updatedAt || 0) < FOURTEEN_DAYS);
+
 // ── WebSocket clients map: ws → { id, initials, color, name, roomId } ───────
 const clients = new Map(); // ws → clientInfo
 
@@ -831,6 +846,26 @@ app.get("/invoices", (req, res) => {
   if (brand) result = result.filter(i => i.brand === brand);
   if (invoiceId) result = result.filter(i => i.id.includes(invoiceId.toUpperCase()));
   res.json({ invoices: result, total: result.length });
+});
+
+// ── Precount snapshot endpoints (resume a partly-counted invoice) ─────────────
+app.post("/save-precount", (req, res) => {
+  const snap = req.body && req.body.snapshot;
+  if (!snap || !snap.id) return res.status(400).json({ ok: false, error: "snapshot.id required" });
+  let list = purgePrecounts(readPrecounts());
+  const entry = { ...snap, updatedAt: Date.now() };
+  const i = list.findIndex(s => s.id === entry.id);
+  if (i === -1) list.push(entry); else list[i] = entry;
+  savePrecounts(list);
+  res.json({ ok: true });
+});
+
+app.get("/precount/:invoiceId", (req, res) => {
+  const id = String(req.params.invoiceId || "");
+  const list = purgePrecounts(readPrecounts());
+  const snap = list.find(s => s.id === id) || list.find(s => String(s.id).toUpperCase() === id.toUpperCase());
+  if (!snap) return res.status(404).json({ ok: false });
+  res.json({ ok: true, snapshot: snap });
 });
 
 // ── Health / keep-alive ───────────────────────────────────────────────────────
