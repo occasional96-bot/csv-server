@@ -453,6 +453,66 @@ body{background:radial-gradient(90% 70% at 0% 0%,rgba(139,92,246,0.16),transpare
 .cmd-box{border-radius:16px;backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%)}
 .cmd-item:hover,.cmd-item.sel{background:rgba(124,92,255,0.14)}
 .toast{border-radius:12px}
+
+/* ── Driver Log ── */
+.b-onvan{background:linear-gradient(135deg,#fcd34d,#f59e0b);color:#7c2d12}
+.b-delivered{background:linear-gradient(135deg,#10b981,#059669);color:#fff}
+.stats.dstats{grid-template-columns:repeat(4,1fr)}
+.sv-onvan{background:linear-gradient(150deg,rgba(245,158,11,0.22),rgba(245,158,11,0.04))}
+.sv-onvan .stat-label,.sv-onvan .stat-ic,.sv-onvan .stat-sub{color:#fcd34d}
+#dstat-onvan{color:#fcd34d}
+.sv-loaded{background:linear-gradient(150deg,rgba(59,130,246,0.22),rgba(59,130,246,0.05))}
+.sv-loaded .stat-label,.sv-loaded .stat-ic,.sv-loaded .stat-sub{color:#93c5fd}
+#dstat-loaded{color:#93c5fd}
+.sv-delivered{background:linear-gradient(150deg,rgba(16,185,129,0.22),rgba(16,185,129,0.04))}
+.sv-delivered .stat-label,.sv-delivered .stat-ic,.sv-delivered .stat-sub{color:#6ee7b7}
+#dstat-delivered{color:#6ee7b7}
+.sv-drivers{background:linear-gradient(150deg,rgba(124,92,255,0.24),rgba(124,92,255,0.05))}
+.sv-drivers .stat-label,.sv-drivers .stat-ic,.sv-drivers .stat-sub{color:#c4b5fd}
+#dstat-drivers{color:#c4b5fd}
+.drv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-bottom:12px}
+.drv-card{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.07);border-radius:16px;overflow:hidden}
+.drv-head{display:flex;align-items:center;gap:10px;padding:13px 14px;border-bottom:1px solid rgba(255,255,255,0.05)}
+.drv-name{font-size:13px;font-weight:600;color:#FAFAFA}
+.drv-meta{font-size:11px;color:#9D9DA8;margin-top:1px}
+.drv-status{margin-left:auto;font-size:9px;font-weight:700;letter-spacing:.04em;border-radius:999px;padding:4px 10px;white-space:nowrap}
+.ds-loading{background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff}
+.ds-run{background:linear-gradient(135deg,#fcd34d,#f59e0b);color:#7c2d12}
+.ds-done{background:linear-gradient(135deg,#10b981,#059669);color:#fff}
+.ds-idle{background:rgba(255,255,255,0.07);color:#cbd5e1}
+.drv-invs{padding:4px 14px 10px}
+.drv-inv-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.03)}
+.drv-inv-row:last-child{border-bottom:none}
+.drv-inv-id{font-size:12px;font-weight:600;min-width:64px}
+.dual-prog{flex:1;height:5px;border-radius:3px;background:rgba(255,255,255,0.06);position:relative;overflow:hidden}
+.dual-prog .dp-loaded{position:absolute;top:0;left:0;bottom:0;background:rgba(59,130,246,0.45);border-radius:3px}
+.dual-prog .dp-delivered{position:absolute;top:0;left:0;bottom:0;background:#10b981;border-radius:3px}
+.drv-inv-frac{font-size:10px;color:#9D9DA8;min-width:88px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.drv-legend{display:flex;gap:14px;font-size:10px;color:#9D9DA8;align-items:center;margin:0 0 16px}
+.drv-legend span{display:inline-flex;align-items:center;gap:5px}
+.drv-legend i{width:12px;height:5px;border-radius:3px;display:inline-block}
+.drv-manage{display:none;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:14px 16px;margin-bottom:16px}
+.drv-manage.show{display:block}
+.drv-chiprow{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.drv-chip{display:inline-flex;align-items:center;gap:6px;background:rgba(124,92,255,0.1);border:1px solid rgba(124,92,255,0.25);border-radius:999px;padding:5px 8px 5px 12px;font-size:11px;font-weight:700;color:#c4b5fd;letter-spacing:.03em}
+.drv-chip b{cursor:pointer;color:#9D9DA8;font-weight:700;padding:0 4px}
+.drv-chip b:hover{color:#EF4444}
+.drv-add-row{display:flex;gap:8px}
+.drv-add-input{flex:0 0 150px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:7px 12px;color:#E4E4E7;font-size:12px;font-weight:600;outline:none;text-transform:uppercase;font-family:inherit}
+.drv-add-input::placeholder{color:#6B6B74;font-weight:400;text-transform:none}
+.drv-add-input:focus{border-color:rgba(124,92,255,0.5)}
+.dr-thead{display:grid;grid-template-columns:78px 60px 1fr 70px 130px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02)}
+.dr-row{display:grid;grid-template-columns:78px 60px 1fr 70px 130px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.025);align-items:center;transition:background 0.15s}
+.dr-row:last-child{border-bottom:none}
+.dr-row:hover{background:rgba(108,99,255,0.025)}
+.grp-fracs{display:flex;align-items:center;gap:10px}
+.grp-frac-loaded{font-size:11px;font-weight:600;color:#93c5fd;font-variant-numeric:tabular-nums}
+.grp-frac-del{font-size:11px;font-weight:600;color:#6ee7b7;font-variant-numeric:tabular-nums}
+@media(max-width:900px){
+  .stats.dstats{grid-template-columns:repeat(2,1fr)}
+  .dr-thead,.dr-row{grid-template-columns:60px 44px 1fr 110px}
+  .dr-thead>*:nth-child(4),.dr-row>*:nth-child(4){display:none}
+}
 </style>
 </head>
 <body>
@@ -476,6 +536,10 @@ body{background:radial-gradient(90% 70% at 0% 0%,rgba(139,92,246,0.16),transpare
     <div class="nav-item" onclick="showPage('boards')" id="nav-boards">
       <svg class="nav-icon" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="#B0B0BA" stroke-width="1.5"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="#B0B0BA" stroke-width="1.5"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="#B0B0BA" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="#B0B0BA" stroke-width="1.5"/></svg>
       Focus Boards
+    </div>
+    <div class="nav-item" onclick="showPage('driver')" id="nav-driver">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="#B0B0BA" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 4.5h8v6h-8z"/><path d="M9.5 6.5h2.6l2.4 2.5v1.5h-2.3"/><circle cx="4.7" cy="12.3" r="1.4"/><circle cx="11.3" cy="12.3" r="1.4"/></svg>
+      Driver Log
     </div>
     <div class="nav-item" onclick="toggleSettings()" style="margin-top:auto">
       <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="#B0B0BA" stroke-width="1.3"><circle cx="8" cy="8" r="2.5"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.3 3.3l1.4 1.4M11.3 11.3l1.4 1.4M3.3 12.7l1.4-1.4M11.3 4.7l1.4-1.4"/></svg>
@@ -718,6 +782,90 @@ body{background:radial-gradient(90% 70% at 0% 0%,rgba(139,92,246,0.16),transpare
       </div>
     </div><!-- /page-import -->
 
+    <!-- ── DRIVER LOG PAGE ── -->
+    <div id="page-driver" style="display:none">
+      <div class="topbar">
+        <div>
+          <div class="page-title">Driver Log</div>
+          <div class="page-sub">Parts scanned on &amp; off the van — kept separate from warehouse scans</div>
+        </div>
+        <div class="topbar-right">
+          <div class="filter" style="padding:6px 12px">
+            <select id="df-date" onchange="applyDriverFilters()">
+              <option value="today">Today</option>
+              <option value="week">Last 7 days</option>
+              <option value="fortnight">Last 14 days</option>
+            </select>
+          </div>
+          <div class="filter" style="padding:6px 12px">
+            <select id="df-driver" onchange="applyDriverFilters()"><option value="">All drivers</option></select>
+          </div>
+          <button class="export-disc" style="margin-left:0" onclick="toggleDriverManage()">Manage Drivers</button>
+          <div class="live-badge"><div class="pulse"></div>Live</div>
+        </div>
+      </div>
+
+      <div class="drv-manage" id="drv-manage">
+        <div class="section-label" style="margin-bottom:10px">DRIVERS — scans by these initials appear here and are hidden from the Scan Log</div>
+        <div class="drv-add-row">
+          <input class="drv-add-input" id="drv-add-input" placeholder="Initials e.g. DK" maxlength="4" onkeydown="if(event.key==='Enter')addDriver('drv-add-input')" />
+          <button class="export-disc" onclick="addDriver('drv-add-input')">Add driver</button>
+        </div>
+        <div class="drv-chiprow" id="drv-chips"></div>
+      </div>
+
+      <div class="stats dstats">
+        <div class="stat sv-onvan">
+          <svg class="stat-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 6.5h11v9h-11z"/><path d="M13.5 9.5h4l3.5 3.6v2.4h-3.4"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>
+          <div class="stat-label">On Van Now</div>
+          <div class="stat-val" id="dstat-onvan">0</div>
+          <div class="stat-sub">parts in transit</div>
+        </div>
+        <div class="stat sv-loaded">
+          <svg class="stat-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4M8 8l4-4 4 4"/><path d="M4 20h16"/></svg>
+          <div class="stat-label">Loaded Today</div>
+          <div class="stat-val" id="dstat-loaded">0</div>
+          <div class="stat-sub">scans on van</div>
+        </div>
+        <div class="stat sv-delivered">
+          <svg class="stat-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.3 12.3l2.5 2.5 4.8-5.4"/></svg>
+          <div class="stat-label">Delivered Today</div>
+          <div class="stat-val" id="dstat-delivered">0</div>
+          <div class="stat-sub">scans off van</div>
+        </div>
+        <div class="stat sv-drivers">
+          <svg class="stat-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.4"/><path d="M3.5 19a5.5 5.5 0 0111 0"/><path d="M16 6.4a3 3 0 010 5.6"/><path d="M21 19a5.4 5.4 0 00-3.6-5.1"/></svg>
+          <div class="stat-label">Drivers Active</div>
+          <div class="stat-val" id="dstat-drivers">0</div>
+          <div class="stat-sub">scanned today</div>
+        </div>
+      </div>
+
+      <div class="section-label">VANS</div>
+      <div class="drv-grid" id="drv-cards"></div>
+      <div class="drv-legend">
+        <span><i style="background:rgba(59,130,246,0.45)"></i>Loaded on van</span>
+        <span><i style="background:#10b981"></i>Delivered</span>
+      </div>
+
+      <div class="section-label">DRIVER SCANS</div>
+      <div class="table-wrap">
+        <div class="dr-thead">
+          <div class="th">TIME</div>
+          <div class="th">DRIVER</div>
+          <div class="th">PART / DESCRIPTION</div>
+          <div class="th" style="text-align:center">QTY</div>
+          <div class="th">STATUS</div>
+        </div>
+        <div class="tbody" id="driver-tbody">
+          <div class="empty-state">No driver scans yet</div>
+        </div>
+      </div>
+      <div class="footer-bar">
+        <div class="footer-txt" id="driver-footer">—</div>
+      </div>
+    </div><!-- /page-driver -->
+
   </div><!-- /main -->
 </div><!-- /shell -->
 <div class="toast-container" id="toast-container"></div>
@@ -742,6 +890,7 @@ body{background:radial-gradient(90% 70% at 0% 0%,rgba(139,92,246,0.16),transpare
       <div class="cmd-item" data-cmd="scan-log" onclick="runCmd('scan-log')"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="2" rx="1" fill="currentColor"/><rect x="2" y="7" width="8" height="2" rx="1" fill="currentColor"/><rect x="2" y="12" width="10" height="2" rx="1" fill="currentColor"/></svg>Go to Scan Log<span class="cmd-kbd">1</span></div>
       <div class="cmd-item" data-cmd="import" onclick="runCmd('import')"><svg viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M3 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Go to Import CSV<span class="cmd-kbd">2</span></div>
       <div class="cmd-item" data-cmd="boards" onclick="runCmd('boards')"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>Go to Focus Boards<span class="cmd-kbd">3</span></div>
+      <div class="cmd-item" data-cmd="driver" onclick="runCmd('driver')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 4.5h8v6h-8z"/><path d="M9.5 6.5h2.6l2.4 2.5v1.5h-2.3"/><circle cx="4.7" cy="12.3" r="1.4"/><circle cx="11.3" cy="12.3" r="1.4"/></svg>Go to Driver Log<span class="cmd-kbd">4</span></div>
       <div class="cmd-item" data-cmd="settings" onclick="runCmd('settings')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="2.5"/><path d="M8 2v2M8 12v2M2 8h2M12 8h2"/></svg>Open Settings<span class="cmd-kbd">S</span></div>
       <div class="cmd-item" data-cmd="export-csv" onclick="runCmd('export-csv')"><svg viewBox="0 0 16 16" fill="none"><path d="M4 12h8M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Export CSV</div>
       <div class="cmd-item" data-cmd="export-disc" onclick="runCmd('export-disc')"><svg viewBox="0 0 16 16" fill="none"><path d="M4 12h8M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Export Discrepancy Report</div>
@@ -803,6 +952,17 @@ body{background:radial-gradient(90% 70% at 0% 0%,rgba(139,92,246,0.16),transpare
   <div class="sp-divider"></div>
 
   <div class="sp-section">
+    <div class="sp-label">Drivers (Driver Log)</div>
+    <div class="drv-add-row">
+      <input class="drv-add-input" id="sp-drv-input" style="flex:1;min-width:0" placeholder="Initials e.g. DK" maxlength="4" onkeydown="if(event.key==='Enter')addDriver('sp-drv-input')" />
+      <button class="sp-opt" style="flex:0 0 auto;padding:6px 14px" onclick="addDriver('sp-drv-input')">Add</button>
+    </div>
+    <div class="drv-chiprow" id="sp-drv-chips"></div>
+  </div>
+
+  <div class="sp-divider"></div>
+
+  <div class="sp-section">
     <div class="sp-label">Features</div>
     <div class="sp-toggle-row"><span class="sp-toggle-txt">Group by Invoice</span><div class="sp-switch on" id="sw-grouping" onclick="toggleSwitch('grouping',this)"></div></div>
     <div class="sp-toggle-row"><span class="sp-toggle-txt">Mini Qty Bars</span><div class="sp-switch on" id="sw-minibars" onclick="toggleSwitch('minibars',this)"></div></div>
@@ -852,13 +1012,14 @@ function getDateFrom(){
 // ── Pages ─────────────────────────────────────────────────────────────────
 let boardsInterval = null;
 function showPage(p){
-  ["log","import","boards"].forEach(x=>{
+  ["log","import","boards","driver"].forEach(x=>{
     const el = document.getElementById("page-"+x);
     if(el) el.style.display = x===p ? "block" : "none";
     const nav = document.getElementById("nav-"+x);
     if(nav) nav.classList.toggle("active", x===p);
   });
   if(p==="import"){ loadFileMeta(); loadPathsUI(); }
+  if(p==="driver"){ populateDriverFilter(); renderDriverPage(); }
 
   if(p==="boards"){
     let pg = document.getElementById("page-boards");
@@ -890,7 +1051,7 @@ function connectWS(){
         const msg = JSON.parse(e.data);
         if(msg.type==="scan_log_update"){
           allLogs.unshift(msg.entry);
-          loadInvoices().then(()=>renderTable(true));
+          loadInvoices().then(()=>{ renderTable(true); renderDriverPage(); });
           loadStats();
         }
         if(msg.type==="new_file"){
@@ -937,22 +1098,29 @@ async function loadLogs(){
       allLogs = d.logs || [];
       renderTable(false);
       populateUserFilter();
+      loadStats();
+      renderDriverPage();
       setHealth("ok");
       return;
     }catch(e){ if(i===delays.length-1){ setHealth("down"); if(tbody) tbody.innerHTML='<div class="empty-state">Could not load logs — server is offline. Try refreshing in a moment.</div>'; } }
   }
 }
 
-async function loadStats(){
+function loadStats(){
+  // Computed client-side from allLogs so driver scans don't inflate warehouse numbers
   try{
-    const r = await fetch(SERVER+"/scan-log-stats");
-    const d = await r.json();
-    const sc=document.getElementById("stat-confirmed"); if(sc) sc.textContent=d.confirmed??0;
-    const sm=document.getElementById("stat-manual");    if(sm) sm.textContent=d.manual??0;
-    const su=document.getElementById("stat-users");    if(su) su.textContent=(d.users||[]).length;
-    const bc=document.getElementById("bar-confirmed"); if(bc) bc.style.opacity=(d.confirmed??0)>0?"1":"0";
-    const bm=document.getElementById("bar-manual");    if(bm) bm.style.opacity=(d.manual??0)>0?"1":"0";
-    const bu=document.getElementById("bar-users");    if(bu) bu.style.opacity=(d.users||[]).length>0?"1":"0";
+    const t=new Date(); t.setHours(0,0,0,0); const from=t.getTime();
+    const dset=driverSet();
+    const today=allLogs.filter(e=>e.timestamp>=from && !dset.has((e.initials||"").toUpperCase()));
+    const confirmed=today.filter(e=>(e.action||"confirmed")==="confirmed").length;
+    const manual=today.filter(e=>e.action==="manual").length;
+    const users=[...new Set(today.map(e=>e.initials))];
+    const sc=document.getElementById("stat-confirmed"); if(sc) sc.textContent=confirmed;
+    const sm=document.getElementById("stat-manual");    if(sm) sm.textContent=manual;
+    const su=document.getElementById("stat-users");    if(su) su.textContent=users.length;
+    const bc=document.getElementById("bar-confirmed"); if(bc) bc.style.opacity=confirmed>0?"1":"0";
+    const bm=document.getElementById("bar-manual");    if(bm) bm.style.opacity=manual>0?"1":"0";
+    const bu=document.getElementById("bar-users");    if(bu) bu.style.opacity=users.length>0?"1":"0";
   }catch{}
 }
 
@@ -969,10 +1137,11 @@ function getUnscannedRows(){
   // Only show unscanned rows when "All" or "Unscanned" filter is active
   if(filters.action && filters.action !== "unscanned") return [];
   const from = getDateFrom();
-  // Build set of scanned part keys (invoiceId+partNumber) for today
+  const dsetU = driverSet();
+  // Build set of scanned part keys (invoiceId+partNumber) for today — driver scans don't count
   const scanned = new Set(
     allLogs
-      .filter(e => e.timestamp >= from && ["confirmed","manual"].includes(e.action))
+      .filter(e => e.timestamp >= from && ["confirmed","manual"].includes(e.action) && !dsetU.has((e.initials||"").toUpperCase()))
       .map(e => e.invoiceId+"||"+e.partNumber)
   );
   const rows = [];
@@ -998,7 +1167,8 @@ function getUnscannedRows(){
 }
 
 function populateUserFilter(){
-  const users = [...new Set(allLogs.map(e=>e.initials))].sort();
+  const dset = driverSet();
+  const users = [...new Set(allLogs.map(e=>e.initials))].filter(u=>!dset.has((u||"").toUpperCase())).sort();
   const sel = document.getElementById("f-user");
   const cur = sel.value;
   sel.innerHTML = '<option value="">All users</option>' + users.map(u=>`<option value="${u}">${u}</option>`).join("");
@@ -1010,8 +1180,10 @@ function getFiltered(){
   const from = getDateFrom();
   const isYesterday = filters.date==="yesterday";
   const todayStart = (()=>{ const t=new Date(); t.setHours(0,0,0,0); return t.getTime(); })();
+  const dset = driverSet();
   return allLogs.filter(e=>{
     if(e.action==="unscanned") return false;
+    if(dset.has((e.initials||"").toUpperCase())) return false;
     if(e.invoiceId && e.invoiceId.startsWith("Q")) return false;
     if(e.timestamp < from) return false;
     if(isYesterday && e.timestamp >= todayStart) return false;
@@ -1612,6 +1784,274 @@ async function syncNow(){
   }
 }
 
+// ── Driver Log ───────────────────────────────────────────────────────────
+// Drivers are a list of initials kept in localStorage. Their scans are pulled
+// out of the Scan Log and shown here: 1st scan of a part = ON VAN, 2nd = DELIVERED.
+const DRIVERS_KEY = "wh_pro_drivers_v1";
+function getDrivers(){ try{ return JSON.parse(localStorage.getItem(DRIVERS_KEY)||"[]"); }catch{ return []; } }
+function setDriversList(arr){ localStorage.setItem(DRIVERS_KEY, JSON.stringify(arr)); }
+function driverSet(){ return new Set(getDrivers().map(x=>String(x).toUpperCase())); }
+
+let driverFilters = { date:"today", driver:"" };
+let driverCollapsed = new Set();
+
+function driverDateFrom(){
+  if(driverFilters.date==="today"){ const t=new Date(); t.setHours(0,0,0,0); return t.getTime(); }
+  if(driverFilters.date==="week") return Date.now()-7*86400000;
+  return Date.now()-14*86400000;
+}
+
+function toggleDriverManage(){
+  document.getElementById("drv-manage").classList.toggle("show");
+  renderDriverChips();
+}
+
+function renderDriverChips(){
+  const list = getDrivers();
+  const html = list.length
+    ? list.map(d=>`<span class="drv-chip">${d}<b onclick="removeDriver('${d}')" title="Remove ${d}">&times;</b></span>`).join("")
+    : '<span style="font-size:11px;color:#8C8C97">No drivers yet — add initials above</span>';
+  const a=document.getElementById("drv-chips"); if(a) a.innerHTML=html;
+  const b=document.getElementById("sp-drv-chips"); if(b) b.innerHTML=html;
+}
+
+function driverListChanged(){
+  renderDriverChips();
+  populateDriverFilter();
+  renderDriverPage();
+  renderTable(false);
+  loadStats();
+  populateUserFilter();
+}
+
+function addDriver(inputId){
+  const inp=document.getElementById(inputId);
+  const v=(inp.value||"").trim().toUpperCase().replace(/[^A-Z0-9]/g,"");
+  if(!v){ inp.value=""; return; }
+  const list=getDrivers();
+  if(!list.includes(v)){ list.push(v); setDriversList(list); showToast("Driver "+v+" added","success"); }
+  inp.value="";
+  driverListChanged();
+}
+
+function removeDriver(d){
+  setDriversList(getDrivers().filter(x=>x!==d));
+  showToast("Driver "+d+" removed","info");
+  driverListChanged();
+}
+
+function populateDriverFilter(){
+  const sel=document.getElementById("df-driver"); if(!sel) return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">All drivers</option>'+getDrivers().map(d=>`<option value="${d}">${d}</option>`).join("");
+  sel.value=[...sel.options].some(o=>o.value===cur)?cur:"";
+  driverFilters.driver=sel.value;
+}
+
+function applyDriverFilters(){
+  driverFilters.date=document.getElementById("df-date").value;
+  driverFilters.driver=document.getElementById("df-driver").value;
+  renderDriverPage();
+}
+
+function toggleDriverGroup(invId){
+  if(driverCollapsed.has(invId)) driverCollapsed.delete(invId);
+  else driverCollapsed.add(invId);
+  renderDriverPage();
+}
+
+function computeDriverData(){
+  const dset = driverSet();
+  const from = driverDateFrom();
+  const todayStart = (()=>{ const t=new Date(); t.setHours(0,0,0,0); return t.getTime(); })();
+  const scans = allLogs
+    .filter(e => dset.has((e.initials||"").toUpperCase())
+      && ["confirmed","manual"].includes(e.action||"confirmed")
+      && e.timestamp >= from
+      && !(e.invoiceId||"").startsWith("Q"))
+    .sort((a,b)=>a.timestamp-b.timestamp);
+
+  // Alternate ON/OFF per invoice+part (computed across ALL drivers so pass order is stable)
+  const counts = new Map();
+  const events = [];
+  for(const e of scans){
+    const key = e.invoiceId+"||"+e.partNumber;
+    const n = (counts.get(key)||0)+1;
+    counts.set(key, n);
+    events.push({ ...e, dir: n%2 ? "on" : "off" });
+  }
+
+  const shown = driverFilters.driver ? events.filter(e=>e.initials===driverFilters.driver) : events;
+
+  // Invoice part totals from server invoices (fallback: distinct parts seen)
+  const invTotals = new Map();
+  for(const inv of allInvoices) invTotals.set(inv.id,(inv.parts||[]).length);
+
+  // Per-invoice state from final parity: odd = still on van, even = delivered
+  const invState = new Map();
+  for(const e of shown){
+    if(!invState.has(e.invoiceId)) invState.set(e.invoiceId,{ parts:new Map(), drivers:new Map(), lastTs:0 });
+    const g = invState.get(e.invoiceId);
+    g.parts.set(e.partNumber, counts.get(e.invoiceId+"||"+e.partNumber));
+    if(!g.drivers.has(e.initials)) g.drivers.set(e.initials, e.color||"#8B5CF6");
+    g.lastTs = Math.max(g.lastTs, e.timestamp);
+  }
+  for(const [invId,g] of invState){
+    g.loaded = g.parts.size;
+    g.delivered = [...g.parts.values()].filter(n=>n%2===0).length;
+    g.onVan = g.loaded - g.delivered;
+    g.total = invTotals.get(invId) || g.loaded;
+  }
+
+  return {
+    events: shown,
+    invState,
+    metrics: {
+      onVan: [...invState.values()].reduce((s,g)=>s+g.onVan,0),
+      loadedToday: shown.filter(e=>e.dir==="on" && e.timestamp>=todayStart).length,
+      deliveredToday: shown.filter(e=>e.dir==="off" && e.timestamp>=todayStart).length,
+      driversActive: new Set(events.filter(e=>e.timestamp>=todayStart).map(e=>e.initials)).size,
+    },
+  };
+}
+
+function renderDriverCards(data){
+  const el = document.getElementById("drv-cards");
+  if(!el) return;
+  const drivers = getDrivers();
+  if(!drivers.length){
+    el.innerHTML = '<div class="no-boards" style="grid-column:1/-1">No drivers configured — click <b>Manage Drivers</b> and add driver initials to start tracking van scans</div>';
+    return;
+  }
+  // Group events per driver → invoices they touched
+  const byDriver = new Map();
+  for(const e of data.events){
+    const k = (e.initials||"").toUpperCase();
+    if(!byDriver.has(k)) byDriver.set(k,{ color:e.color||"#8B5CF6", invoices:new Map() });
+    const d = byDriver.get(k);
+    if(!d.invoices.has(e.invoiceId)) d.invoices.set(e.invoiceId, 0);
+    d.invoices.set(e.invoiceId, Math.max(d.invoices.get(e.invoiceId), e.timestamp));
+  }
+  const list = driverFilters.driver ? drivers.filter(d=>d===driverFilters.driver) : drivers;
+  el.innerHTML = list.map(drv=>{
+    const d = byDriver.get(drv);
+    if(!d){
+      return `<div class="drv-card">
+        <div class="drv-head">
+          <div class="avatar" style="width:34px;height:34px;font-size:11px;background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.08);color:#9D9DA8">${drv}</div>
+          <div><div class="drv-name">${drv}</div><div class="drv-meta">No scans in this range</div></div>
+          <span class="drv-status ds-idle">IDLE</span>
+        </div>
+      </div>`;
+    }
+    const invIds = [...d.invoices.entries()].sort((a,b)=>b[1]-a[1]).map(x=>x[0]);
+    let totalOnVan=0, totalDelivered=0, totalLoaded=0;
+    const rows = invIds.map(invId=>{
+      const g = data.invState.get(invId);
+      if(!g) return "";
+      totalOnVan+=g.onVan; totalDelivered+=g.delivered; totalLoaded+=g.loaded;
+      const loadPct = g.total>0?Math.min(Math.round(g.loaded/g.total*100),100):0;
+      const delPct = g.total>0?Math.min(Math.round(g.delivered/g.total*100),100):0;
+      const done = g.delivered>=g.total && g.total>0;
+      const frac = done ? `<span style="color:#6ee7b7">Complete</span>`
+        : g.delivered>0 ? `${g.delivered}/${g.total} delivered`
+        : `${g.loaded}/${g.total} loaded`;
+      return `<div class="drv-inv-row">
+        <span class="drv-inv-id" style="color:${settingsState.invColor||'#3B82F6'}">${invId}</span>
+        <div class="dual-prog"><div class="dp-loaded" style="width:${loadPct}%"></div><div class="dp-delivered" style="width:${delPct}%"></div></div>
+        <span class="drv-inv-frac">${frac}</span>
+      </div>`;
+    }).join("");
+    const status = totalOnVan===0 && totalDelivered>0 ? ["ds-done","ALL DELIVERED"]
+      : totalDelivered>0 ? ["ds-run","OUT ON RUN"]
+      : totalOnVan>0 ? ["ds-loading","LOADING"]
+      : ["ds-idle","IDLE"];
+    const col = d.color;
+    return `<div class="drv-card">
+      <div class="drv-head">
+        <div class="avatar" style="width:34px;height:34px;font-size:11px;background:${col}20;border:1.5px solid ${col}40;color:${col}">${drv}</div>
+        <div><div class="drv-name">${drv}</div><div class="drv-meta">${invIds.length} invoice${invIds.length!==1?"s":""} · ${totalOnVan} on van · ${totalDelivered} delivered</div></div>
+        <span class="drv-status ${status[0]}">${status[1]}</span>
+      </div>
+      <div class="drv-invs">${rows}</div>
+    </div>`;
+  }).join("");
+}
+
+function renderDriverRow(e){
+  const avatarStyle = `background:${e.color}20;border:1.5px solid ${e.color}40;color:${e.color}`;
+  const isOn = e.dir==="on";
+  return `<div class="dr-row">
+    <div class="time-cell">${fmtTime(e.timestamp)}</div>
+    <div><div class="avatar" style="${avatarStyle}">${e.initials}</div></div>
+    <div class="part-cell"><div class="part-num" style="color:${settingsState.partColor||'#E4E4E7'}">${e.partNumber}</div><div class="part-desc">${e.description||""}</div></div>
+    <div class="qty-cell">${e.qty||1}</div>
+    <div><span class="badge ${isOn?"b-onvan":"b-delivered"}">${isOn?"ON VAN":"DELIVERED"}</span></div>
+  </div>`;
+}
+
+function renderDriverPage(){
+  const page = document.getElementById("page-driver");
+  if(!page || page.style.display==="none") return;
+  const lookup = buildPartLookup();
+  const data = computeDriverData();
+  data.events = data.events.map(e=>enrich(e,lookup));
+
+  const so=document.getElementById("dstat-onvan"); if(so) so.textContent=data.metrics.onVan;
+  const sl=document.getElementById("dstat-loaded"); if(sl) sl.textContent=data.metrics.loadedToday;
+  const sd=document.getElementById("dstat-delivered"); if(sd) sd.textContent=data.metrics.deliveredToday;
+  const sa=document.getElementById("dstat-drivers"); if(sa) sa.textContent=data.metrics.driversActive;
+
+  renderDriverCards(data);
+
+  const tbody=document.getElementById("driver-tbody");
+  const footer=document.getElementById("driver-footer");
+  if(!getDrivers().length){
+    tbody.innerHTML='<div class="empty-state">Add drivers via Manage Drivers to see their scans here</div>';
+    if(footer) footer.textContent="No drivers configured";
+    return;
+  }
+  if(!data.events.length){
+    tbody.innerHTML='<div class="empty-state">No driver scans in this range — drivers scan a part once to load it ON the van, again to mark it DELIVERED</div>';
+    if(footer) footer.textContent="No driver scans";
+    return;
+  }
+
+  // Group by invoice, newest activity first
+  const groups=new Map();
+  [...data.events].sort((a,b)=>b.timestamp-a.timestamp).forEach(e=>{
+    if(!groups.has(e.invoiceId)) groups.set(e.invoiceId,[]);
+    groups.get(e.invoiceId).push(e);
+  });
+  let html="";
+  for(const [invId,items] of groups){
+    const g=data.invState.get(invId)||{loaded:0,delivered:0,onVan:0,total:0};
+    const isCollapsed=driverCollapsed.has(invId);
+    const done=g.total>0 && g.delivered>=g.total;
+    const delPct=g.total>0?Math.min(Math.round(g.delivered/g.total*100),100):0;
+    const loadPct=g.total>0?Math.min(Math.round(g.loaded/g.total*100),100):0;
+    const safeId=invId.replace(/'/g,"\\'");
+    html+=`<div class="grp-header" onclick="toggleDriverGroup('${safeId}')">
+      <svg class="grp-chev${isCollapsed?"":" open"}" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2l4 4-4 4"/></svg>
+      <span class="grp-inv" style="color:${settingsState.invColor||'#3B82F6'}">${invId}</span>
+      <span class="grp-brand">${items[0]?.brand||"?"}</span>
+      <span class="grp-count">${items.length} scan${items.length!==1?"s":""}</span>
+      <div class="grp-right">
+        ${done?`<span class="badge b-delivered" style="padding:3px 10px">COMPLETE</span>`:`<div class="grp-fracs">
+          <span class="grp-frac-loaded">Loaded ${g.loaded}/${g.total}</span>
+          <span class="grp-frac-del">Del ${g.delivered}/${g.total}</span>
+        </div>`}
+        <div class="dual-prog" style="width:70px;flex:none"><div class="dp-loaded" style="width:${loadPct}%"></div><div class="dp-delivered" style="width:${delPct}%"></div></div>
+      </div>
+    </div>`;
+    html+=`<div class="grp-rows${isCollapsed?" collapsed":""}" style="max-height:${isCollapsed?0:items.length*80+40}px">`;
+    items.forEach(e=>{ html+=renderDriverRow(e); });
+    html+=`</div>`;
+  }
+  tbody.innerHTML=html;
+  if(footer) footer.textContent=`Showing ${data.events.length} driver scan${data.events.length!==1?"s":""} across ${groups.size} invoice${groups.size!==1?"s":""} · Live · Last 14 days retained`;
+}
+
 // ── Focus Boards ──────────────────────────────────────────────────────────
 async function loadBoards(){
   try{
@@ -1751,6 +2191,7 @@ function runCmd(cmd){
   if(cmd==="scan-log") showPage("log");
   else if(cmd==="import") showPage("import");
   else if(cmd==="boards") showPage("boards");
+  else if(cmd==="driver") showPage("driver");
   else if(cmd==="settings") toggleSettings();
   else if(cmd==="export-csv") exportCSV();
   else if(cmd==="export-disc") exportDiscrepancy();
@@ -1866,6 +2307,8 @@ document.getElementById("date-chip").textContent=now.toLocaleDateString("en-AU",
 
 initRowToggles();
 applySettings();
+renderDriverChips();
+populateDriverFilter();
 showPage("import");
 setHealth("wake");
 pingServer().finally(()=>{ loadInvoices().then(()=>{ loadLogs(); loadStats(); }); });
