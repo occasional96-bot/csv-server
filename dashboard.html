@@ -814,6 +814,57 @@ body{background:radial-gradient(90% 70% at 0% 0%,rgba(139,92,246,0.16),transpare
         <div class="drv-chiprow" id="drv-chips"></div>
       </div>
 
+      <!-- ── VAN MANIFEST (explicit on/off board — Phase 4) ── -->
+      <style>
+        #vm-root{--vm-card:#151619;--vm-ink:#ECEDEF;--vm-dim:#9A9CA3;--vm-mut:#63656D;--vm-line:rgba(255,255,255,0.07);--vm-line2:rgba(255,255,255,0.12);--vm-soft:#1D1F23;--vm-amber:#E6AE3A;--vm-green:#3BBE86;--vm-blue:#5B9BFF;--vm-amberbg:rgba(230,174,58,0.13);--vm-greenbg:rgba(59,190,134,0.13);--vm-mono:ui-monospace,"SF Mono","Cascadia Code","Roboto Mono",Menlo,Consolas,monospace;color:var(--vm-ink)}
+        #vm-root .vm-h{font-size:18px;font-weight:750;letter-spacing:-0.02em}
+        #vm-root .vm-sub{font-size:12px;color:var(--vm-mut);font-weight:500;margin-left:9px}
+        #vm-root .vm-amber{color:var(--vm-amber)} #vm-root .vm-green{color:var(--vm-green)}
+        #vm-root .vm-zero{color:inherit;font-weight:400}
+        #vm-root .vm-st-run{color:var(--vm-amber)} #vm-root .vm-st-load{color:var(--vm-blue)} #vm-root .vm-st-done{color:var(--vm-green)}
+        #vm-root summary{list-style:none} #vm-root summary::-webkit-details-marker{display:none}
+        #vm-root .vm-cv{color:var(--vm-mut);font-size:11px;transition:transform .18s ease;flex:none}
+        #vm-root details[open]>summary .vm-cv{transform:rotate(180deg)}
+        @media (prefers-reduced-motion:reduce){#vm-root .vm-cv{transition:none}}
+        #vm-root .vm-list{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+        #vm-root .vm-drv{background:var(--vm-card);border:1px solid var(--vm-line);border-radius:14px;overflow:hidden}
+        #vm-root .vm-drv[open]{border-color:var(--vm-line2)}
+        #vm-root .vm-sum{cursor:pointer;display:flex;align-items:center;gap:13px;padding:15px 16px}
+        #vm-root .vm-av{width:38px;height:38px;border-radius:11px;background:var(--vm-soft);border:1px solid var(--vm-line);display:grid;place-items:center;font-size:13px;font-weight:700;color:var(--vm-dim);flex:none}
+        #vm-root .vm-id{display:flex;flex-direction:column;gap:3px;min-width:0}
+        #vm-root .vm-nm{font-size:14.5px;font-weight:650}
+        #vm-root .vm-stt{font-size:11px;font-weight:600}
+        #vm-root .vm-hd{margin-left:auto;display:flex;gap:8px}
+        #vm-root .vm-hd-box{background:var(--vm-soft);border:1px solid var(--vm-line);border-radius:10px;padding:6px 13px;display:flex;flex-direction:column;gap:2px;align-items:center;min-width:60px}
+        #vm-root .vm-hd-n{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-0.02em;line-height:1}
+        #vm-root .vm-hd-l{font-size:9px;text-transform:uppercase;letter-spacing:0.05em;color:var(--vm-mut);font-weight:600}
+        #vm-root .vm-invs{padding:0 16px 12px;display:flex;flex-direction:column;gap:8px}
+        #vm-root .vm-inv{background:var(--vm-soft);border:1px solid var(--vm-line);border-radius:11px;overflow:hidden}
+        #vm-root .vm-isum{cursor:pointer;display:flex;align-items:center;gap:10px;padding:12px 13px}
+        #vm-root .vm-idot{width:7px;height:7px;border-radius:50%;flex:none}
+        #vm-root .vm-idot.onvan{background:var(--vm-amber)} #vm-root .vm-idot.delivered{background:var(--vm-green)}
+        #vm-root .vm-ishop{font-size:13px;font-weight:650;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        #vm-root .vm-imeta{font-size:11px;color:var(--vm-mut);font-variant-numeric:tabular-nums;white-space:nowrap}
+        #vm-root .vm-ic{font-size:11.5px;color:var(--vm-dim);font-variant-numeric:tabular-nums;white-space:nowrap}
+        #vm-root .vm-ic b{font-weight:700}
+        @media(max-width:520px){#vm-root .vm-imeta{display:none}}
+        #vm-root .vm-pos{padding:2px 13px 12px}
+        #vm-root .vm-poh{font-size:9.5px;text-transform:uppercase;letter-spacing:0.1em;color:var(--vm-mut);font-weight:600;margin:6px 0 6px}
+        #vm-root .vm-po{display:flex;align-items:center;gap:11px;padding:8px 0}
+        #vm-root .vm-po+.vm-po{border-top:1px solid var(--vm-line)}
+        #vm-root .vm-po-pn{font-family:var(--vm-mono);font-size:12px;white-space:nowrap;color:var(--vm-ink)}
+        #vm-root .vm-po-ds{font-size:12px;color:var(--vm-mut);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        #vm-root .vm-chip{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;padding:2px 7px;border-radius:5px;flex:none}
+        #vm-root .vm-chip.amber{color:var(--vm-amber);background:var(--vm-amberbg)} #vm-root .vm-chip.green{color:var(--vm-green);background:var(--vm-greenbg)}
+        #vm-root .vm-empty{background:var(--vm-card);border:1px solid var(--vm-line);border-radius:14px;padding:26px;text-align:center;color:var(--vm-mut);font-size:13px}
+      </style>
+      <div class="section-label" style="margin-top:2px">VAN MANIFEST — explicit on/off board</div>
+      <div id="vm-root">
+        <div class="vm-h">Drivers <span class="vm-sub" id="vm-sub"></span></div>
+        <div class="vm-list" id="vm-list"></div>
+      </div>
+
+      <div class="section-label" style="margin-top:24px">PARITY VIEW (auto-guessed)</div>
       <div class="stats dstats">
         <div class="stat sv-onvan">
           <svg class="stat-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 6.5h11v9h-11z"/><path d="M13.5 9.5h4l3.5 3.6v2.4h-3.4"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>
@@ -1019,7 +1070,7 @@ function showPage(p){
     if(nav) nav.classList.toggle("active", x===p);
   });
   if(p==="import"){ loadFileMeta(); loadPathsUI(); }
-  if(p==="driver"){ populateDriverFilter(); renderDriverPage(); }
+  if(p==="driver"){ populateDriverFilter(); renderDriverPage(); vmRefresh(); }
 
   if(p==="boards"){
     let pg = document.getElementById("page-boards");
@@ -1053,6 +1104,7 @@ function connectWS(){
           allLogs.unshift(msg.entry);
           loadInvoices().then(()=>{ renderTable(true); renderDriverPage(); });
           loadStats();
+          vmOnLog(msg.entry);
         }
         if(msg.type==="new_file"){
           checkAllStale();
@@ -2050,6 +2102,91 @@ function renderDriverPage(){
   }
   tbody.innerHTML=html;
   if(footer) footer.textContent=`Showing ${data.events.length} driver scan${data.events.length!==1?"s":""} across ${groups.size} invoice${groups.size!==1?"s":""} · Live · Last 14 days retained`;
+}
+
+// ── Van manifest (explicit on_board / off_board) ──────────────────────────
+// Independent of the parity Driver Log above. Faithful to locked design
+// 5e406825 (Option 1 — Parts leaf). Groups explicit van scans:
+//   driver(initials) → invoiceId → partNumber, net = #on_board − #off_board.
+// net>0 = On van (amber); net<=0 (had an off_board) = Delivered (green).
+let vmLogs = [];
+const VM_STL = { run:"Out on run", load:"Loading", done:"Van clear" };
+async function vmRefresh(){
+  try{
+    const r = await fetch(SERVER+"/scan-logs?action=on_board,off_board",{cache:"no-store"});
+    const d = await r.json();
+    vmLogs = d.logs || [];
+  }catch{ /* keep last good list */ }
+  renderVanManifest();
+}
+function vmOnLog(entry){
+  if(!entry || !["on_board","off_board"].includes(entry.action)) return;
+  vmLogs.unshift(entry);
+  renderVanManifest();
+}
+function renderVanManifest(){
+  const page = document.getElementById("page-driver");
+  const root = document.getElementById("vm-root");
+  if(!page || !root || page.style.display==="none") return;
+  const listEl = document.getElementById("vm-list");
+  const subEl  = document.getElementById("vm-sub");
+  const vmEsc  = s => String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const oc = n => n>0 ? "vm-amber" : "vm-zero";
+  const gc = n => n>0 ? "vm-green" : "vm-zero";
+
+  // Group: driver → invoice → part
+  const dmap = new Map();
+  for(const e of vmLogs){
+    if(!["on_board","off_board"].includes(e.action)) continue;
+    const drv = (e.initials||"?").toUpperCase();
+    if(!dmap.has(drv)) dmap.set(drv,{ lastTs:0, invs:new Map() });
+    const D = dmap.get(drv); D.lastTs = Math.max(D.lastTs, e.timestamp||0);
+    const invId = e.invoiceId||"?";
+    if(!D.invs.has(invId)) D.invs.set(invId,{ brand:e.brand||"?", lastTs:0, parts:new Map() });
+    const IV = D.invs.get(invId);
+    if((e.timestamp||0)>=IV.lastTs){ IV.lastTs=e.timestamp||0; if(e.brand) IV.brand=e.brand; }
+    const pn = e.partNumber||"?";
+    if(!IV.parts.has(pn)) IV.parts.set(pn,{ on:0, off:0, ds:"", ts:0 });
+    const P = IV.parts.get(pn);
+    if(e.action==="on_board") P.on++; else P.off++;
+    if((e.timestamp||0)>=P.ts){ P.ts=e.timestamp||0; if(e.description) P.ds=e.description; }
+  }
+
+  if(subEl) subEl.textContent = dmap.size ? `${dmap.size} active` : "";
+  if(!dmap.size){
+    listEl.innerHTML = '<div class="vm-empty">No van scans yet — drivers load a part <b>on board</b> to put it on the van, then scan <b>off board</b> to deliver it. Explicit scans appear here.</div>';
+    return;
+  }
+
+  const partsArr = IV => [...IV.parts.entries()].map(([pn,P])=>({ pn, net:P.on-P.off, ds:P.ds }));
+  const ivOn  = IV => partsArr(IV).filter(p=>p.net>0).length;   // parts still on van
+  const ivDel = IV => partsArr(IV).filter(p=>p.net<=0).length;  // parts delivered
+
+  const drivers = [...dmap.entries()].sort((a,b)=>b[1].lastTs-a[1].lastTs);
+  listEl.innerHTML = drivers.map(([drv,D])=>{
+    const invs = [...D.invs.entries()].sort((a,b)=>b[1].lastTs-a[1].lastTs);
+    const invOnVan    = invs.filter(([,IV])=>ivOn(IV)>0).length;      // invoices with >=1 part on van
+    const invDelivered= invs.filter(([,IV])=>ivOn(IV)===0).length;    // invoices fully delivered
+    const st = invOnVan>0 ? (invDelivered>0 ? "run" : "load") : "done";
+    const invHtml = invs.map(([invId,IV])=>{
+      const on=ivOn(IV), del=ivDel(IV);
+      const idot = on>0 ? "onvan" : "delivered";
+      const parts = partsArr(IV).sort((a,b)=> (b.net>0)-(a.net>0) || String(a.pn).localeCompare(String(b.pn)));
+      const poRows = parts.map(p=>{
+        const chip = p.net>0
+          ? '<span class="vm-chip amber">On van</span>'
+          : '<span class="vm-chip green">Delivered</span>';
+        return `<div class="vm-po"><span class="vm-po-pn">${vmEsc(p.pn)}</span><span class="vm-po-ds">${vmEsc(p.ds)}</span>${chip}</div>`;
+      }).join("");
+      return `<details class="vm-inv"><summary class="vm-isum"><span class="vm-idot ${idot}"></span><span class="vm-ishop">Invoice ${vmEsc(invId)}</span><span class="vm-imeta">${vmEsc(IV.brand)}</span><span class="vm-ic"><b class="${oc(on)}">${on}</b> on van · <b class="${gc(del)}">${del}</b> delivered</span><span class="vm-cv">▾</span></summary><div class="vm-pos"><div class="vm-poh">Parts</div>${poRows}</div></details>`;
+    }).join("");
+    return `<details class="vm-drv"><summary class="vm-sum">
+      <span class="vm-av">${vmEsc(drv)}</span>
+      <span class="vm-id"><span class="vm-nm">${vmEsc(drv)}</span><span class="vm-stt vm-st-${st}">${VM_STL[st]}</span></span>
+      <span class="vm-hd"><span class="vm-hd-box"><span class="vm-hd-n ${oc(invOnVan)}">${invOnVan}</span><span class="vm-hd-l">On van</span></span><span class="vm-hd-box"><span class="vm-hd-n ${gc(invDelivered)}">${invDelivered}</span><span class="vm-hd-l">Delivered</span></span></span>
+      <span class="vm-cv">▾</span>
+    </summary><div class="vm-invs">${invHtml}</div></details>`;
+  }).join("");
 }
 
 // ── Focus Boards ──────────────────────────────────────────────────────────

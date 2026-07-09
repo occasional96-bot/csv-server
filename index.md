@@ -8,7 +8,7 @@
 | File | Purpose |
 |------|---------|
 | `server.js` | Main Express + WebSocket server (798 lines) |
-| `dashboard.html` | Admin dashboard UI — served at GET /dashboard |
+| `dashboard.html` | Admin dashboard UI — served at GET /dashboard (Driver Log page has Van manifest `#vm-root` + parity view) |
 | `app.json` | Backend app config |
 | `package.json` | Backend dependencies (express, multer, ws) |
 
@@ -46,6 +46,7 @@
 | 672 | `POST /log-scan` — log a scan event |
 | 698 | `GET  /scan-logs` — retrieve scan log |
 | 711 | `GET  /scan-log-stats` — scan log stats |
+| ~790 | `GET  /known-drivers` — distinct driver initials (scan log + connected clients + rooms) |
 | 725 | `POST /sync-invoices` — receive invoice sync from app |
 | 753 | `POST /clear-invoices` — clear server invoices |
 | 777 | `GET  /invoices` — retrieve server invoices |

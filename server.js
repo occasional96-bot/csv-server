@@ -748,7 +748,7 @@ app.post("/log-scan", (req, res) => {
     brand: brand || (invoiceId.startsWith("L") ? "KIA" : invoiceId.startsWith("F") ? "HY" : "?"),
     partNumber,
     description: description || "",
-    action, // "confirmed" | "manual" | "not_found" | "short" | "over" | "missing" | "undo"
+    action, // "confirmed" | "manual" | "not_found" | "short" | "over" | "missing" | "undo" | "on_board" | "off_board"
     note: note || "",
     qty: qty || 0,
     confirmed: confirmed || 0,
@@ -784,6 +784,19 @@ app.get("/scan-log-stats", (req, res) => {
     users:     [...new Set(todayLog.map(e => e.initials))],
   };
   res.json(stats);
+});
+
+// Distinct driver initials: everyone in the scan log + anyone currently connected
+app.get("/known-drivers", (req, res) => {
+  const set = new Set();
+  readScanLog().forEach(e => { if (e.initials && e.initials !== "?") set.add(e.initials.toUpperCase()); });
+  for (const info of clients.values()) {
+    if (info.initials && info.initials !== "?") set.add(info.initials.toUpperCase());
+  }
+  for (const room of Object.values(rooms)) {
+    (room.members || []).forEach(m => { if (m.initials && m.initials !== "?") set.add(m.initials.toUpperCase()); });
+  }
+  res.json({ drivers: [...set].sort() });
 });
 
 // ── Invoice sync endpoints ───────────────────────────────────────────────────
