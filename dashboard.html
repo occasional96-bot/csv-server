@@ -847,12 +847,15 @@ body{background:radial-gradient(90% 70% at 0% 0%,rgba(139,92,246,0.16),transpare
         #vm-root .vm-isum{cursor:pointer;display:flex;align-items:center;gap:10px;padding:12px 13px}
         #vm-root .vm-idot{width:7px;height:7px;border-radius:50%;flex:none}
         #vm-root .vm-idot.onvan{background:var(--vm-amber)} #vm-root .vm-idot.delivered{background:var(--vm-green)}
-        #vm-root .vm-ishop{font-size:13px;font-weight:650;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        #vm-root .vm-ipo{font-size:10px;font-weight:700;letter-spacing:0.02em;color:var(--vm-mut);background:rgba(255,255,255,0.05);border-radius:5px;padding:2px 7px;white-space:nowrap;font-variant-numeric:tabular-nums;flex:none}
-        #vm-root .vm-imeta{font-size:11px;color:var(--vm-mut);font-variant-numeric:tabular-nums;white-space:nowrap}
-        #vm-root .vm-ic{font-size:11.5px;color:var(--vm-dim);font-variant-numeric:tabular-nums;white-space:nowrap}
+        #vm-root .vm-iblock{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+        #vm-root .vm-ishop{font-size:13px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        #vm-root .vm-isub{font-size:11px;color:var(--vm-mut);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        #vm-root .vm-ic{font-size:11.5px;color:var(--vm-dim);font-variant-numeric:tabular-nums;white-space:nowrap;flex:none}
         #vm-root .vm-ic b{font-weight:700}
-        @media(max-width:520px){#vm-root .vm-imeta{display:none}}
+        #vm-root .vm-search{width:100%;box-sizing:border-box;background:var(--vm-soft);border:1px solid var(--vm-line);border-radius:10px;padding:10px 13px;color:var(--vm-ink);font-size:13px;font-family:inherit;outline:none;margin-top:12px;transition:border-color .15s}
+        #vm-root .vm-search::placeholder{color:var(--vm-mut)}
+        #vm-root .vm-search:focus{border-color:var(--vm-line2)}
+        @media(max-width:520px){#vm-root .vm-ic{font-size:11px}}
         #vm-root .vm-pos{padding:2px 13px 12px}
         #vm-root .vm-poh{font-size:9.5px;text-transform:uppercase;letter-spacing:0.1em;color:var(--vm-mut);font-weight:600;margin:6px 0 6px}
         #vm-root .vm-po{display:flex;align-items:center;gap:11px;padding:8px 0}
@@ -866,6 +869,7 @@ body{background:radial-gradient(90% 70% at 0% 0%,rgba(139,92,246,0.16),transpare
       <div class="section-label" style="margin-top:2px">VAN MANIFEST — explicit on/off board</div>
       <div id="vm-root">
         <div class="vm-h">Drivers <span class="vm-sub" id="vm-sub"></span></div>
+        <input class="vm-search" id="vm-search" type="search" autocomplete="off" placeholder="Filter by invoice #, PO, part #, or shop name…" oninput="vmSetQuery(this.value)" />
         <div class="vm-list" id="vm-list"></div>
       </div>
 
@@ -2115,6 +2119,8 @@ function renderDriverPage(){
 //   driver(initials) → invoiceId → partNumber, net = #on_board − #off_board.
 // net>0 = On van (amber); net<=0 (had an off_board) = Delivered (green).
 let vmLogs = [];
+let vmQuery = "";
+function vmSetQuery(v){ vmQuery = (v||"").trim().toLowerCase(); renderVanManifest(); }
 const VM_STL = { run:"Out on run", load:"Loading", done:"Van clear" };
 async function vmRefresh(){
   try{
@@ -2139,18 +2145,25 @@ function renderVanManifest(){
   const oc = n => n>0 ? "vm-amber" : "vm-zero";
   const gc = n => n>0 ? "vm-green" : "vm-zero";
 
+  // Filter: match query against invoice #, PO, part #, description, shop name, driver
+  const q = vmQuery;
+  const matchEntry = e => !q || [e.invoiceId, e.orderRef, e.partNumber, e.description, e.customer, e.initials]
+    .some(f => String(f==null?"":f).toLowerCase().includes(q));
+
   // Group: driver → invoice → part
   const dmap = new Map();
   for(const e of vmLogs){
     if(!["on_board","off_board"].includes(e.action)) continue;
+    if(!matchEntry(e)) continue;
     const drv = (e.initials||"?").toUpperCase();
     if(!dmap.has(drv)) dmap.set(drv,{ lastTs:0, invs:new Map() });
     const D = dmap.get(drv); D.lastTs = Math.max(D.lastTs, e.timestamp||0);
     const invId = e.invoiceId||"?";
-    if(!D.invs.has(invId)) D.invs.set(invId,{ brand:e.brand||"?", po:"", lastTs:0, parts:new Map() });
+    if(!D.invs.has(invId)) D.invs.set(invId,{ brand:e.brand||"?", po:"", cust:"", lastTs:0, parts:new Map() });
     const IV = D.invs.get(invId);
     if((e.timestamp||0)>=IV.lastTs){ IV.lastTs=e.timestamp||0; if(e.brand) IV.brand=e.brand; }
     if(e.orderRef && e.orderRef!=="—") IV.po = e.orderRef;
+    if(e.customer) IV.cust = e.customer;
     const pn = e.partNumber||"?";
     if(!IV.parts.has(pn)) IV.parts.set(pn,{ on:0, off:0, ds:"", ts:0 });
     const P = IV.parts.get(pn);
@@ -2158,11 +2171,14 @@ function renderVanManifest(){
     if((e.timestamp||0)>=P.ts){ P.ts=e.timestamp||0; if(e.description) P.ds=e.description; }
   }
 
-  if(subEl) subEl.textContent = dmap.size ? `${dmap.size} active` : "";
+  if(subEl) subEl.textContent = q ? (dmap.size?`${dmap.size} match${dmap.size!==1?"es":""}`:"no matches") : (dmap.size?`${dmap.size} active`:"");
   if(!dmap.size){
-    listEl.innerHTML = '<div class="vm-empty">No van scans yet — drivers load a part <b>on board</b> to put it on the van, then scan <b>off board</b> to deliver it. Explicit scans appear here.</div>';
+    listEl.innerHTML = q
+      ? `<div class="vm-empty">No van scans match “${vmEsc(vmQuery)}”. Try an invoice #, PO, part #, or shop name.</div>`
+      : '<div class="vm-empty">No van scans yet — drivers load a part <b>on board</b> to put it on the van, then scan <b>off board</b> to deliver it. Explicit scans appear here.</div>';
     return;
   }
+  const openAttr = q ? " open" : "";
 
   const partsArr = IV => [...IV.parts.entries()].map(([pn,P])=>({ pn, net:P.on-P.off, ds:P.ds }));
   const ivOn  = IV => partsArr(IV).filter(p=>p.net>0).length;   // parts still on van
@@ -2184,9 +2200,15 @@ function renderVanManifest(){
           : '<span class="vm-chip green">Delivered</span>';
         return `<div class="vm-po"><span class="vm-po-pn">${vmEsc(p.pn)}</span><span class="vm-po-ds">${vmEsc(p.ds)}</span>${chip}</div>`;
       }).join("");
-      return `<details class="vm-inv"><summary class="vm-isum"><span class="vm-idot ${idot}"></span><span class="vm-ishop">Invoice ${vmEsc(invId)}</span>${IV.po?`<span class="vm-ipo">PO ${vmEsc(IV.po)}</span>`:""}<span class="vm-imeta">${vmEsc(IV.brand)}</span><span class="vm-ic"><b class="${oc(on)}">${on}</b> on van · <b class="${gc(del)}">${del}</b> delivered</span><span class="vm-cv">▾</span></summary><div class="vm-pos"><div class="vm-poh">Parts</div>${poRows}</div></details>`;
+      const title = IV.cust ? vmEsc(IV.cust) : `Invoice ${vmEsc(invId)}`;
+      const subBits = [];
+      if(IV.cust) subBits.push(`Invoice ${vmEsc(invId)}`);
+      if(IV.po)   subBits.push(`PO ${vmEsc(IV.po)}`);
+      if(IV.brand && IV.brand!=="?") subBits.push(vmEsc(IV.brand));
+      const sub = subBits.length ? `<span class="vm-isub">${subBits.join(" · ")}</span>` : "";
+      return `<details class="vm-inv"${openAttr}><summary class="vm-isum"><span class="vm-idot ${idot}"></span><span class="vm-iblock"><span class="vm-ishop">${title}</span>${sub}</span><span class="vm-ic"><b class="${oc(on)}">${on}</b> on van · <b class="${gc(del)}">${del}</b> delivered</span><span class="vm-cv">▾</span></summary><div class="vm-pos"><div class="vm-poh">Parts</div>${poRows}</div></details>`;
     }).join("");
-    return `<details class="vm-drv"><summary class="vm-sum">
+    return `<details class="vm-drv"${openAttr}><summary class="vm-sum">
       <span class="vm-av">${vmEsc(drv)}</span>
       <span class="vm-id"><span class="vm-nm">${vmEsc(drv)}</span><span class="vm-stt vm-st-${st}">${VM_STL[st]}</span></span>
       <span class="vm-hd"><span class="vm-hd-box"><span class="vm-hd-n ${oc(invOnVan)}">${invOnVan}</span><span class="vm-hd-l">On van</span></span><span class="vm-hd-box"><span class="vm-hd-n ${gc(invDelivered)}">${invDelivered}</span><span class="vm-hd-l">Delivered</span></span></span>

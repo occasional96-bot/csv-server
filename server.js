@@ -734,7 +734,7 @@ app.get("/room/:roomId/updates", (req, res) => {
 
 // ── Scan log endpoints ────────────────────────────────────────────────────────
 app.post("/log-scan", (req, res) => {
-  const { initials, color, invoiceId, orderRef, brand, partNumber, description, action, note, qty, confirmed, lineNo } = req.body;
+  const { initials, color, invoiceId, orderRef, brand, partNumber, description, action, note, qty, confirmed, lineNo, customer } = req.body;
   if (!initials || !invoiceId || !partNumber || !action) return res.status(400).json({ error: "Missing fields" });
   if (action === "not_found") return res.json({ ok: true, skipped: true });
   let log = purgeScanLog(readScanLog());
@@ -753,6 +753,7 @@ app.post("/log-scan", (req, res) => {
     qty: qty || 0,
     confirmed: confirmed || 0,
     lineNo: lineNo || "0",
+    customer: customer || "",
   };
   log.unshift(entry);
   saveScanLog(log);
