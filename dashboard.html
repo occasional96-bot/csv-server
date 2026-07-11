@@ -11,9 +11,14 @@ body{background:#09090B;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Se
 a{color:inherit;text-decoration:none}
 
 /* ── Layout ── */
-.shell{display:flex;min-height:100vh}
-.sidebar{width:220px;background:rgba(255,255,255,0.01);border-right:1px solid rgba(255,255,255,0.06);padding:20px 0;flex-shrink:0;display:flex;flex-direction:column}
-.main{flex:1;padding:24px;overflow-x:hidden}
+.shell{display:flex;height:100vh}
+.sidebar{width:220px;background:rgba(255,255,255,0.01);border-right:1px solid rgba(255,255,255,0.06);padding:20px 0;flex-shrink:0;display:flex;flex-direction:column;overflow-y:auto}
+.main{flex:1;padding:24px;overflow-x:hidden;overflow-y:auto}
+/* Scan Log: freeze topbar/stats/filters/column headers — only the rows scroll */
+#page-log{display:flex;flex-direction:column;height:100%;min-height:0}
+#page-log .table-wrap{flex:1;min-height:0;display:flex;flex-direction:column}
+#page-log .thead{flex-shrink:0}
+#page-log .tbody{flex:1;min-height:0;overflow-y:auto}
 
 /* ── Sidebar ── */
 .logo{padding:0 20px 20px;border-bottom:1px solid rgba(255,255,255,0.06);margin-bottom:16px}
@@ -1070,7 +1075,7 @@ let boardsInterval = null;
 function showPage(p){
   ["log","import","boards","driver"].forEach(x=>{
     const el = document.getElementById("page-"+x);
-    if(el) el.style.display = x===p ? "block" : "none";
+    if(el) el.style.display = x===p ? (x==="log" ? "flex" : "block") : "none";
     const nav = document.getElementById("nav-"+x);
     if(nav) nav.classList.toggle("active", x===p);
   });
