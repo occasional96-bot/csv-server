@@ -147,6 +147,8 @@ a{color:inherit;text-decoration:none}
 .b-short{background:rgba(251,191,36,0.08);color:#FBBF24;border:none}
 .b-over{background:rgba(59,130,246,0.08);color:#3B82F6;border:none}
 .b-missing{background:rgba(239,68,68,0.06);color:#EF4444;border:none}
+.b-on_board{background:rgba(251,191,36,0.08);color:#FBBF24;border:none}
+.b-off_board{background:rgba(34,197,94,0.08);color:#22C55E;border:none}
 
 .empty-state{padding:48px;text-align:center;color:#9D9DA8;font-size:13px}
 .footer-bar{display:flex;align-items:center;justify-content:space-between;margin-top:12px}
@@ -444,6 +446,8 @@ body{background:radial-gradient(90% 70% at 0% 0%,rgba(139,92,246,0.16),transpare
 .b-short{background:linear-gradient(135deg,#fcd34d,#f59e0b);color:#7c2d12}
 .b-over{background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff}
 .b-not_found,.b-missing{background:linear-gradient(135deg,#f43f5e,#e11d48);color:#fff}
+.b-on_board{background:linear-gradient(135deg,#fcd34d,#f59e0b);color:#7c2d12}
+.b-off_board{background:linear-gradient(135deg,#10b981,#059669);color:#fff}
 .b-unscanned,.b-undo{background:rgba(255,255,255,0.07);color:#cbd5e1}
 .export-disc,.sync-now-btn,.info-bar2,.sf-btn.sf-all.active,.sp-opt.act{color:#c4b5fd}
 .sf-btn.sf-all.active{background:rgba(124,92,255,0.16)}
@@ -844,6 +848,7 @@ body{background:radial-gradient(90% 70% at 0% 0%,rgba(139,92,246,0.16),transpare
         #vm-root .vm-idot{width:7px;height:7px;border-radius:50%;flex:none}
         #vm-root .vm-idot.onvan{background:var(--vm-amber)} #vm-root .vm-idot.delivered{background:var(--vm-green)}
         #vm-root .vm-ishop{font-size:13px;font-weight:650;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        #vm-root .vm-ipo{font-size:10px;font-weight:700;letter-spacing:0.02em;color:var(--vm-mut);background:rgba(255,255,255,0.05);border-radius:5px;padding:2px 7px;white-space:nowrap;font-variant-numeric:tabular-nums;flex:none}
         #vm-root .vm-imeta{font-size:11px;color:var(--vm-mut);font-variant-numeric:tabular-nums;white-space:nowrap}
         #vm-root .vm-ic{font-size:11.5px;color:var(--vm-dim);font-variant-numeric:tabular-nums;white-space:nowrap}
         #vm-root .vm-ic b{font-weight:700}
@@ -1302,8 +1307,8 @@ function renderRow(e, isNew){
   const isUnscan = e.action==="unscanned";
   const avatarStyle = `background:${e.color}20;border:1.5px solid ${e.color}40;color:${e.color}`;
   const badgeClass = "b-"+(e.action||"confirmed");
-  const badgeLabel = e.action==="confirmed"?"Confirmed":e.action==="manual"?"Manual":e.action==="not_found"?"Not found":e.action==="unscanned"?"Unscanned":e.action==="short"?"Short supply":e.action==="over"?"Over supply":e.action==="missing"?"Missing":"Undo";
-  const dotColor = e.action==="confirmed"?"#22C55E":e.action==="manual"?"#3B82F6":e.action==="not_found"?"#EF4444":e.action==="short"?"#FBBF24":e.action==="over"?"#3B82F6":e.action==="missing"?"#EF4444":"#9D9DA8";
+  const badgeLabel = e.action==="confirmed"?"Confirmed":e.action==="manual"?"Manual":e.action==="not_found"?"Not found":e.action==="unscanned"?"Unscanned":e.action==="short"?"Short supply":e.action==="over"?"Over supply":e.action==="missing"?"Missing":e.action==="on_board"?"On board":e.action==="off_board"?"Off board":"Undo";
+  const dotColor = e.action==="confirmed"?"#22C55E":e.action==="manual"?"#3B82F6":e.action==="not_found"?"#EF4444":e.action==="short"?"#FBBF24":e.action==="over"?"#3B82F6":e.action==="missing"?"#EF4444":e.action==="on_board"?"#FBBF24":e.action==="off_board"?"#22C55E":"#9D9DA8";
   const partColor = settingsState.partColor||"#E4E4E7";
   // Mini progress bar for qty
   let qtyHtml = "—";
@@ -2142,9 +2147,10 @@ function renderVanManifest(){
     if(!dmap.has(drv)) dmap.set(drv,{ lastTs:0, invs:new Map() });
     const D = dmap.get(drv); D.lastTs = Math.max(D.lastTs, e.timestamp||0);
     const invId = e.invoiceId||"?";
-    if(!D.invs.has(invId)) D.invs.set(invId,{ brand:e.brand||"?", lastTs:0, parts:new Map() });
+    if(!D.invs.has(invId)) D.invs.set(invId,{ brand:e.brand||"?", po:"", lastTs:0, parts:new Map() });
     const IV = D.invs.get(invId);
     if((e.timestamp||0)>=IV.lastTs){ IV.lastTs=e.timestamp||0; if(e.brand) IV.brand=e.brand; }
+    if(e.orderRef && e.orderRef!=="—") IV.po = e.orderRef;
     const pn = e.partNumber||"?";
     if(!IV.parts.has(pn)) IV.parts.set(pn,{ on:0, off:0, ds:"", ts:0 });
     const P = IV.parts.get(pn);
@@ -2178,7 +2184,7 @@ function renderVanManifest(){
           : '<span class="vm-chip green">Delivered</span>';
         return `<div class="vm-po"><span class="vm-po-pn">${vmEsc(p.pn)}</span><span class="vm-po-ds">${vmEsc(p.ds)}</span>${chip}</div>`;
       }).join("");
-      return `<details class="vm-inv"><summary class="vm-isum"><span class="vm-idot ${idot}"></span><span class="vm-ishop">Invoice ${vmEsc(invId)}</span><span class="vm-imeta">${vmEsc(IV.brand)}</span><span class="vm-ic"><b class="${oc(on)}">${on}</b> on van · <b class="${gc(del)}">${del}</b> delivered</span><span class="vm-cv">▾</span></summary><div class="vm-pos"><div class="vm-poh">Parts</div>${poRows}</div></details>`;
+      return `<details class="vm-inv"><summary class="vm-isum"><span class="vm-idot ${idot}"></span><span class="vm-ishop">Invoice ${vmEsc(invId)}</span>${IV.po?`<span class="vm-ipo">PO ${vmEsc(IV.po)}</span>`:""}<span class="vm-imeta">${vmEsc(IV.brand)}</span><span class="vm-ic"><b class="${oc(on)}">${on}</b> on van · <b class="${gc(del)}">${del}</b> delivered</span><span class="vm-cv">▾</span></summary><div class="vm-pos"><div class="vm-poh">Parts</div>${poRows}</div></details>`;
     }).join("");
     return `<details class="vm-drv"><summary class="vm-sum">
       <span class="vm-av">${vmEsc(drv)}</span>
