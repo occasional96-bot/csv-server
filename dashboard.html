@@ -1303,6 +1303,7 @@ function getFiltered(){
   const dset = driverSet();
   return allLogs.filter(e=>{
     if(e.action==="unscanned") return false;
+    if(e.action==="on_board" || e.action==="off_board") return false; // van scans live on the Driver Log only
     if(dset.has((e.initials||"").toUpperCase())) return false;
     if(e.invoiceId && e.invoiceId.startsWith("Q")) return false;
     if(e.timestamp < win.from || e.timestamp >= win.to) return false;
