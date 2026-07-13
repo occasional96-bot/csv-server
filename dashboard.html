@@ -96,6 +96,7 @@ a{color:inherit;text-decoration:none}
 .vm-fbadge{font-size:9px;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;padding:3px 8px;border-radius:5px;flex:none}
 .vm-fbadge.on{color:#E6AE3A;background:rgba(230,174,58,0.13)}
 .vm-fbadge.off{color:#3BBE86;background:rgba(59,190,134,0.13)}
+.vm-fbadge.undo{color:#8B96A8;background:rgba(139,150,168,0.13)}
 .vm-fempty{padding:20px 16px;text-align:center;color:#63656D;font-size:12px}
 
 /* ── Stats ── */
@@ -1218,6 +1219,7 @@ async function loadLogs(){
       renderTable(false);
       populateUserFilter();
       loadStats();
+      renderVanManifest(); // PO fallback map reads allLogs/allInvoices
       setHealth("ok");
       return;
     }catch(e){ if(i===delays.length-1){ setHealth("down"); if(tbody) tbody.innerHTML='<div class="empty-state">Could not load logs — server is offline. Try refreshing in a moment.</div>'; } }
@@ -1992,9 +1994,11 @@ function renderVanManifest(){
   const isToday = cal.mode==="day" && cal.day===dateKey(new Date());
   const lb=document.getElementById("drv-live"); if(lb) lb.style.visibility = isToday ? "visible" : "hidden";
 
-  // Day strip: real counts for the window, unaffected by the text filter
-  const sOn  = dayLogs.filter(e=>e.action==="on_board").length;
-  const sOff = dayLogs.filter(e=>e.action==="off_board").length;
+  // Day strip: real counts for the window, unaffected by the text filter.
+  // note "undo" = compensating scan: off_board+undo cancels a load, on_board+undo cancels a delivery.
+  const isUndo = e => (e.note||"")==="undo";
+  const sOn  = Math.max(0, dayLogs.filter(e=>e.action==="on_board"  && !isUndo(e)).length - dayLogs.filter(e=>e.action==="off_board" && isUndo(e)).length);
+  const sOff = Math.max(0, dayLogs.filter(e=>e.action==="off_board" && !isUndo(e)).length - dayLogs.filter(e=>e.action==="on_board"  && isUndo(e)).length);
   const netMap = new Map();
   for(const e of dayLogs){
     const k=(e.initials||"?").toUpperCase()+"||"+e.invoiceId+"||"+e.partNumber;
@@ -2021,14 +2025,32 @@ function renderVanManifest(){
       const col=e.color||"#8B5CF6";
       const meta=[e.description, e.customer].filter(Boolean).join(" · ");
       const isOn=e.action==="on_board";
-      return `<div class="vm-frow"><span class="vm-ftime">${t}</span><span class="vm-fav" style="background:${col}20;border:1px solid ${col}40;color:${col}">${vmEsc((e.initials||"?").toUpperCase())}</span><span class="vm-fpart">${vmEsc(e.partNumber)}</span><span class="vm-fdesc">${vmEsc(meta)}</span><span class="vm-fbadge ${isOn?"on":"off"}">${isOn?"On board":"Off board"}</span></div>`;
+      const badge = isUndo(e)
+        ? `<span class="vm-fbadge undo">Undo ${isOn?"delivery":"load"}</span>`
+        : `<span class="vm-fbadge ${isOn?"on":"off"}">${isOn?"On board":"Off board"}</span>`;
+      return `<div class="vm-frow"><span class="vm-ftime">${t}</span><span class="vm-fav" style="background:${col}20;border:1px solid ${col}40;color:${col}">${vmEsc((e.initials||"?").toUpperCase())}</span><span class="vm-fpart">${vmEsc(e.partNumber)}</span><span class="vm-fdesc">${vmEsc(meta)}</span>${badge}</div>`;
     }).join("") : '<div class="vm-fempty">No van scans '+(q?"match this filter":"on this day")+'</div>';
     feedRows.style.display = vmFeedOpen ? "" : "none";
   }
 
-  // Group: driver → invoice → part
+  // PO fallback: partNumber → orderRef from the warehouse invoice store + warehouse scan log.
+  // Van scans from older app builds carry no orderRef; the same part on the warehouse side does.
+  const poByPart = new Map();
+  try{
+    for(const inv of (allInvoices||[])){
+      if(!inv.orderRef) continue;
+      for(const p of (inv.parts||[])) if(p.partNumber && !poByPart.has(p.partNumber)) poByPart.set(p.partNumber, inv.orderRef);
+    }
+    for(const e of (allLogs||[])){
+      if(e.orderRef && e.partNumber && !["on_board","off_board"].includes(e.action) && !poByPart.has(e.partNumber)) poByPart.set(e.partNumber, e.orderRef);
+    }
+  }catch{}
+  const poFor = pn => { if(!pn) return ""; return poByPart.get(pn) || poByPart.get(String(pn).replace(/-\d{1,3}$/,"")) || ""; };
+
+  // Group: driver → invoice → part (chronological — undo entries must land after the scan they cancel)
   const dmap = new Map();
-  for(const e of dayLogs){
+  const seq = [...dayLogs].sort((a,b)=>(a.timestamp||0)-(b.timestamp||0));
+  for(const e of seq){
     if(!matchEntry(e)) continue;
     const drv = (e.initials||"?").toUpperCase();
     if(!dmap.has(drv)) dmap.set(drv,{ lastTs:0, invs:new Map() });
@@ -2036,14 +2058,27 @@ function renderVanManifest(){
     const invId = e.invoiceId||"?";
     if(!D.invs.has(invId)) D.invs.set(invId,{ brand:e.brand||"?", po:"", cust:"", lastTs:0, parts:new Map() });
     const IV = D.invs.get(invId);
-    if((e.timestamp||0)>=IV.lastTs){ IV.lastTs=e.timestamp||0; if(e.brand) IV.brand=e.brand; }
+    if((e.timestamp||0)>=IV.lastTs){ IV.lastTs=e.timestamp||0; if(e.brand && e.brand!=="?") IV.brand=e.brand; }
     if(e.orderRef && e.orderRef!=="—") IV.po = e.orderRef;
     if(e.customer) IV.cust = e.customer;
     const pn = e.partNumber||"?";
+    if(!IV.po){ const fp=poFor(pn); if(fp) IV.po=fp; }
     if(!IV.parts.has(pn)) IV.parts.set(pn,{ on:0, off:0, ds:"", ts:0 });
     const P = IV.parts.get(pn);
-    if(e.action==="on_board") P.on++; else P.off++;
+    if(isUndo(e)){
+      if(e.action==="off_board") P.on = Math.max(0, P.on-1); // cancels a load
+      else P.off = Math.max(0, P.off-1);                     // cancels a delivery
+    }
+    else if(e.action==="on_board") P.on++; else P.off++;
     if((e.timestamp||0)>=P.ts){ P.ts=e.timestamp||0; if(e.description) P.ds=e.description; }
+  }
+  // Prune parts fully cancelled by undo, then empty invoices/drivers
+  for(const [drv,D] of dmap){
+    for(const [invId,IV] of D.invs){
+      for(const [pn,P] of IV.parts){ if(P.on===0 && P.off===0) IV.parts.delete(pn); }
+      if(!IV.parts.size) D.invs.delete(invId);
+    }
+    if(!D.invs.size) dmap.delete(drv);
   }
 
   if(subEl) subEl.textContent = q ? (dmap.size?`${dmap.size} match${dmap.size!==1?"es":""}`:"no matches") : (dmap.size?`${dmap.size} active`:"");
