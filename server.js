@@ -774,6 +774,18 @@ app.get("/scan-logs", (req, res) => {
   res.json({ logs: log, total: log.length });
 });
 
+// Delete all VAN scans (on_board/off_board) for one invoice — dashboard test cleanup, password-gated
+app.post("/delete-van-scans", (req, res) => {
+  const { invoiceId, password } = req.body || {};
+  if (password !== "123") return res.status(403).json({ error: "Wrong password" });
+  if (!invoiceId) return res.status(400).json({ error: "Missing invoiceId" });
+  const log = purgeScanLog(readScanLog());
+  const keep = log.filter(e => !(["on_board", "off_board"].includes(e.action) && e.invoiceId === invoiceId));
+  const removed = log.length - keep.length;
+  saveScanLog(keep);
+  res.json({ ok: true, removed });
+});
+
 app.get("/scan-log-stats", (req, res) => {
   const log = purgeScanLog(readScanLog());
   const today = new Date(); today.setHours(0,0,0,0);

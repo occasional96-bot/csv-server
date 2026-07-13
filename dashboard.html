@@ -97,6 +97,8 @@ a{color:inherit;text-decoration:none}
 .vm-fbadge.on{color:#E6AE3A;background:rgba(230,174,58,0.13)}
 .vm-fbadge.off{color:#3BBE86;background:rgba(59,190,134,0.13)}
 .vm-fbadge.undo{color:#8B96A8;background:rgba(139,150,168,0.13)}
+.vm-del{color:#5A6474;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;flex:none;cursor:pointer}
+.vm-del:hover{color:#E05B5B;background:rgba(224,91,91,0.12)}
 .vm-fempty{padding:20px 16px;text-align:center;color:#63656D;font-size:12px}
 
 /* ── Stats ── */
@@ -1946,7 +1948,19 @@ function removeDriver(d){
 // net>0 = On van (amber); net<=0 (had an off_board) = Delivered (green).
 let vmLogs = [];
 let vmQuery = "";
+let vmOpenKeys = new Set(); // driver/invoice panels the user expanded — survives live re-renders
 function vmSetQuery(v){ vmQuery = (v||"").trim().toLowerCase(); renderVanManifest(); }
+async function vmDeleteInvoice(invId){
+  const pw = prompt("Delete ALL van scans for invoice "+invId+"?\nEnter password:");
+  if(pw===null) return;
+  if(pw!=="123"){ alert("Wrong password."); return; }
+  try{
+    const r = await fetch(SERVER+"/delete-van-scans",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({invoiceId:invId,password:pw})});
+    const d = await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error(d.error||("HTTP "+r.status));
+    vmRefresh(); loadLogs();
+  }catch(e){ alert("Delete failed: "+e.message); }
+}
 const VM_STL = { run:"Out on run", load:"Loading", done:"Van clear" };
 async function vmRefresh(){
   try{
@@ -2090,7 +2104,8 @@ function renderVanManifest(){
         : '<div class="vm-empty">No van scans on '+calLabel(cal).toLowerCase()+' — pick another day on the calendar.</div>');
     return;
   }
-  const openAttr = q ? " open" : "";
+  const drvOpen = drv => (q || vmOpenKeys.has(drv)) ? " open" : "";
+  const invOpen = (drv, invId) => (q || vmOpenKeys.has(drv + "|" + invId)) ? " open" : "";
 
   const partsArr = IV => [...IV.parts.entries()].map(([pn,P])=>({ pn, net:P.on-P.off, ds:P.ds }));
   const ivOn  = IV => partsArr(IV).filter(p=>p.net>0).length;   // parts still on van
@@ -2118,15 +2133,27 @@ function renderVanManifest(){
       if(IV.po)   subBits.push(`PO ${vmEsc(IV.po)}`);
       if(IV.brand && IV.brand!=="?") subBits.push(vmEsc(IV.brand));
       const sub = subBits.length ? `<span class="vm-isub">${subBits.join(" · ")}</span>` : "";
-      return `<details class="vm-inv"${openAttr}><summary class="vm-isum"><span class="vm-idot ${idot}"></span><span class="vm-iblock"><span class="vm-ishop">${title}</span>${sub}</span><span class="vm-ic"><b class="${oc(on)}">${on}</b> on van · <b class="${gc(del)}">${del}</b> delivered</span><span class="vm-cv">▾</span></summary><div class="vm-pos"><div class="vm-poh">Parts</div>${poRows}</div></details>`;
+      return `<details class="vm-inv"${invOpen(drv, invId)} data-vmkey="${vmEsc(drv + "|" + invId)}"><summary class="vm-isum"><span class="vm-idot ${idot}"></span><span class="vm-iblock"><span class="vm-ishop">${title}</span>${sub}</span><span class="vm-ic"><b class="${oc(on)}">${on}</b> on van · <b class="${gc(del)}">${del}</b> delivered</span><span class="vm-del" data-vmdel="${vmEsc(invId)}" title="Delete van scans for this invoice">✕</span><span class="vm-cv">▾</span></summary><div class="vm-pos"><div class="vm-poh">Parts</div>${poRows}</div></details>`;
     }).join("");
-    return `<details class="vm-drv"${openAttr}><summary class="vm-sum">
+    return `<details class="vm-drv"${drvOpen(drv)} data-vmkey="${vmEsc(drv)}"><summary class="vm-sum">
       <span class="vm-av">${vmEsc(drv)}</span>
       <span class="vm-id"><span class="vm-nm">${vmEsc(drv)}</span><span class="vm-stt vm-st-${st}">${VM_STL[st]}</span></span>
       <span class="vm-hd"><span class="vm-hd-box"><span class="vm-hd-n ${oc(invOnVan)}">${invOnVan}</span><span class="vm-hd-l">On van</span></span><span class="vm-hd-box"><span class="vm-hd-n ${gc(invDelivered)}">${invDelivered}</span><span class="vm-hd-l">Delivered</span></span></span>
       <span class="vm-cv">▾</span>
     </summary><div class="vm-invs">${invHtml}</div></details>`;
   }).join("");
+
+  // Keep user-expanded panels open across live re-renders; wire delete buttons
+  listEl.querySelectorAll("details[data-vmkey]").forEach(d=>{
+    d.addEventListener("toggle", ()=>{
+      if(vmQuery) return; // the filter forces panels open — don't persist that
+      const k=d.getAttribute("data-vmkey");
+      if(d.open) vmOpenKeys.add(k); else vmOpenKeys.delete(k);
+    });
+  });
+  listEl.querySelectorAll("[data-vmdel]").forEach(el=>{
+    el.addEventListener("click", ev=>{ ev.preventDefault(); ev.stopPropagation(); vmDeleteInvoice(el.getAttribute("data-vmdel")); });
+  });
 }
 
 // ── Focus Boards ──────────────────────────────────────────────────────────
