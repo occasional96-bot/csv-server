@@ -1266,8 +1266,10 @@ function getUnscannedRows(){
       .filter(e => e.timestamp >= from && ["confirmed","manual"].includes(e.action) && !dsetU.has((e.initials||"").toUpperCase()))
       .map(e => e.invoiceId+"||"+e.partNumber)
   );
+  const todayMid = new Date(); todayMid.setHours(0,0,0,0);
   const rows = [];
   for(const inv of allInvoices){
+    if((inv.savedAt||0) < todayMid.getTime()) continue; // store keeps 30 days now; unscanned is today-only
     if(inv.id && inv.id.startsWith("Q")) continue;
     if(filters.brand && inv.brand !== filters.brand) continue;
     if(filters.invoice && !inv.id.includes(filters.invoice.toUpperCase())) continue;
@@ -2050,17 +2052,18 @@ function renderVanManifest(){
 
   // PO fallback: partNumber → orderRef from the warehouse invoice store + warehouse scan log.
   // Van scans from older app builds carry no orderRef; the same part on the warehouse side does.
-  const poByPart = new Map();
+  const poByPart = new Map(); // pn → {ref, t} — newest source wins (same rule as the app)
   try{
+    const put=(pn,ref,t)=>{ const prev=poByPart.get(pn); if(!prev || t>=prev.t) poByPart.set(pn,{ref,t}); };
     for(const inv of (allInvoices||[])){
       if(!inv.orderRef) continue;
-      for(const p of (inv.parts||[])) if(p.partNumber && !poByPart.has(p.partNumber)) poByPart.set(p.partNumber, inv.orderRef);
+      for(const p of (inv.parts||[])) if(p.partNumber) put(p.partNumber, inv.orderRef, inv.savedAt||0);
     }
     for(const e of (allLogs||[])){
-      if(e.orderRef && e.partNumber && !["on_board","off_board"].includes(e.action) && !poByPart.has(e.partNumber)) poByPart.set(e.partNumber, e.orderRef);
+      if(e.orderRef && e.orderRef!=="—" && e.partNumber && !["on_board","off_board"].includes(e.action)) put(e.partNumber, e.orderRef, e.timestamp||0);
     }
   }catch{}
-  const poFor = pn => { if(!pn) return ""; return poByPart.get(pn) || poByPart.get(String(pn).replace(/-\d{1,3}$/,"")) || ""; };
+  const poFor = pn => { if(!pn) return ""; const hit = poByPart.get(pn) || poByPart.get(String(pn).replace(/-\d{1,3}$/,"")); return hit ? hit.ref : ""; };
 
   // Group: driver → invoice → part (chronological — undo entries must land after the scan they cancel)
   const dmap = new Map();

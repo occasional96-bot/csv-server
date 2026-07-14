@@ -110,9 +110,11 @@ const saveInvoices = (list) => {
     fs.renameSync(INVOICES_TMP, INVOICES_FILE);
   } catch(e) { console.error("saveInvoices error:", e); }
 };
+// Keep 30 days — the dashboard resolves van-scan POs from this store;
+// "unscanned" stays today-only client-side (dashboard getUnscannedRows)
 const purgeInvoices = (list) => {
-  const midnight = new Date(); midnight.setHours(0,0,0,0);
-  return list.filter(inv => inv.savedAt >= midnight.getTime());
+  const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  return list.filter(inv => inv.savedAt >= cutoff);
 };
 
 // ── Precount snapshots (resumable panel-counter sessions) ─────────────────────
