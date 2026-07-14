@@ -2081,13 +2081,14 @@ function renderVanManifest(){
     if(e.customer) IV.cust = e.customer;
     const pn = e.partNumber||"?";
     if(!IV.po){ const fp=poFor(pn); if(fp) IV.po=fp; }
-    if(!IV.parts.has(pn)) IV.parts.set(pn,{ on:0, off:0, ds:"", ts:0 });
+    if(!IV.parts.has(pn)) IV.parts.set(pn,{ on:0, off:0, onQty:0, offQty:0, ds:"", ts:0 });
     const P = IV.parts.get(pn);
+    const eq = Math.max(1, Number(e.qty)||0); // older app builds log qty 0 — count as 1 unit
     if(isUndo(e)){
-      if(e.action==="off_board") P.on = Math.max(0, P.on-1); // cancels a load
-      else P.off = Math.max(0, P.off-1);                     // cancels a delivery
+      if(e.action==="off_board"){ P.on = Math.max(0, P.on-1); P.onQty = Math.max(0, P.onQty-eq); } // cancels a load
+      else { P.off = Math.max(0, P.off-1); P.offQty = Math.max(0, P.offQty-eq); }                  // cancels a delivery
     }
-    else if(e.action==="on_board") P.on++; else P.off++;
+    else if(e.action==="on_board"){ P.on++; P.onQty+=eq; } else { P.off++; P.offQty+=eq; }
     if((e.timestamp||0)>=P.ts){ P.ts=e.timestamp||0; if(e.description) P.ds=e.description; }
   }
   // Prune parts fully cancelled by undo, then empty invoices/drivers
@@ -2111,7 +2112,7 @@ function renderVanManifest(){
   const drvOpen = drv => (q || vmOpenKeys.has(drv)) ? " open" : "";
   const invOpen = (drv, invId) => (q || vmOpenKeys.has(drv + "|" + invId)) ? " open" : "";
 
-  const partsArr = IV => [...IV.parts.entries()].map(([pn,P])=>({ pn, net:P.on-P.off, ds:P.ds }));
+  const partsArr = IV => [...IV.parts.entries()].map(([pn,P])=>({ pn, net:P.on-P.off, onQty:P.onQty, offQty:P.offQty, ds:P.ds }));
   const ivOn  = IV => partsArr(IV).filter(p=>p.net>0).length;   // parts still on van
   const ivDel = IV => partsArr(IV).filter(p=>p.net<=0).length;  // parts delivered
 
@@ -2127,8 +2128,8 @@ function renderVanManifest(){
       const parts = partsArr(IV).sort((a,b)=> (b.net>0)-(a.net>0) || String(a.pn).localeCompare(String(b.pn)));
       const poRows = parts.map(p=>{
         const chip = p.net>0
-          ? '<span class="vm-chip amber">On van</span>'
-          : '<span class="vm-chip green">Delivered</span>';
+          ? `<span class="vm-chip amber">On van ×${Math.max(1,p.onQty)}</span>`
+          : `<span class="vm-chip green">Delivered ×${Math.max(1,p.offQty)}</span>`;
         return `<div class="vm-po"><span class="vm-po-pn">${vmEsc(p.pn)}</span><span class="vm-po-ds">${vmEsc(p.ds)}</span>${chip}</div>`;
       }).join("");
       const title = IV.cust ? vmEsc(IV.cust) : `Invoice ${vmEsc(invId)}`;
