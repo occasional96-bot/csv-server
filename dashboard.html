@@ -89,7 +89,7 @@ a{color:inherit;text-decoration:none}
 .vm-feed-count{font-size:11px;color:#63656D}
 .vm-frow{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.03);font-size:12px}
 .vm-frow:last-child{border-bottom:none}
-.vm-ftime{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:11px;color:#9D9DA8;width:70px;flex:none}
+.vm-ftime{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:11px;color:#9D9DA8;width:96px;flex:none}
 .vm-fav{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:8.5px;font-weight:800;flex:none}
 .vm-fpart{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:11.5px;color:#ECEDEF;flex:none}
 .vm-fdesc{color:#63656D;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11.5px}
@@ -887,6 +887,8 @@ body{background:radial-gradient(90% 70% at 0% 0%,rgba(139,92,246,0.16),transpare
         #vm-root .vm-ishop{font-size:13px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
         #vm-root .vm-isub{font-size:11px;color:var(--vm-mut);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
         #vm-root .vm-ic{font-size:11.5px;color:var(--vm-dim);font-variant-numeric:tabular-nums;white-space:nowrap;flex:none}
+        #vm-root .vm-it{font-family:var(--vm-mono);font-size:11px;color:var(--vm-mut);white-space:nowrap;flex:none;margin-right:10px}
+        #vm-root .vm-po-t{font-family:var(--vm-mono);font-size:11px;color:var(--vm-mut);white-space:nowrap;flex:none}
         #vm-root .vm-ic b{font-weight:700}
         #vm-root .vm-search{width:100%;box-sizing:border-box;background:var(--vm-soft);border:1px solid var(--vm-line);border-radius:10px;padding:10px 13px;color:var(--vm-ink);font-size:13px;font-family:inherit;outline:none;margin-top:12px;transition:border-color .15s}
         #vm-root .vm-search::placeholder{color:var(--vm-mut)}
@@ -2039,7 +2041,7 @@ function renderVanManifest(){
     feedRows.innerHTML = feed.length ? feed.map(e=>{
       const d=new Date(e.timestamp||0);
       const hm=String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
-      const t = cal.mode==="7d" ? d.toLocaleDateString("en-AU",{weekday:"short"})+" "+hm : hm;
+      const t = d.toLocaleDateString("en-AU",{day:"2-digit",month:"2-digit"})+" "+hm;
       const col=e.color||"#8B5CF6";
       const meta=[e.description, e.customer].filter(Boolean).join(" · ");
       const isOn=e.action==="on_board";
@@ -2113,7 +2115,13 @@ function renderVanManifest(){
   const drvOpen = drv => (q || vmOpenKeys.has(drv)) ? " open" : "";
   const invOpen = (drv, invId) => (q || vmOpenKeys.has(drv + "|" + invId)) ? " open" : "";
 
-  const partsArr = IV => [...IV.parts.entries()].map(([pn,P])=>({ pn, net:P.on-P.off, onQty:P.onQty, offQty:P.offQty, ds:P.ds }));
+  const vmFmtT = ts => {
+    if(!ts) return "";
+    const d=new Date(ts);
+    const hm=String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
+    return d.toLocaleDateString("en-AU",{day:"2-digit",month:"2-digit"})+" "+hm;
+  };
+  const partsArr = IV => [...IV.parts.entries()].map(([pn,P])=>({ pn, net:P.on-P.off, onQty:P.onQty, offQty:P.offQty, ds:P.ds, ts:P.ts }));
   const ivOn  = IV => partsArr(IV).filter(p=>p.net>0).length;   // parts still on van
   const ivDel = IV => partsArr(IV).filter(p=>p.net<=0).length;  // parts delivered
 
@@ -2132,7 +2140,7 @@ function renderVanManifest(){
           ? '<span class="vm-chip amber">On van</span>'
           : '<span class="vm-chip green">Delivered</span>';
         const qty = Math.max(1, p.net>0 ? p.onQty : p.offQty);
-        return `<div class="vm-po"><span class="vm-po-pn">${vmEsc(p.pn)}</span><span class="vm-po-ds">${vmEsc(p.ds)}</span><span class="vm-po-qty">QTY ${qty}</span>${chip}</div>`;
+        return `<div class="vm-po"><span class="vm-po-pn">${vmEsc(p.pn)}</span><span class="vm-po-ds">${vmEsc(p.ds)}</span><span class="vm-po-t">${vmFmtT(p.ts)}</span><span class="vm-po-qty">QTY ${qty}</span>${chip}</div>`;
       }).join("");
       const title = IV.cust ? vmEsc(IV.cust) : `Invoice ${vmEsc(invId)}`;
       const subBits = [];
@@ -2140,7 +2148,7 @@ function renderVanManifest(){
       if(IV.po)   subBits.push(`PO ${vmEsc(IV.po)}`);
       if(IV.brand && IV.brand!=="?") subBits.push(vmEsc(IV.brand));
       const sub = subBits.length ? `<span class="vm-isub">${subBits.join(" · ")}</span>` : "";
-      return `<details class="vm-inv"${invOpen(drv, invId)} data-vmkey="${vmEsc(drv + "|" + invId)}"><summary class="vm-isum"><span class="vm-idot ${idot}"></span><span class="vm-iblock"><span class="vm-ishop">${title}</span>${sub}</span><span class="vm-ic"><b class="${oc(on)}">${on}</b> on van · <b class="${gc(del)}">${del}</b> delivered</span><span class="vm-del" data-vmdel="${vmEsc(invId)}" title="Delete van scans for this invoice">✕</span><span class="vm-cv">▾</span></summary><div class="vm-pos"><div class="vm-poh">Parts</div>${poRows}</div></details>`;
+      return `<details class="vm-inv"${invOpen(drv, invId)} data-vmkey="${vmEsc(drv + "|" + invId)}"><summary class="vm-isum"><span class="vm-idot ${idot}"></span><span class="vm-iblock"><span class="vm-ishop">${title}</span>${sub}</span><span class="vm-it">${vmFmtT(IV.lastTs)}</span><span class="vm-ic"><b class="${oc(on)}">${on}</b> on van · <b class="${gc(del)}">${del}</b> delivered</span><span class="vm-del" data-vmdel="${vmEsc(invId)}" title="Delete van scans for this invoice">✕</span><span class="vm-cv">▾</span></summary><div class="vm-pos"><div class="vm-poh">Parts</div>${poRows}</div></details>`;
     }).join("");
     return `<details class="vm-drv"${drvOpen(drv)} data-vmkey="${vmEsc(drv)}"><summary class="vm-sum">
       <span class="vm-av">${vmEsc(drv)}</span>
