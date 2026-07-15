@@ -132,6 +132,27 @@ const savePrecounts  = (list) => {
 };
 const purgePrecounts = (list) => list.filter(e => Date.now() - (e.updatedAt || 0) < FOURTEEN_DAYS);
 
+// ── Picking slip snapshots (proof-of-pick record for the dashboard panel) ─────
+// slipId → full snapshot (parts + status + counts) with a capped per-slip event feed.
+// App POSTs one fire-and-forget snapshot per mutation; last-write-wins on updatedAt,
+// so a dropped call self-heals on the next one. Own file — Clear All Data keeps it.
+const PICKSLIPS_FILE = path.join(DATA_DIR, "pickslips.json");
+const PICKSLIPS_TMP  = path.join(DATA_DIR, "pickslips.tmp.json");
+const readPickslips  = () => { try { return JSON.parse(fs.readFileSync(PICKSLIPS_FILE, "utf8")) || {}; } catch { return {}; } };
+const savePickslips  = (map) => {
+  try {
+    fs.writeFileSync(PICKSLIPS_TMP, JSON.stringify(map, null, 2));
+    fs.renameSync(PICKSLIPS_TMP, PICKSLIPS_FILE);
+  } catch(e) { console.error("savePickslips error:", e); }
+};
+const purgePickslips = (map) => {
+  const out = {};
+  for (const [id, s] of Object.entries(map)) {
+    if (Date.now() - (s.updatedAt || 0) < FOURTEEN_DAYS) out[id] = s;
+  }
+  return out;
+};
+
 // ── WebSocket clients map: ws → { id, initials, color, name, roomId } ───────
 const clients = new Map(); // ws → clientInfo
 
@@ -900,6 +921,46 @@ app.get("/precount/:invoiceId", (req, res) => {
 app.get("/precounts", (req, res) => {
   const list = purgePrecounts(readPrecounts()).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
   res.json({ ok: true, snapshots: list });
+});
+
+// ── Picking slip endpoints (Picking Slip Board → dashboard panel) ─────────────
+app.post("/pickslip-update", (req, res) => {
+  const { slipId, initials, color, updatedAt, event, slip } = req.body || {};
+  if (!slipId || !slip || !slip.id) return res.status(400).json({ error: "slipId + slip required" });
+  let store = purgePickslips(readPickslips());
+  const prev = store[slipId];
+  // LWW: accept only if not older than what we hold (retries / out-of-order safe)
+  if (prev && (updatedAt || 0) < (prev.updatedAt || 0)) return res.json({ ok: true, stale: true });
+  const feedEntry = event && event.kind ? {
+    kind: event.kind, // picked | unpicked | backorder_marked | backorder_cleared | slip_added | slip_removed | slip_complete
+    partNumber: event.partNumber || "",
+    qty: event.qty || 0,
+    note: event.note || "",
+    initials: initials || "?",
+    color: color || "#8BA3BE",
+    at: updatedAt || Date.now(),
+  } : null;
+  const feed = (prev && Array.isArray(prev.feed)) ? prev.feed : [];
+  if (feedEntry) feed.unshift(feedEntry);
+  store[slipId] = {
+    ...slip,
+    updatedAt: updatedAt || Date.now(),
+    initials: initials || "?",
+    color: color || "#8BA3BE",
+    // Removed slips keep their snapshot (that's the proof record) but stop counting as "on board"
+    removed: event?.kind === "slip_removed" ? true : event?.kind === "slip_added" ? false : !!(prev && prev.removed),
+    feed: feed.slice(0, 50),
+  };
+  savePickslips(store);
+  broadcast({ type: "pickslip_update", slip: store[slipId], event: feedEntry });
+  res.json({ ok: true });
+});
+
+// Dashboard bootstrap: every non-expired slip snapshot, newest activity first
+app.get("/pickslips", (req, res) => {
+  const store = purgePickslips(readPickslips());
+  const slips = Object.values(store).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+  res.json({ ok: true, slips });
 });
 
 // ── Health / keep-alive ───────────────────────────────────────────────────────

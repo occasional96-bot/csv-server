@@ -8,7 +8,7 @@
 | File | Purpose |
 |------|---------|
 | `server.js` | Main Express + WebSocket server (798 lines) |
-| `dashboard.html` | Admin dashboard UI — served at GET /dashboard (Driver Log = Van manifest `#vm-root`: undo-aware netting, PO fallback, sticky panels, per-invoice delete; Scan Log excludes van scans) |
+| `dashboard.html` | Admin dashboard UI — served at GET /dashboard (Driver Log = Van manifest `#vm-root`: undo-aware netting, PO fallback, sticky panels, per-invoice delete; Scan Log excludes van scans; Picking Slips page `#ps-root`: snapshot-driven slip drill + pick activity feed, live via WS `pickslip_update`) |
 | `app.json` | Backend app config |
 | `package.json` | Backend dependencies (express, multer, ws) |
 
@@ -51,6 +51,8 @@
 | 725 | `POST /sync-invoices` — receive invoice sync from app |
 | 753 | `POST /clear-invoices` — clear server invoices |
 | 777 | `GET  /invoices` — retrieve server invoices |
+| ~907 | `POST /pickslip-update` — Picking Slip Board snapshot (LWW on updatedAt, capped per-slip feed, WS `pickslip_update` broadcast; store `pickslips.json`, 14-day, survives Clear All Data) |
+| ~941 | `GET  /pickslips` — all slip snapshots, newest activity first (dashboard bootstrap) |
 | 787 | `GET  /ping` — health check |
 | 790 | `GET  /dashboard` — serve dashboard HTML |
 | 796 | `GET  /` — version/status |

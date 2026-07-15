@@ -81,7 +81,7 @@ a{color:inherit;text-decoration:none}
 .vm-sbox{flex:1;background:#151619;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:12px 15px}
 .vm-sl{font-size:9.5px;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:#63656D}
 .vm-sv{font-size:22px;font-weight:700;letter-spacing:-0.02em;margin-top:4px;font-variant-numeric:tabular-nums;color:#ECEDEF}
-.vm-sv.amber{color:#E6AE3A}.vm-sv.green{color:#3BBE86}.vm-sv.blue{color:#5B9BFF}
+.vm-sv.amber{color:#E6AE3A}.vm-sv.green{color:#3BBE86}.vm-sv.blue{color:#5B9BFF}.vm-sv.teal{color:#2FBED1}
 .vm-feed{background:#151619;border:1px solid rgba(255,255,255,0.07);border-radius:14px;overflow:hidden;margin-top:24px}
 .vm-feed-head{display:flex;align-items:center;gap:9px;padding:12px 16px;cursor:pointer;user-select:none}
 .vm-feed-head.divide{border-bottom:1px solid rgba(255,255,255,0.07)}
@@ -97,6 +97,10 @@ a{color:inherit;text-decoration:none}
 .vm-fbadge.on{color:#E6AE3A;background:rgba(230,174,58,0.13)}
 .vm-fbadge.off{color:#3BBE86;background:rgba(59,190,134,0.13)}
 .vm-fbadge.undo{color:#8B96A8;background:rgba(139,150,168,0.13)}
+.vm-fbadge.teal{color:#2FBED1;background:rgba(47,190,209,0.13)}
+.vm-fbadge.blue{color:#5B9BFF;background:rgba(91,155,255,0.13)}
+.vm-fbadge.green{color:#3BBE86;background:rgba(59,190,134,0.13)}
+.vm-fbadge.red{color:#E05B5B;background:rgba(224,91,91,0.13)}
 .vm-del{color:#5A6474;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;flex:none;cursor:pointer}
 .vm-del:hover{color:#E05B5B;background:rgba(224,91,91,0.12)}
 .vm-fempty{padding:20px 16px;text-align:center;color:#63656D;font-size:12px}
@@ -597,6 +601,10 @@ body{background:radial-gradient(90% 70% at 0% 0%,rgba(139,92,246,0.16),transpare
       <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="#B0B0BA" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 4.5h8v6h-8z"/><path d="M9.5 6.5h2.6l2.4 2.5v1.5h-2.3"/><circle cx="4.7" cy="12.3" r="1.4"/><circle cx="11.3" cy="12.3" r="1.4"/></svg>
       Driver Log
     </div>
+    <div class="nav-item" onclick="showPage('pickslip')" id="nav-pickslip">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="#B0B0BA" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="2.5" width="10" height="12" rx="2"/><path d="M6 1.5h4v2.5H6z"/><path d="M5.7 9l1.6 1.6 3-3.4"/></svg>
+      Picking Slips
+    </div>
     <div class="sidebar-bottom" style="margin-top:auto">
       <div class="server-status">
         <div class="status-dot" id="conn-dot"></div>
@@ -923,6 +931,86 @@ body{background:radial-gradient(90% 70% at 0% 0%,rgba(139,92,246,0.16),transpare
       </div>
     </div><!-- /page-driver -->
 
+    <!-- ── PICKING SLIPS PAGE (proof-of-pick snapshots from the app) ── -->
+    <div id="page-pickslip" style="display:none">
+      <div class="topbar">
+        <div>
+          <div class="page-title">Picking Slips</div>
+          <div class="page-sub">Panel shop slips — proof of what was picked vs on order</div>
+        </div>
+        <div class="topbar-right">
+          <div class="live-badge" id="ps-live"><div class="pulse"></div>Live</div>
+        </div>
+      </div>
+
+      <div class="vm-strip">
+        <div class="vm-sbox"><div class="vm-sl">Slips on board</div><div class="vm-sv blue" id="pss-slips">0</div></div>
+        <div class="vm-sbox"><div class="vm-sl">Parts picked</div><div class="vm-sv green" id="pss-picked">0</div></div>
+        <div class="vm-sbox"><div class="vm-sl">On order</div><div class="vm-sv teal" id="pss-onorder">0</div></div>
+      </div>
+
+      <style>
+        #ps-root{--ps-card:#151619;--ps-ink:#ECEDEF;--ps-dim:#9A9CA3;--ps-mut:#63656D;--ps-line:rgba(255,255,255,0.07);--ps-line2:rgba(255,255,255,0.12);--ps-soft:#1D1F23;--ps-teal:#2FBED1;--ps-green:#3BBE86;--ps-blue:#5B9BFF;--ps-red:#E05B5B;--ps-tealbg:rgba(47,190,209,0.13);--ps-greenbg:rgba(59,190,134,0.13);--ps-redbg:rgba(224,91,91,0.13);--ps-mono:ui-monospace,"SF Mono","Cascadia Code","Roboto Mono",Menlo,Consolas,monospace;color:var(--ps-ink)}
+        #ps-root .ps-h{font-size:18px;font-weight:750;letter-spacing:-0.02em}
+        #ps-root .ps-sub{font-size:12px;color:var(--ps-mut);font-weight:500;margin-left:9px}
+        #ps-root .ps-zero{color:inherit;font-weight:400}
+        #ps-root .ps-green{color:var(--ps-green)} #ps-root .ps-teal{color:var(--ps-teal)}
+        #ps-root summary{list-style:none} #ps-root summary::-webkit-details-marker{display:none}
+        #ps-root .ps-cv{color:var(--ps-mut);font-size:11px;transition:transform .18s ease;flex:none}
+        #ps-root details[open]>summary .ps-cv{transform:rotate(180deg)}
+        @media (prefers-reduced-motion:reduce){#ps-root .ps-cv{transition:none}}
+        #ps-root .ps-list{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+        #ps-root .ps-slip{background:var(--ps-card);border:1px solid var(--ps-line);border-radius:14px;overflow:hidden}
+        #ps-root .ps-slip[open]{border-color:var(--ps-line2)}
+        #ps-root .ps-slip.gone{opacity:0.55}
+        #ps-root .ps-sum{cursor:pointer;display:flex;align-items:center;gap:13px;padding:15px 16px}
+        #ps-root .ps-dot{width:8px;height:8px;border-radius:50%;flex:none}
+        #ps-root .ps-dot.picking{background:var(--ps-blue)} #ps-root .ps-dot.complete{background:var(--ps-green)} #ps-root .ps-dot.gone{background:var(--ps-mut)}
+        #ps-root .ps-id{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+        #ps-root .ps-nm{font-size:14.5px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        #ps-root .ps-stt{font-size:11px;color:var(--ps-mut);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        #ps-root .ps-stt b{font-weight:700}
+        #ps-root .ps-hd{margin-left:auto;display:flex;gap:8px;align-items:center}
+        #ps-root .ps-hd-box{background:var(--ps-soft);border:1px solid var(--ps-line);border-radius:10px;padding:6px 13px;display:flex;flex-direction:column;gap:2px;align-items:center;min-width:60px}
+        #ps-root .ps-hd-n{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-0.02em;line-height:1}
+        #ps-root .ps-hd-l{font-size:9px;text-transform:uppercase;letter-spacing:0.05em;color:var(--ps-mut);font-weight:600}
+        #ps-root .ps-tag{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;padding:3px 8px;border-radius:5px;flex:none}
+        #ps-root .ps-tag.teal{color:var(--ps-teal);background:var(--ps-tealbg)}
+        #ps-root .ps-tag.gone{color:var(--ps-dim);background:rgba(139,150,168,0.13)}
+        #ps-root .ps-parts{padding:2px 16px 12px}
+        #ps-root .ps-poh{font-size:9.5px;text-transform:uppercase;letter-spacing:0.1em;color:var(--ps-mut);font-weight:600;margin:6px 0 6px}
+        #ps-root .ps-po{display:flex;align-items:center;gap:11px;padding:8px 0}
+        #ps-root .ps-po+.ps-po{border-top:1px solid var(--ps-line)}
+        #ps-root .ps-po-pn{font-family:var(--ps-mono);font-size:12px;white-space:nowrap;color:var(--ps-ink)}
+        #ps-root .ps-po-ds{font-size:12px;color:var(--ps-mut);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        #ps-root .ps-po-who{font-family:var(--ps-mono);font-size:11px;color:var(--ps-mut);white-space:nowrap;flex:none}
+        #ps-root .ps-chip{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;padding:2px 7px;border-radius:5px;flex:none}
+        #ps-root .ps-chip.green{color:var(--ps-green);background:var(--ps-greenbg)}
+        #ps-root .ps-chip.teal{color:var(--ps-teal);background:var(--ps-tealbg)}
+        #ps-root .ps-chip.red{color:var(--ps-red);background:var(--ps-redbg)}
+        #ps-root .ps-search{width:100%;box-sizing:border-box;background:var(--ps-soft);border:1px solid var(--ps-line);border-radius:10px;padding:10px 13px;color:var(--ps-ink);font-size:13px;font-family:inherit;outline:none;margin-top:12px;transition:border-color .15s}
+        #ps-root .ps-search::placeholder{color:var(--ps-mut)}
+        #ps-root .ps-search:focus{border-color:var(--ps-line2)}
+        #ps-root .ps-empty{background:var(--ps-card);border:1px solid var(--ps-line);border-radius:14px;padding:26px;text-align:center;color:var(--ps-mut);font-size:13px}
+      </style>
+      <div class="section-label" style="margin-top:2px">PICKING SLIP BOARD — picked vs on order</div>
+      <div id="ps-root">
+        <div class="ps-h">Slips <span class="ps-sub" id="ps-sub"></span></div>
+        <input class="ps-search" id="ps-search" type="search" autocomplete="off" placeholder="Filter by slip #, part #, or shop name…" oninput="psSetQuery(this.value)" />
+        <div class="ps-list" id="ps-list"></div>
+      </div>
+
+      <div class="vm-feed">
+        <div class="vm-feed-head divide" onclick="psToggleFeed()">
+          <span class="vm-feed-title" id="ps-feed-title">Pick activity</span>
+          <span class="vm-feed-count" id="ps-feed-count"></span>
+          <span style="flex:1"></span>
+          <span class="vm-cv" id="ps-feed-cv" style="color:#63656D;font-size:11px">▾</span>
+        </div>
+        <div class="vm-feed-rows" id="ps-feed-rows"></div>
+      </div>
+    </div><!-- /page-pickslip -->
+
   </div><!-- /main -->
 </div><!-- /shell -->
 <div class="toast-container" id="toast-container"></div>
@@ -948,6 +1036,7 @@ body{background:radial-gradient(90% 70% at 0% 0%,rgba(139,92,246,0.16),transpare
       <div class="cmd-item" data-cmd="import" onclick="runCmd('import')"><svg viewBox="0 0 16 16" fill="none"><path d="M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M3 12h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>Go to Import CSV<span class="cmd-kbd">2</span></div>
       <div class="cmd-item" data-cmd="boards" onclick="runCmd('boards')"><svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>Go to Focus Boards<span class="cmd-kbd">3</span></div>
       <div class="cmd-item" data-cmd="driver" onclick="runCmd('driver')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 4.5h8v6h-8z"/><path d="M9.5 6.5h2.6l2.4 2.5v1.5h-2.3"/><circle cx="4.7" cy="12.3" r="1.4"/><circle cx="11.3" cy="12.3" r="1.4"/></svg>Go to Driver Log<span class="cmd-kbd">4</span></div>
+      <div class="cmd-item" data-cmd="pickslip" onclick="runCmd('pickslip')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="2.5" width="10" height="12" rx="2"/><path d="M6 1.5h4v2.5H6z"/><path d="M5.7 9l1.6 1.6 3-3.4"/></svg>Go to Picking Slips<span class="cmd-kbd">5</span></div>
       <div class="cmd-item" data-cmd="settings" onclick="runCmd('settings')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="2.5"/><path d="M8 2v2M8 12v2M2 8h2M12 8h2"/></svg>Open Settings<span class="cmd-kbd">S</span></div>
       <div class="cmd-item" data-cmd="export-csv" onclick="runCmd('export-csv')"><svg viewBox="0 0 16 16" fill="none"><path d="M4 12h8M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Export CSV</div>
       <div class="cmd-item" data-cmd="export-disc" onclick="runCmd('export-disc')"><svg viewBox="0 0 16 16" fill="none"><path d="M4 12h8M8 2v8M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Export Discrepancy Report</div>
@@ -1136,7 +1225,7 @@ function getDateFrom(){ return getDateWindow().from; }
 // ── Pages ─────────────────────────────────────────────────────────────────
 let boardsInterval = null;
 function showPage(p){
-  ["log","import","boards","driver"].forEach(x=>{
+  ["log","import","boards","driver","pickslip"].forEach(x=>{
     const el = document.getElementById("page-"+x);
     if(el) el.style.display = x===p ? (x==="log" ? "flex" : "block") : "none";
     const nav = document.getElementById("nav-"+x);
@@ -1144,6 +1233,7 @@ function showPage(p){
   });
   if(p==="import"){ loadFileMeta(); loadPathsUI(); }
   if(p==="driver"){ vmRefresh(); }
+  if(p==="pickslip"){ loadPickslips(); }
 
   if(p==="boards"){
     let pg = document.getElementById("page-boards");
@@ -1182,6 +1272,9 @@ function connectWS(){
         if(msg.type==="new_file"){
           checkAllStale();
           loadFileMeta();
+        }
+        if(msg.type==="pickslip_update"){
+          psOnUpdate(msg);
         }
       }catch{}
     };
@@ -2326,12 +2419,137 @@ function cmdKeyNav(e){
   else if(e.key==="Enter"){ e.preventDefault(); const sel=items.find(i=>i.classList.contains("sel")); if(sel) sel.click(); }
   else if(e.key==="Escape"){ e.stopPropagation(); toggleCmdPalette(); }
 }
+// ── Picking Slips panel (full snapshots from /pickslips + live pickslip_update) ──
+// Renders server-held slip snapshots — no log derivation. Roster style (state dot,
+// customer-led rows, <details> drill to part lines with provenance, activity feed).
+let psSlips = [];           // snapshots, newest activity first
+let psQuery = "";
+let psOpenIds = new Set();  // expanded slips survive live re-renders
+let psFeedOpen = true;
+function psSetQuery(v){ psQuery=(v||"").trim().toLowerCase(); renderPickslips(); }
+function psTgl(id, open){ if(open) psOpenIds.add(id); else psOpenIds.delete(id); }
+function psToggleFeed(){
+  psFeedOpen = !psFeedOpen;
+  const rows=document.getElementById("ps-feed-rows");
+  const cv=document.getElementById("ps-feed-cv");
+  if(rows) rows.style.display = psFeedOpen ? "" : "none";
+  if(cv) cv.style.transform = psFeedOpen ? "" : "rotate(-90deg)";
+  const head=document.querySelector("#page-pickslip .vm-feed-head");
+  if(head) head.classList.toggle("divide", psFeedOpen);
+}
+async function loadPickslips(){
+  try{
+    const r = await fetch(SERVER+"/pickslips",{cache:"no-store"});
+    const d = await r.json();
+    psSlips = d.slips || [];
+  }catch{ /* keep last good list */ }
+  renderPickslips();
+}
+function psOnUpdate(msg){
+  if(!msg || !msg.slip || !msg.slip.id) return;
+  const i = psSlips.findIndex(s=>s.id===msg.slip.id);
+  if(i===-1) psSlips.unshift(msg.slip); else psSlips[i]=msg.slip;
+  psSlips.sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0)); // keep bootstrap order: latest activity first
+  renderPickslips();
+}
+const PS_EVT = {
+  picked:            { label:"Picked",       cls:"green" },
+  unpicked:          { label:"Un-picked",    cls:"undo"  },
+  backorder_marked:  { label:"On order",     cls:"teal"  },
+  backorder_cleared: { label:"Back to pick", cls:"undo"  },
+  slip_added:        { label:"Slip added",   cls:"blue"  },
+  slip_removed:      { label:"Removed",      cls:"undo"  },
+  slip_complete:     { label:"Complete",     cls:"green" },
+};
+function renderPickslips(){
+  const page = document.getElementById("page-pickslip");
+  const listEl = document.getElementById("ps-list");
+  if(!page || !listEl || page.style.display==="none") return;
+  const esc = s => String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const fmtT = ts => { if(!ts) return ""; const d=new Date(ts); return d.toLocaleDateString("en-AU",{day:"2-digit",month:"2-digit"})+" "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"); };
+  const q = psQuery;
+  const match = s => !q || [s.id, s.customer, ...(s.parts||[]).flatMap(p=>[p.partNumber,p.description])]
+    .some(f => String(f==null?"":f).toLowerCase().includes(q));
+
+  // Stat strip: real counts for slips still on the board, unaffected by the text filter
+  const active = psSlips.filter(s=>!s.removed);
+  const stPicked  = active.reduce((n,s)=>n+((s.counts||{}).picked ||0),0);
+  const stOnOrder = active.reduce((n,s)=>n+((s.counts||{}).onOrder||0),0);
+  const e1=document.getElementById("pss-slips");   if(e1) e1.textContent=active.length;
+  const e2=document.getElementById("pss-picked");  if(e2) e2.textContent=stPicked;
+  const e3=document.getElementById("pss-onorder"); if(e3) e3.textContent=stOnOrder;
+
+  const list = psSlips.filter(match);
+  const subEl=document.getElementById("ps-sub");
+  if(subEl) subEl.textContent = list.length ? `${list.length} slip${list.length!==1?"s":""}${q?" (filtered)":""}` : "";
+
+  listEl.innerHTML = list.length ? list.map(s=>{
+    const c = s.counts || { picked:0, toPick:0, onOrder:0, total:0 };
+    const dot   = s.removed ? "gone" : s.complete ? "complete" : "picking";
+    const state = s.removed ? "Off board" : s.complete ? "Complete" : "Picking";
+    const stCol = s.removed ? "var(--ps-mut)" : s.complete ? "var(--ps-green)" : "var(--ps-blue)";
+    const allBO = c.total>0 && c.onOrder===c.total && c.picked===0;
+    const open  = psOpenIds.has(s.id) ? " open" : "";
+    const parts = (s.parts||[]).map(p=>{
+      const chip = p.status==="picked"
+        ? `<span class="ps-chip green">Picked${(p.qty||0)>0 && (p.expected||1)>1 ? " "+p.qty+"/"+p.expected : ""}</span>`
+        : p.status==="on_order"
+        ? `<span class="ps-chip teal">On order</span>`
+        : `<span class="ps-chip red">To pick</span>`;
+      const prov = p.status==="picked" ? (p.by ? esc(p.by)+" "+fmtT(p.at) : "")
+        : p.status==="on_order" ? (p.auto ? "AUTO" : "MARKED "+esc(p.by||"?")+(p.at?" "+fmtT(p.at):""))
+        : "";
+      return `<div class="ps-po"><span class="ps-po-pn">${esc(p.partNumber)}</span><span class="ps-po-ds">${esc(p.description||"")}</span>${prov?`<span class="ps-po-who">${prov}</span>`:""}${chip}</div>`;
+    }).join("");
+    return `<details class="ps-slip${s.removed?" gone":""}"${open} ontoggle="psTgl('${esc(s.id)}',this.open)">
+      <summary class="ps-sum">
+        <span class="ps-dot ${dot}"></span>
+        <span class="ps-id">
+          <span class="ps-nm">${esc(s.customer || s.id)}</span>
+          <span class="ps-stt">${esc(s.id)} · <b style="color:${stCol}">${state}</b> · updated ${fmtT(s.updatedAt)}</span>
+        </span>
+        <span class="ps-hd">
+          ${allBO?'<span class="ps-tag teal">All on order</span>':""}
+          ${s.removed?'<span class="ps-tag gone">Removed</span>':""}
+          <span class="ps-hd-box"><span class="ps-hd-n ${c.picked>0?"ps-green":"ps-zero"}">${c.picked}/${c.picked+c.toPick}</span><span class="ps-hd-l">Picked</span></span>
+          <span class="ps-hd-box"><span class="ps-hd-n ${c.onOrder>0?"ps-teal":"ps-zero"}">${c.onOrder}</span><span class="ps-hd-l">On order</span></span>
+        </span>
+        <span class="ps-cv">▾</span>
+      </summary>
+      <div class="ps-parts"><div class="ps-poh">Parts — ${c.total}</div>${parts}</div>
+    </details>`;
+  }).join("") : `<div class="ps-empty">${q ? "No slips match this filter" : "No picking slips yet — board a slip in the app and it appears here live"}</div>`;
+
+  // Activity feed: every slip's event feed merged, newest first
+  const feed = psSlips
+    .filter(match)
+    .flatMap(s => (s.feed||[]).map(f => ({ ...f, slipId: s.id, customer: s.customer||"" })))
+    .sort((a,b)=>(b.at||0)-(a.at||0))
+    .slice(0,120);
+  const feedRows=document.getElementById("ps-feed-rows");
+  const feedCount=document.getElementById("ps-feed-count");
+  if(feedCount) feedCount.textContent = feed.length ? `${feed.length} event${feed.length!==1?"s":""}` : "";
+  if(feedRows){
+    feedRows.innerHTML = feed.length ? feed.map(f=>{
+      const ev = PS_EVT[f.kind] || { label: f.kind, cls: "undo" };
+      const col = f.color || "#2FBED1";
+      const isSlipEvt = !f.partNumber;
+      const main = isSlipEvt ? f.slipId : f.partNumber;
+      const meta = [isSlipEvt ? f.customer : (f.slipId + (f.customer ? " · " + f.customer : "")), f.note==="undo" ? "undo" : f.note].filter(Boolean).join(" · ");
+      const qty = f.kind==="picked" && (f.qty||0)>0 ? " ×"+f.qty : "";
+      return `<div class="vm-frow"><span class="vm-ftime">${fmtT(f.at)}</span><span class="vm-fav" style="background:${col}20;border:1px solid ${col}40;color:${col}">${esc((f.initials||"?").toUpperCase())}</span><span class="vm-fpart">${esc(main)}</span><span class="vm-fdesc">${esc(meta)}</span><span class="vm-fbadge ${ev.cls}">${ev.label}${qty}</span></div>`;
+    }).join("") : `<div class="vm-fempty">No pick activity ${q?"matches this filter":"yet"}</div>`;
+    feedRows.style.display = psFeedOpen ? "" : "none";
+  }
+}
+
 function runCmd(cmd){
   toggleCmdPalette();
   if(cmd==="scan-log") showPage("log");
   else if(cmd==="import") showPage("import");
   else if(cmd==="boards") showPage("boards");
   else if(cmd==="driver") showPage("driver");
+  else if(cmd==="pickslip") showPage("pickslip");
   else if(cmd==="settings") toggleSettings();
   else if(cmd==="export-csv") exportCSV();
   else if(cmd==="export-disc") exportDiscrepancy();
