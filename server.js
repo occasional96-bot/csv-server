@@ -929,8 +929,8 @@ app.post("/pickslip-update", (req, res) => {
   if (!slipId || !slip || !slip.id) return res.status(400).json({ error: "slipId + slip required" });
   let store = purgePickslips(readPickslips());
   const prev = store[slipId];
-  // LWW: accept only if not older than what we hold (retries / out-of-order safe)
-  if (prev && (updatedAt || 0) < (prev.updatedAt || 0)) return res.json({ ok: true, stale: true });
+  // No stale rejection: phones have skewed clocks and the per-part merge below makes
+  // out-of-order posts safe — newer timestamped activity survives either way.
   const feedEntry = event && event.kind ? {
     kind: event.kind, // picked | unpicked | backorder_marked | backorder_cleared | slip_added | slip_removed | slip_complete
     partNumber: event.partNumber || "",
@@ -942,9 +942,29 @@ app.post("/pickslip-update", (req, res) => {
   } : null;
   const feed = (prev && Array.isArray(prev.feed)) ? prev.feed : [];
   if (feedEntry) feed.unshift(feedEntry);
+  // Cross-device merge: phones post whole snapshots, and a phone that hasn't seen a
+  // teammate's picks would clobber them. Per part: the part named in the event is
+  // taken as posted (the explicit action — including un-picks); every other part
+  // keeps whichever side has newer timestamped activity.
+  let parts = Array.isArray(slip.parts) ? slip.parts : [];
+  if (prev && Array.isArray(prev.parts)) {
+    const used = new Set(); // duplicate part lines pair off one-to-one
+    parts = parts.map(p => {
+      const pi = prev.parts.findIndex((q, i) => !used.has(i) && q.partNumber === p.partNumber);
+      if (pi === -1) return p;
+      used.add(pi);
+      if (feedEntry && feedEntry.partNumber && feedEntry.partNumber === p.partNumber) return p;
+      const q = prev.parts[pi];
+      return (q.at || 0) > (p.at || 0) ? q : p;
+    });
+  }
+  const counts = { picked: 0, toPick: 0, onOrder: 0, total: parts.length };
+  parts.forEach(p => { if (p.status === "picked") counts.picked++; else if (p.status === "on_order") counts.onOrder++; else counts.toPick++; });
+  const complete = parts.filter(p => p.status !== "on_order").every(p => p.status === "picked");
   store[slipId] = {
     ...slip,
-    updatedAt: updatedAt || Date.now(),
+    parts, counts, complete,
+    updatedAt: Math.max(updatedAt || Date.now(), (prev && prev.updatedAt) || 0),
     initials: initials || "?",
     color: color || "#8BA3BE",
     // Removed slips keep their snapshot (that's the proof record) but stop counting as "on board"
