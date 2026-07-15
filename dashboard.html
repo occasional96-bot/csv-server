@@ -898,6 +898,7 @@ body{background:radial-gradient(90% 70% at 0% 0%,rgba(139,92,246,0.16),transpare
         #vm-root .vm-po+.vm-po{border-top:1px solid var(--vm-line)}
         #vm-root .vm-po-pn{font-family:var(--vm-mono);font-size:12px;white-space:nowrap;color:var(--vm-ink)}
         #vm-root .vm-po-ds{font-size:12px;color:var(--vm-mut);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        #vm-root .vm-po-qty{font-family:var(--vm-mono);font-size:12px;font-weight:700;color:var(--vm-ink);white-space:nowrap;flex:none}
         #vm-root .vm-chip{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;padding:2px 7px;border-radius:5px;flex:none}
         #vm-root .vm-chip.amber{color:var(--vm-amber);background:var(--vm-amberbg)} #vm-root .vm-chip.green{color:var(--vm-green);background:var(--vm-greenbg)}
         #vm-root .vm-empty{background:var(--vm-card);border:1px solid var(--vm-line);border-radius:14px;padding:26px;text-align:center;color:var(--vm-mut);font-size:13px}
@@ -2128,9 +2129,10 @@ function renderVanManifest(){
       const parts = partsArr(IV).sort((a,b)=> (b.net>0)-(a.net>0) || String(a.pn).localeCompare(String(b.pn)));
       const poRows = parts.map(p=>{
         const chip = p.net>0
-          ? `<span class="vm-chip amber">On van ×${Math.max(1,p.onQty)}</span>`
-          : `<span class="vm-chip green">Delivered ×${Math.max(1,p.offQty)}</span>`;
-        return `<div class="vm-po"><span class="vm-po-pn">${vmEsc(p.pn)}</span><span class="vm-po-ds">${vmEsc(p.ds)}</span>${chip}</div>`;
+          ? '<span class="vm-chip amber">On van</span>'
+          : '<span class="vm-chip green">Delivered</span>';
+        const qty = Math.max(1, p.net>0 ? p.onQty : p.offQty);
+        return `<div class="vm-po"><span class="vm-po-pn">${vmEsc(p.pn)}</span><span class="vm-po-ds">${vmEsc(p.ds)}</span><span class="vm-po-qty">QTY ${qty}</span>${chip}</div>`;
       }).join("");
       const title = IV.cust ? vmEsc(IV.cust) : `Invoice ${vmEsc(invId)}`;
       const subBits = [];
