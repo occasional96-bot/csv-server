@@ -2068,6 +2068,26 @@ function renderVanManifest(){
   }catch{}
   const poFor = pn => { if(!pn) return ""; const hit = poByPart.get(pn) || poByPart.get(String(pn).replace(/-\d{1,3}$/,"")); return hit ? hit.ref : ""; };
 
+  // Brand fallback: van scans from older builds carry brand "?" — resolve from the
+  // warehouse invoice store + warehouse scan log (full id and digits-only), then id prefix.
+  const brandById = new Map();
+  try{
+    const putB=(id,b)=>{ if(!id||!b||b==="?") return; const k=String(id).toUpperCase(); if(!brandById.has(k)) brandById.set(k,b); const dg=k.replace(/[^0-9]/g,""); if(dg && !brandById.has(dg)) brandById.set(dg,b); };
+    for(const inv of (allInvoices||[])) putB(inv.id, inv.brand);
+    for(const e of (allLogs||[])) putB(e.invoiceId, e.brand);
+  }catch{}
+  const brandFor = id => {
+    const k=String(id||"").toUpperCase();
+    if(brandById.has(k)) return brandById.get(k);
+    const dg=k.replace(/[^0-9]/g,"");
+    if(dg && brandById.has(dg)) return brandById.get(dg);
+    if(k.startsWith("E-BYDAU")) return "BYD";
+    if(/^I\d/.test(k)) return "ISUZU";
+    if(k.startsWith("L")) return "KIA";
+    if(k.startsWith("F")) return "HY";
+    return "";
+  };
+
   // Group: driver → invoice → part (chronological — undo entries must land after the scan they cancel)
   const dmap = new Map();
   const seq = [...dayLogs].sort((a,b)=>(a.timestamp||0)-(b.timestamp||0));
@@ -2146,7 +2166,8 @@ function renderVanManifest(){
       const subBits = [];
       if(IV.cust) subBits.push(`Invoice ${vmEsc(invId)}`);
       if(IV.po)   subBits.push(`PO ${vmEsc(IV.po)}`);
-      if(IV.brand && IV.brand!=="?") subBits.push(vmEsc(IV.brand));
+      const br = (IV.brand && IV.brand!=="?") ? IV.brand : brandFor(invId);
+      if(br) subBits.push(vmEsc(br));
       const sub = subBits.length ? `<span class="vm-isub">${subBits.join(" · ")}</span>` : "";
       return `<details class="vm-inv"${invOpen(drv, invId)} data-vmkey="${vmEsc(drv + "|" + invId)}"><summary class="vm-isum"><span class="vm-idot ${idot}"></span><span class="vm-iblock"><span class="vm-ishop">${title}</span>${sub}</span><span class="vm-it">${vmFmtT(IV.lastTs)}</span><span class="vm-ic"><b class="${oc(on)}">${on}</b> on van · <b class="${gc(del)}">${del}</b> delivered</span><span class="vm-del" data-vmdel="${vmEsc(invId)}" title="Delete van scans for this invoice">✕</span><span class="vm-cv">▾</span></summary><div class="vm-pos"><div class="vm-poh">Parts</div>${poRows}</div></details>`;
     }).join("");
