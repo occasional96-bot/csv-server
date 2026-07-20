@@ -571,6 +571,28 @@ wss.on("connection", (ws) => {
         return;
       }
 
+      // ── Clear ONE room's data (a phone's Settings → "Clear all data") ──
+      // The phone wiping itself is not enough: its board room keeps living here, and the
+      // next join_room hands the same invoices straight back. Scoped to the caller's room
+      // so one picker clearing their own board cannot wipe anyone else's.
+      if (msg.type === "clear_room_data") {
+        const room = rooms[msg.roomId];
+        if (!room) { sendToClient(ws, { type: "room_error", error: "Room not found or expired" }); return; }
+        const now = Date.now();
+        room.focusList = [];
+        room.pinnedIds = [];
+        room.invoices = [];
+        room.invoiceUpdates = {};
+        room.dataClearedAt = now; // makes the room_joined catch-up gate fire for anyone offline
+        saveRooms();
+        // Others sharing this board get the same wipe. The caller already cleared itself,
+        // so exclude it — otherwise it shows the "cleared by admin" alert for its own tap.
+        broadcastToRoom(msg.roomId, { type: "clear_all_data", clearedAt: now, clearedBy: msg.initials || "?" }, msg.userId);
+        sendToClient(ws, { type: "room_data_cleared", roomId: msg.roomId, clearedAt: now });
+        console.log(`[clear_room_data] Room ${msg.roomId} wiped by ${msg.initials || "?"} (scan logs + other rooms untouched)`);
+        return;
+      }
+
       // ── Clear ALL data (admin wipe from dashboard — keeps scan logs) ──
       if (msg.type === "clear_all_data") {
         const now = Date.now();
