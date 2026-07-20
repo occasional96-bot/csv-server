@@ -695,7 +695,10 @@ const upload = multer({ storage });
 // ── CSV endpoints ──────────────────────────────────────────────────────────
 app.get("/files", (req, res) => {
   const files = fs.readdirSync(UPLOAD).filter(f => f.endsWith(".csv"));
-  res.json({ files });
+  // Upload times ride along so phones can skip files older than their last
+  // "Clear all data" — additive field, existing consumers read files only.
+  const meta = readMeta();
+  res.json({ files, times: meta.fileTimes || {} });
 });
 
 app.post("/upload", upload.single("file"), (req, res) => {
