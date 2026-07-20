@@ -1125,6 +1125,20 @@ const WS_URL = SERVER.replace(/^http/, "ws");
 // ── State ──────────────────────────────────────────────────────────────────
 let allLogs = [];
 let allInvoices = [];
+
+// Invoice-footer boilerplate (banking block, remittance terms) gets swallowed into the
+// last part's description by the PDF parser. Cut it off at the first footer marker.
+const DESC_FOOTER_RE = /\s*(banking\s*details|account\s*name\s*:|bank\s*name\s*:|bsb\s*:|account\s*(no|number)\s*:|please\s*remit|remittance|direct\s*(deposit|credit)|eft\s*details|terms\s*:)\b.*$/i;
+function cleanDesc(s){
+  return String(s||"").replace(DESC_FOOTER_RE,"").replace(/\s+/g," ").trim();
+}
+function cleanLogDescs(logs){
+  return (logs||[]).map(e => e && e.description ? { ...e, description: cleanDesc(e.description) } : e);
+}
+function cleanInvoiceDescs(invs){
+  return (invs||[]).map(inv => !inv || !inv.parts ? inv
+    : { ...inv, parts: inv.parts.map(p => p && p.description ? { ...p, description: cleanDesc(p.description) } : p) });
+}
 let filters = { brand:"", user:"", invoice:"", part:"", date:"today", action:"" };
 let hiddenActions = new Set();
 let pathFiles = { kia: null, hy: null, inv: null, inve: null, other1: null, other2: null };
@@ -1264,7 +1278,7 @@ function connectWS(){
       try{
         const msg = JSON.parse(e.data);
         if(msg.type==="scan_log_update"){
-          allLogs.unshift(msg.entry);
+          allLogs.unshift(msg.entry && msg.entry.description ? { ...msg.entry, description: cleanDesc(msg.entry.description) } : msg.entry);
           loadInvoices().then(()=>{ renderTable(true); });
           loadStats();
           vmOnLog(msg.entry);
@@ -1313,7 +1327,7 @@ async function loadLogs(){
       const r = await fetch(SERVER+"/scan-logs",{cache:"no-store"});
       if(!r.ok) throw new Error("HTTP "+r.status);
       const d = await r.json();
-      allLogs = d.logs || [];
+      allLogs = cleanLogDescs(d.logs || []);
       renderTable(false);
       populateUserFilter();
       loadStats();
@@ -1346,7 +1360,7 @@ async function loadInvoices(){
   try{
     const r = await fetch(SERVER+"/invoices");
     const d = await r.json();
-    allInvoices = d.invoices || [];
+    allInvoices = cleanInvoiceDescs(d.invoices || []);
   }catch(e){ allInvoices = []; }
 }
 
