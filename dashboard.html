@@ -146,10 +146,14 @@ a{color:inherit;text-decoration:none}
 
 /* ── Table ── */
 .table-wrap{background:rgba(255,255,255,0.015);border-radius:12px;border:1px solid rgba(255,255,255,0.06);overflow:hidden}
-.thead{display:grid;grid-template-columns:28px 52px 78px 38px 150px 1fr 70px 110px 180px 120px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02)}
+.thead{display:grid;grid-template-columns:28px 52px 78px 38px 150px 1fr 70px 110px 180px 106px 120px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02)}
 .th{font-size:10px;font-weight:500;color:#8C8C97;letter-spacing:0.1em;text-transform:uppercase}
 .tbody{}
-.row{display:grid;grid-template-columns:52px 78px 38px 150px 1fr 70px 110px 180px 120px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.025);align-items:center;transition:background 0.15s}
+.row{display:grid;grid-template-columns:52px 78px 38px 150px 1fr 70px 110px 180px 106px 120px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.025);align-items:center;transition:background 0.15s}
+/* ── Method: how the part was identified. Deliberately plain — STATUS keeps the colour ── */
+.method-cell{display:flex;align-items:center;gap:6px;font-size:11px;color:#D9D9E0;white-space:nowrap}
+.method-cell svg{width:13px;height:13px;flex-shrink:0;opacity:.7}
+.method-empty{font-size:11px;color:#57575F}
 .row:last-child{border-bottom:none}
 .row:hover{background:rgba(108,99,255,0.025)}
 .row.flash-new{animation:flashrow 1.5s ease-out}
@@ -696,6 +700,15 @@ body{background:radial-gradient(90% 70% at 0% 0%,rgba(139,92,246,0.16),transpare
         <div class="sf-btn sf-unscanned" id="sf-unscanned" onclick="setStatusFilter('unscanned')">Unscanned</div>
       </div>
 
+      <div class="status-filters">
+        <span class="sf-label">METHOD:</span>
+        <div class="sf-btn sf-all active" id="mf-all" onclick="setMethodFilter('')">All</div>
+        <div class="sf-btn sf-undo" id="mf-barcode" onclick="setMethodFilter('barcode')">Barcode</div>
+        <div class="sf-btn sf-undo" id="mf-camera" onclick="setMethodFilter('camera')">Camera</div>
+        <div class="sf-btn sf-undo" id="mf-typed" onclick="setMethodFilter('typed')">Typed</div>
+        <div class="sf-btn sf-undo" id="mf-tap" onclick="setMethodFilter('tap')">Tap confirm</div>
+      </div>
+
       <div class="table-wrap">
         <div class="thead">
           <div class="th" style="cursor:pointer;display:flex;align-items:center;justify-content:center" onclick="toggleAllGroups()" title="Collapse/Expand all"><svg id="collapse-all-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;color:#3B82F6;transition:transform .2s"><path d="M4 6l4 4 4-4"/></svg></div>
@@ -707,6 +720,7 @@ body{background:radial-gradient(90% 70% at 0% 0%,rgba(139,92,246,0.16),transpare
           <div class="th" style="text-align:center">QTY</div>
           <div class="th">ORDER REF</div>
           <div class="th">NOTE</div>
+          <div class="th">METHOD</div>
           <div class="th">STATUS</div>
         </div>
         <div class="tbody" id="log-tbody">
@@ -1139,7 +1153,7 @@ function cleanInvoiceDescs(invs){
   return (invs||[]).map(inv => !inv || !inv.parts ? inv
     : { ...inv, parts: inv.parts.map(p => p && p.description ? { ...p, description: cleanDesc(p.description) } : p) });
 }
-let filters = { brand:"", user:"", invoice:"", part:"", date:"today", action:"" };
+let filters = { brand:"", user:"", invoice:"", part:"", date:"today", action:"", method:"" };
 let hiddenActions = new Set();
 let pathFiles = { kia: null, hy: null, inv: null, inve: null, other1: null, other2: null };
 let ws = null;
@@ -1424,6 +1438,7 @@ function getFiltered(){
     if(filters.invoice && !e.invoiceId.includes(filters.invoice.toUpperCase())) return false;
     if(filters.part && !e.partNumber.includes(filters.part.toUpperCase())) return false;
     if(filters.action && e.action !== filters.action) return false;
+    if(filters.method && (e.method||"") !== filters.method) return false;
     const act = e.action || "confirmed";
     if(hiddenActions.has(act)) return false;
     return true;
@@ -1478,6 +1493,21 @@ function toggleAllGroups(){
   renderTable(false);
 }
 
+// How the part was identified — the thing that picked the part number, never the qty
+// entry. Rows logged before the app started sending `method` show a dash.
+const METHOD_ICONS = {
+  barcode: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 3v10M4.5 3v10M7 3v10M9.5 3v7M12 3v10M14 3v10"/></svg>',
+  camera:  '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 5.5A1.5 1.5 0 013.5 4h1.2l.9-1.3h4.8L11.3 4h1.2A1.5 1.5 0 0114 5.5v7A1.5 1.5 0 0112.5 14h-9A1.5 1.5 0 012 12.5v-7z"/><circle cx="8" cy="8.8" r="2.6"/></svg>',
+  typed:   '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1.5" y="4" width="13" height="8" rx="1.5"/><path d="M4 6.5h.01M6.5 6.5h.01M9 6.5h.01M11.5 6.5h.01M4 9.5h.01M11.5 9.5h.01M6.5 9.5h3"/></svg>',
+  tap:     '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7V3.6a1.3 1.3 0 012.6 0V8"/><path d="M8.6 7.4a1.2 1.2 0 012.4 0V8"/><path d="M11 7.8a1.2 1.2 0 012.4 0v2.9c0 2-1.6 3.6-3.6 3.6H9c-1.4 0-2.2-.6-2.9-1.6L3.5 9.6a1.2 1.2 0 012-1.4L6 9"/></svg>',
+};
+const METHOD_LABELS = { barcode:"Barcode", camera:"Camera", typed:"Typed", tap:"Tap confirm" };
+function methodHtml(m){
+  const key = METHOD_LABELS[m] ? m : "";
+  if(!key) return '<div class="method-empty">—</div>';
+  return `<div class="method-cell">${METHOD_ICONS[key]}<span>${METHOD_LABELS[key]}</span></div>`;
+}
+
 function renderRow(e, isNew){
   const isUnscan = e.action==="unscanned";
   const avatarStyle = `background:${e.color}20;border:1.5px solid ${e.color}40;color:${e.color}`;
@@ -1515,6 +1545,7 @@ function renderRow(e, isNew){
     <div class="qty-cell${isUnscan?" dim":""}">${qtyHtml}${miniBar}</div>
     <div>${e.orderRef?`<div class="order-ref${isUnscan?" dim":""}">${e.orderRef}</div>`:`<div class="order-ref dim">—</div>`}</div>
     <div>${e.note?`<div class="note-cell" title="${(e.note||'').replace(/"/g,'&quot;')}">${e.note}</div>`:'<div class="note-empty">—</div>'}</div>
+    <div>${methodHtml(e.method)}</div>
     <div><span class="badge ${badgeClass}"><span class="badge-dot" style="background:${dotColor}"></span>${badgeLabel}</span></div>
     ${actions}
   </div>`;
@@ -1598,6 +1629,14 @@ function setStatusFilter(action){
   renderTable(false);
 }
 
+function setMethodFilter(method){
+  filters.method = method;
+  document.querySelectorAll("[id^='mf-']").forEach(b=>b.classList.remove("active"));
+  const el = document.getElementById(method===""?"mf-all":"mf-"+method);
+  if(el) el.classList.add("active");
+  renderTable(false);
+}
+
 function toggleAction(action){
   if(hiddenActions.has(action)){ hiddenActions.delete(action); const el=document.getElementById("tog-"+action); if(el) el.className="toggle on-"+action; }
   else{ hiddenActions.add(action); const el=document.getElementById("tog-"+action); if(el) el.className="toggle off"; }
@@ -1609,8 +1648,8 @@ function toggleFilter(action){ toggleAction(action); }
 // ── Export ────────────────────────────────────────────────────────────────
 function exportCSV(){
   const rows = getFiltered();
-  const header = ["Time","User","Brand","Invoice","PartNumber","Description","Confirmed","Qty","OrderRef","Note","Status"];
-  const lines = rows.map(e=>[fmtTime(e.timestamp),e.initials,e.brand,e.invoiceId,e.partNumber,`"${(e.description||"").replace(/"/g,'""')}"`,e.confirmed??0,e.qty||0,`"${(e.orderRef||"").replace(/"/g,'""')}"`,`"${(e.note||"").replace(/"/g,'""')}"`,e.action].join(","));
+  const header = ["Time","User","Brand","Invoice","PartNumber","Description","Confirmed","Qty","OrderRef","Note","Method","Status"];
+  const lines = rows.map(e=>[fmtTime(e.timestamp),e.initials,e.brand,e.invoiceId,e.partNumber,`"${(e.description||"").replace(/"/g,'""')}"`,e.confirmed??0,e.qty||0,`"${(e.orderRef||"").replace(/"/g,'""')}"`,`"${(e.note||"").replace(/"/g,'""')}"`,e.method||"",e.action].join(","));
   download("scan-log-"+new Date().toISOString().slice(0,10)+".csv", [header.join(","),...lines].join("\n"));
 }
 

@@ -782,7 +782,8 @@ app.get("/room/:roomId/updates", (req, res) => {
 
 // ── Scan log endpoints ────────────────────────────────────────────────────────
 app.post("/log-scan", (req, res) => {
-  const { initials, color, invoiceId, orderRef, brand, partNumber, description, action, note, qty, confirmed, lineNo, customer } = req.body;
+  const { initials, color, invoiceId, orderRef, brand, partNumber, description, action, method, note, qty, confirmed, lineNo, customer } = req.body;
+  const METHODS = ["barcode", "camera", "typed", "tap"];
   if (!initials || !invoiceId || !partNumber || !action) return res.status(400).json({ error: "Missing fields" });
   if (action === "not_found") return res.json({ ok: true, skipped: true });
   let log = purgeScanLog(readScanLog());
@@ -797,6 +798,8 @@ app.post("/log-scan", (req, res) => {
     partNumber,
     description: description || "",
     action, // "confirmed" | "manual" | "not_found" | "short" | "over" | "missing" | "undo" | "on_board" | "off_board"
+    // How the part was identified. "" on rows logged by app builds older than this field.
+    method: METHODS.includes(method) ? method : "",
     note: note || "",
     qty: qty || 0,
     confirmed: confirmed || 0,
@@ -811,12 +814,13 @@ app.post("/log-scan", (req, res) => {
 
 app.get("/scan-logs", (req, res) => {
   let log = purgeScanLog(readScanLog());
-  const { brand, invoiceId, initials, partNumber, action, from, to } = req.query;
+  const { brand, invoiceId, initials, partNumber, action, method, from, to } = req.query;
   if (brand)       log = log.filter(e => e.brand === brand);
   if (invoiceId)   log = log.filter(e => e.invoiceId.includes(invoiceId.toUpperCase()));
   if (initials)    log = log.filter(e => e.initials === initials.toUpperCase());
   if (partNumber)  log = log.filter(e => e.partNumber.includes(partNumber.toUpperCase()));
   if (action)      log = log.filter(e => action.split(",").includes(e.action));
+  if (method)      log = log.filter(e => method.split(",").includes(e.method || ""));
   if (from)        log = log.filter(e => e.timestamp >= parseInt(from));
   if (to)          log = log.filter(e => e.timestamp <= parseInt(to));
   res.json({ logs: log, total: log.length });
