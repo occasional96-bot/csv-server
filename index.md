@@ -8,7 +8,7 @@
 | File | Purpose |
 |------|---------|
 | `server.js` | Main Express + WebSocket server (798 lines) |
-| `dashboard.html` | Admin dashboard UI — served at GET /dashboard (Driver Log = Van manifest `#vm-root`: undo-aware netting, PO fallback, sticky panels, per-invoice delete; Scan Log excludes van scans; Picking Slips page `#ps-root`: snapshot-driven slip drill + pick activity feed, live via WS `pickslip_update`) |
+| `dashboard.html` | Admin dashboard UI — served at GET /dashboard (Driver Log = Van manifest `#vm-root`: undo-aware netting, PO fallback, sticky panels, per-invoice delete; Scan Log excludes van scans, METHOD column left of STATUS via `methodHtml()` + METHOD filter pills `mf-*` (2026-07-22); Picking Slips page `#ps-root`: snapshot-driven slip drill + pick activity feed, live via WS `pickslip_update`) |
 | `app.json` | Backend app config |
 | `package.json` | Backend dependencies (express, multer, ws) |
 
@@ -43,8 +43,8 @@
 | 639 | `GET  /rooms` — list active rooms |
 | 659 | `GET  /room/:roomId` — room detail |
 | 665 | `GET  /room/:roomId/updates` — room update log |
-| 672 | `POST /log-scan` — log a scan event |
-| 698 | `GET  /scan-logs` — retrieve scan log |
+| 672 | `POST /log-scan` — log a scan event; `method` field = how the part was identified ("barcode" \| "camera" \| "typed" \| "tap", anything else stored as "") |
+| 698 | `GET  /scan-logs` — retrieve scan log; `?method=` filter (CSV list, "" matches pre-2026-07-22 rows) |
 | ~778 | `POST /delete-van-scans` — delete one invoice's on/off_board scans (password "123") |
 | 711 | `GET  /scan-log-stats` — scan log stats |
 | ~790 | `GET  /known-drivers` — distinct driver initials (scan log + connected clients + rooms) |
