@@ -923,6 +923,10 @@ body{background:radial-gradient(90% 70% at 0% 0%,rgba(139,92,246,0.16),transpare
         #vm-root .vm-po-pn{font-family:var(--vm-mono);font-size:12px;white-space:nowrap;color:var(--vm-ink)}
         #vm-root .vm-po-ds{font-size:12px;color:var(--vm-mut);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
         #vm-root .vm-po-qty{font-family:var(--vm-mono);font-size:12px;font-weight:700;color:var(--vm-ink);white-space:nowrap;flex:none}
+        /* Method tile — how the part number was identified. Fixed 22px slot so the icons line up down the card. */
+        #vm-root .vm-mi{flex:none;width:22px;height:22px;border-radius:6px;background:var(--vm-soft);border:1px solid var(--vm-line);color:var(--vm-dim);display:grid;place-items:center}
+        #vm-root .vm-mi svg{width:14px;height:14px;display:block}
+        #vm-root .vm-mi-none{flex:none;width:22px;text-align:center;font-size:11px;color:#3A3B41}
         #vm-root .vm-chip{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;padding:2px 7px;border-radius:5px;flex:none}
         #vm-root .vm-chip.amber{color:var(--vm-amber);background:var(--vm-amberbg)} #vm-root .vm-chip.green{color:var(--vm-green);background:var(--vm-greenbg)}
         #vm-root .vm-empty{background:var(--vm-card);border:1px solid var(--vm-line);border-radius:14px;padding:26px;text-align:center;color:var(--vm-mut);font-size:13px}
@@ -998,6 +1002,10 @@ body{background:radial-gradient(90% 70% at 0% 0%,rgba(139,92,246,0.16),transpare
         #ps-root .ps-po-pn{font-family:var(--ps-mono);font-size:12px;white-space:nowrap;color:var(--ps-ink)}
         #ps-root .ps-po-ds{font-size:12px;color:var(--ps-mut);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
         #ps-root .ps-po-who{font-family:var(--ps-mono);font-size:11px;color:var(--ps-mut);white-space:nowrap;flex:none}
+        /* Method tile — same slot treatment as the Driver Log rows */
+        #ps-root .ps-mi{flex:none;width:22px;height:22px;border-radius:6px;background:var(--ps-soft);border:1px solid var(--ps-line);color:var(--ps-dim);display:grid;place-items:center}
+        #ps-root .ps-mi svg{width:14px;height:14px;display:block}
+        #ps-root .ps-mi-none{flex:none;width:22px;text-align:center;font-size:11px;color:#3A3B41}
         #ps-root .ps-chip{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.04em;padding:2px 7px;border-radius:5px;flex:none}
         #ps-root .ps-chip.green{color:var(--ps-green);background:var(--ps-greenbg)}
         #ps-root .ps-chip.teal{color:var(--ps-teal);background:var(--ps-tealbg)}
@@ -1506,6 +1514,14 @@ function methodHtml(m){
   const key = METHOD_LABELS[m] ? m : "";
   if(!key) return '<div class="method-empty">—</div>';
   return `<div class="method-cell">${METHOD_ICONS[key]}<span>${METHOD_LABELS[key]}</span></div>`;
+}
+// Icon-only variant for the Driver Log / Picking Slip part rows — the chip beside it
+// already says the status, so the method rides along as a tile with a hover tooltip.
+// `cls` is the page prefix ("vm" or "ps") so each panel keeps its own tokens.
+function methodIcon(m, cls){
+  const key = METHOD_LABELS[m] ? m : "";
+  if(!key) return `<span class="${cls}-mi-none" title="No method recorded">—</span>`;
+  return `<span class="${cls}-mi" title="${METHOD_LABELS[key]}">${METHOD_ICONS[key]}</span>`;
 }
 
 function renderRow(e, isNew){
@@ -2250,7 +2266,7 @@ function renderVanManifest(){
     if(e.customer) IV.cust = e.customer;
     const pn = e.partNumber||"?";
     if(!IV.po){ const fp=poFor(pn); if(fp) IV.po=fp; }
-    if(!IV.parts.has(pn)) IV.parts.set(pn,{ on:0, off:0, onQty:0, offQty:0, ds:"", ts:0 });
+    if(!IV.parts.has(pn)) IV.parts.set(pn,{ on:0, off:0, onQty:0, offQty:0, ds:"", ts:0, mth:"" });
     const P = IV.parts.get(pn);
     const eq = Math.max(1, Number(e.qty)||0); // older app builds log qty 0 — count as 1 unit
     if(isUndo(e)){
@@ -2258,7 +2274,8 @@ function renderVanManifest(){
       else { P.off = Math.max(0, P.off-1); P.offQty = Math.max(0, P.offQty-eq); }                  // cancels a delivery
     }
     else if(e.action==="on_board"){ P.on++; P.onQty+=eq; } else { P.off++; P.offQty+=eq; }
-    if((e.timestamp||0)>=P.ts){ P.ts=e.timestamp||0; if(e.description) P.ds=e.description; }
+    // Newest real scan wins the method; an undo isn't how the part was identified
+    if((e.timestamp||0)>=P.ts){ P.ts=e.timestamp||0; if(e.description) P.ds=e.description; if(!isUndo(e)) P.mth=e.method||""; }
   }
   // Prune parts fully cancelled by undo, then empty invoices/drivers
   for(const [drv,D] of dmap){
@@ -2287,7 +2304,7 @@ function renderVanManifest(){
     const hm=String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
     return d.toLocaleDateString("en-AU",{day:"2-digit",month:"2-digit"})+" "+hm;
   };
-  const partsArr = IV => [...IV.parts.entries()].map(([pn,P])=>({ pn, net:P.on-P.off, onQty:P.onQty, offQty:P.offQty, ds:P.ds, ts:P.ts }));
+  const partsArr = IV => [...IV.parts.entries()].map(([pn,P])=>({ pn, net:P.on-P.off, onQty:P.onQty, offQty:P.offQty, ds:P.ds, ts:P.ts, mth:P.mth }));
   const ivOn  = IV => partsArr(IV).filter(p=>p.net>0).length;   // parts still on van
   const ivDel = IV => partsArr(IV).filter(p=>p.net<=0).length;  // parts delivered
 
@@ -2306,7 +2323,7 @@ function renderVanManifest(){
           ? '<span class="vm-chip amber">On van</span>'
           : '<span class="vm-chip green">Delivered</span>';
         const qty = Math.max(1, p.net>0 ? p.onQty : p.offQty);
-        return `<div class="vm-po"><span class="vm-po-pn">${vmEsc(p.pn)}</span><span class="vm-po-ds">${vmEsc(p.ds)}</span><span class="vm-po-t">${vmFmtT(p.ts)}</span><span class="vm-po-qty">QTY ${qty}</span>${chip}</div>`;
+        return `<div class="vm-po"><span class="vm-po-pn">${vmEsc(p.pn)}</span><span class="vm-po-ds">${vmEsc(p.ds)}</span><span class="vm-po-t">${vmFmtT(p.ts)}</span><span class="vm-po-qty">QTY ${qty}</span>${chip}${methodIcon(p.mth,"vm")}</div>`;
       }).join("");
       const title = IV.cust ? vmEsc(IV.cust) : `Invoice ${vmEsc(invId)}`;
       const subBits = [];
@@ -2552,7 +2569,7 @@ function renderPickslips(){
       const prov = p.status==="picked" ? (p.by ? esc(p.by)+" "+fmtT(p.at) : "")
         : p.status==="on_order" ? (p.auto ? "AUTO" : "MARKED "+esc(p.by||"?")+(p.at?" "+fmtT(p.at):""))
         : "";
-      return `<div class="ps-po"><span class="ps-po-pn">${esc(p.partNumber)}</span><span class="ps-po-ds">${esc(p.description||"")}</span>${prov?`<span class="ps-po-who">${prov}</span>`:""}${chip}</div>`;
+      return `<div class="ps-po"><span class="ps-po-pn">${esc(p.partNumber)}</span><span class="ps-po-ds">${esc(p.description||"")}</span>${prov?`<span class="ps-po-who">${prov}</span>`:""}${chip}${methodIcon(p.status==="picked"?p.method:"","ps")}</div>`;
     }).join("");
     return `<details class="ps-slip${s.removed?" gone":""}"${open} ontoggle="psTgl('${esc(s.id)}',this.open)">
       <summary class="ps-sum">
