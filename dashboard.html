@@ -1190,6 +1190,19 @@ const whCals = {
   scan: { mode:"day", day:dateKey(new Date()), vy:0, vm:0, onChange(){ renderTable(false); } },
   drv:  { mode:"day", day:dateKey(new Date()), vy:0, vm:0, onChange(){ renderVanManifest(); } },
 };
+// Roll "Today" past midnight. The day key is stamped at page load; a dashboard
+// left open overnight kept filtering to the OLD day while new scans arrived —
+// they landed in allLogs but getFiltered() dropped every one (looked like
+// "scans not coming up"). Called from the 5s refresh + every WS scan event.
+let calTodayKey = dateKey(new Date());
+function rollCalDays(){
+  const now = dateKey(new Date());
+  if (now === calTodayKey) return;
+  for (const c of Object.values(whCals)) {
+    if (c.mode === "day" && c.day === calTodayKey) c.day = now; // was on "Today" → follow it
+  }
+  calTodayKey = now;
+}
 function calWindow(c){
   if(c.mode==="7d") return { from: Date.now()-7*86400000, to: Infinity };
   const from = keyToDate(c.day).getTime();
@@ -1300,6 +1313,7 @@ function connectWS(){
       try{
         const msg = JSON.parse(e.data);
         if(msg.type==="scan_log_update"){
+          rollCalDays();
           allLogs.unshift(msg.entry && msg.entry.description ? { ...msg.entry, description: cleanDesc(msg.entry.description) } : msg.entry);
           loadInvoices().then(()=>{ renderTable(true); });
           loadStats();
@@ -2737,7 +2751,7 @@ showPage("import");
 setHealth("wake");
 pingServer().finally(()=>{ loadInvoices().then(()=>{ loadLogs(); loadStats(); }); });
 setTimeout(connectWS, 800); // slight delay lets ping wake the server first
-setInterval(()=>{ loadInvoices().then(()=>{ loadLogs(); loadStats(); }); }, 5000);
+setInterval(()=>{ rollCalDays(); loadInvoices().then(()=>{ loadLogs(); loadStats(); }); }, 5000);
 </script>
 </body>
 </html>
