@@ -1378,8 +1378,9 @@ function loadStats(){
   // Computed client-side from allLogs so driver scans don't inflate warehouse numbers
   try{
     const t=new Date(); t.setHours(0,0,0,0); const from=t.getTime();
-    const dset=driverSet();
-    const today=allLogs.filter(e=>e.timestamp>=from && !dset.has((e.initials||"").toUpperCase()));
+    // Van scans are excluded by ACTION (below), never by initials — a driver who also
+    // picks in the warehouse used to vanish from the Scan Log entirely.
+    const today=allLogs.filter(e=>e.timestamp>=from && !["on_board","off_board"].includes(e.action));
     const confirmed=today.filter(e=>(e.action||"confirmed")==="confirmed").length;
     const manual=today.filter(e=>e.action==="manual").length;
     const users=[...new Set(today.map(e=>e.initials))];
@@ -1405,11 +1406,11 @@ function getUnscannedRows(){
   // Only show unscanned rows when "All" or "Unscanned" filter is active
   if(filters.action && filters.action !== "unscanned") return [];
   const from = getDateFrom();
-  const dsetU = driverSet();
-  // Build set of scanned part keys (invoiceId+partNumber) for today — driver scans don't count
+  // Build set of scanned part keys (invoiceId+partNumber) for today. Matched on the
+  // action, not the person — whoever scanned it, the part is no longer unscanned.
   const scanned = new Set(
     allLogs
-      .filter(e => e.timestamp >= from && ["confirmed","manual"].includes(e.action) && !dsetU.has((e.initials||"").toUpperCase()))
+      .filter(e => e.timestamp >= from && ["confirmed","manual","short","over"].includes(e.action))
       .map(e => e.invoiceId+"||"+e.partNumber)
   );
   const todayMid = new Date(); todayMid.setHours(0,0,0,0);
@@ -1437,8 +1438,8 @@ function getUnscannedRows(){
 }
 
 function populateUserFilter(){
-  const dset = driverSet();
-  const users = [...new Set(allLogs.map(e=>e.initials))].filter(u=>!dset.has((u||"").toUpperCase())).sort();
+  // Everyone who scanned — drivers included, they show up for their warehouse scans
+  const users = [...new Set(allLogs.filter(e=>!["on_board","off_board"].includes(e.action)).map(e=>e.initials))].filter(Boolean).sort();
   const sel = document.getElementById("f-user");
   const cur = sel.value;
   sel.innerHTML = '<option value="">All users</option>' + users.map(u=>`<option value="${u}">${u}</option>`).join("");
@@ -1448,11 +1449,11 @@ function populateUserFilter(){
 // ── Render table ──────────────────────────────────────────────────────────
 function getFiltered(){
   const win = getDateWindow();
-  const dset = driverSet();
   return allLogs.filter(e=>{
     if(e.action==="unscanned") return false;
     if(e.action==="on_board" || e.action==="off_board") return false; // van scans live on the Driver Log only
-    if(dset.has((e.initials||"").toUpperCase())) return false;
+    // NOTE: no initials-based exclusion. Van work is already gone by action above, and
+    // filtering on the driver list also swallowed those people's warehouse scans.
     if(e.invoiceId && e.invoiceId.startsWith("Q")) return false;
     if(e.timestamp < win.from || e.timestamp >= win.to) return false;
     if(filters.brand && e.brand !== filters.brand) return false;
