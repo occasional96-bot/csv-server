@@ -11,6 +11,23 @@ const wss    = new WebSocketServer({ server });
 
 const PORT      = process.env.PORT || 3000;
 const DATA_DIR  = fs.existsSync("/data") ? "/data" : __dirname;
+
+// ── Site identity ─────────────────────────────────────────────────────────────
+// One deploy per dealership. SITE_KEY (Railway variable) says which site THIS
+// server is. Each site is its own Railway service + its own /data volume, so no
+// scan logs, CSVs, boards or pick slips ever cross between sites. The `sites`
+// list only feeds the dashboard's site switcher (a link to the other origin).
+const SITES = {
+  werribee: { key: "werribee", name: "Werribee", group: "Hopper Motor Group", code: "HMG",
+              brands: ["KIA", "HY", "BYD", "ISUZU", "NISSAN"],
+              url: "https://csv-server-production-efc6.up.railway.app" },
+  essendon: { key: "essendon", name: "Essendon", group: "Essendon Kia", code: "EK",
+              brands: ["KIA"],
+              url: "https://csv-server-essendon-production.up.railway.app" },
+};
+const SITE_KEY = String(process.env.SITE_KEY || "werribee").toLowerCase();
+const SITE = SITES[SITE_KEY] || SITES.werribee;
+const siteInfo = () => ({ ...SITE, sites: Object.values(SITES).map(s => ({ key: s.key, name: s.name, url: s.url })) });
 const UPLOAD    = path.join(DATA_DIR, "uploads");
 const META      = path.join(DATA_DIR, "meta.json");
 
@@ -835,7 +852,8 @@ function resolveBrand(invoiceId, partNumber, given) {
   if (pfx) return pfx;
   const inv = String(invoiceId || "").trim();
   const { byInvPart, byInv } = panelBrandMaps();
-  return byInvPart.get(inv + "|" + stripPartSfx(partNumber)) || byInv.get(inv) || "?";
+  return byInvPart.get(inv + "|" + stripPartSfx(partNumber)) || byInv.get(inv)
+      || (SITE.brands.length === 1 ? SITE.brands[0] : "?");   // single-brand site (Essendon Kia) never shows "?"
 }
 // Read-time backfill for rows logged as "?" by older app builds. Nothing is rewritten.
 const withBrand = e => (e.brand && e.brand !== "?") ? e : { ...e, brand: resolveBrand(e.invoiceId, e.partNumber, e.brand) };
@@ -1074,6 +1092,7 @@ app.get("/pickslips", (req, res) => {
 
 // ── Health / keep-alive ───────────────────────────────────────────────────────
 app.get("/ping", (req, res) => res.json({ ok: true, ts: Date.now() }));
+app.get("/site", (req, res) => res.json(siteInfo()));
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 app.get("/dashboard", (req, res) => {
@@ -1081,7 +1100,9 @@ app.get("/dashboard", (req, res) => {
   if (!fs.existsSync(fp)) return res.status(404).send("dashboard.html not found — deploy it alongside server.js");
   res.set("Cache-Control", "no-store, no-cache, must-revalidate");
   res.set("Pragma", "no-cache");
-  res.sendFile(fp);
+  res.type("html");
+  // Inject this server's site identity so the page knows who it is before any fetch.
+  res.send(fs.readFileSync(fp, "utf8").replace("/*__SITE_JSON__*/null", JSON.stringify(siteInfo())));
 });
 
 // Debug: verify which dashboard is deployed
@@ -1096,6 +1117,6 @@ app.get("/dashboard-check", (req, res) => {
   } catch(e) { res.json({ error: e.message }); }
 });
 
-app.get("/", (req, res) => res.json({ status: "ok", version: "4.0-rooms" }));
+app.get("/", (req, res) => res.json({ status: "ok", version: "4.0-rooms", site: SITE.key }));
 
 server.listen(PORT, () => console.log(`Server + WebSocket running on port ${PORT}`));
