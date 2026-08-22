@@ -203,12 +203,12 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 
 /* ── Table ── */
 .table-wrap{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--line);overflow:hidden;box-shadow:var(--shadow-card)}
-.thead{display:grid;grid-template-columns:56px 78px 38px 150px 1fr 70px 110px 180px 106px 120px;padding:0 16px;height:40px;align-items:center;border-bottom:1px solid var(--line);background:var(--surface-2);overflow-y:hidden;scrollbar-gutter:stable}
+.thead{display:grid;grid-template-columns:76px 78px 38px 150px 1fr 70px 110px 180px 106px 120px;padding:0 16px;height:40px;align-items:center;border-bottom:1px solid var(--line);background:var(--surface-2);overflow-y:hidden;scrollbar-gutter:stable}
 /* header and body reserve the same scrollbar gutter so columns line up */
 #page-log .tbody{scrollbar-gutter:stable}
 .th{font-size:11.5px;font-weight:600;color:var(--ink-3);letter-spacing:.04em;text-transform:uppercase}
 .tbody{}
-.row{display:grid;grid-template-columns:56px 78px 38px 150px 1fr 70px 110px 180px 106px 120px;padding:12px 16px;border-bottom:1px solid var(--line);align-items:center}
+.row{display:grid;grid-template-columns:76px 78px 38px 150px 1fr 70px 110px 180px 106px 120px;padding:12px 16px;border-bottom:1px solid var(--line);align-items:center}
 .row:last-child{border-bottom:none}
 .row:hover{background:var(--surface-2)}
 .row.flash-new{animation:flashrow 1.5s ease-out}
@@ -472,40 +472,42 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .cmd-search-bar kbd{font-size:10px;color:var(--ink-3);background:var(--grey-soft);padding:2px 6px;border-radius:4px;font-family:var(--mono)}
 
 /* ── Settings panel ── */
-.settings-overlay{position:fixed;top:0;right:0;bottom:0;width:300px;background:var(--surface);border-left:1px solid var(--line);z-index:90;padding:20px 18px;display:none;overflow-y:auto;box-shadow:-8px 0 24px rgba(23,25,28,.08)}
+.settings-overlay{position:fixed;top:14px;right:14px;bottom:14px;width:330px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);z-index:90;padding:22px 22px;display:none;overflow-y:auto;box-shadow:var(--shadow-pop)}
 .settings-overlay.show{display:block}
-.sp-title{font-size:15px;font-weight:600;color:var(--ink);margin-bottom:18px;display:flex;align-items:center;justify-content:space-between}
-.sp-close{width:26px;height:26px;border-radius:var(--r);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-3);border:none;background:transparent;font-size:18px}
+.sp-title{font-size:18px;font-weight:600;color:var(--ink);margin-bottom:20px;display:flex;align-items:center;justify-content:space-between}
+.sp-close{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-3);border:none;background:transparent;font-size:18px}
 .sp-close:hover{background:var(--grey-soft);color:var(--ink)}
-.sp-section{margin-bottom:18px}
-.sp-label{font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;font-weight:600}
+.sp-section{margin-bottom:22px}
+.sp-label{font-size:11.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:9px;font-weight:600}
 .sp-row{display:flex;gap:4px;margin-bottom:6px;background:var(--grey-soft);padding:3px;border-radius:var(--r)}
-.sp-opt{flex:1;padding:5px;border-radius:4px;border:none;background:transparent;font-size:12px;color:var(--ink-2);cursor:pointer;text-align:center;font-weight:500}
+.sp-opt{flex:1;padding:6px;border-radius:7px;border:none;background:transparent;font-size:13px;color:var(--ink-2);cursor:pointer;text-align:center;font-weight:500}
 .sp-opt:hover{color:var(--ink)}
 .sp-opt.act{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(23,25,28,.08)}
-.color-row{display:flex;gap:6px;flex-wrap:wrap}
-.color-swatch{width:24px;height:24px;border-radius:50%;cursor:pointer;border:2px solid transparent;outline:1px solid var(--line);outline-offset:0}
+.color-row{display:flex;gap:8px;flex-wrap:wrap}
+.color-swatch{width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid transparent;outline:1px solid var(--line);outline-offset:0}
 .color-swatch:hover{outline-color:var(--line-2)}
 .color-swatch.act{border-color:#fff;outline:2px solid var(--ink)}
-.sp-divider{height:1px;background:var(--line);margin:14px 0}
-.sp-toggle-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0}
-.sp-toggle-txt{font-size:12px;color:var(--ink-2)}
-.sp-switch{width:32px;height:18px;border-radius:9px;background:var(--line-2);cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
+.sp-divider{height:1px;background:var(--line);margin:18px 0}
+.sp-toggle-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0}
+.sp-toggle-txt{font-size:13.5px;color:var(--ink-2)}
+.sp-switch{width:40px;height:22px;border-radius:11px;background:var(--line-2);cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
 .sp-switch.on{background:var(--accent)}
-.sp-switch::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 2px rgba(0,0,0,.15)}
-.sp-switch.on::after{transform:translateX(14px)}
+.sp-switch::after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 2px rgba(0,0,0,.15)}
+.sp-switch.on::after{transform:translateX(18px)}
 .gear-btn{width:36px;height:36px;border-radius:var(--r);border:1px solid var(--line);background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-3)}
 .gear-btn:hover{border-color:var(--line-2);color:var(--ink)}
 .gear-btn svg{width:15px;height:15px}
 .drv-chiprow{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
-.drv-chip{display:inline-flex;align-items:center;gap:4px;background:var(--grey-soft);border-radius:4px;padding:3px 4px 3px 9px;font-size:11px;font-weight:600;color:var(--ink);font-family:var(--mono)}
+.drv-chip{display:inline-flex;align-items:center;gap:4px;background:var(--grey-soft);border-radius:6px;padding:4px 5px 4px 10px;font-size:12px;font-weight:600;color:var(--ink);font-family:var(--mono)}
 .drv-chip b{cursor:pointer;color:var(--ink-4);font-weight:600;padding:0 4px;font-family:var(--sans)}
 .drv-chip b:hover{color:var(--red)}
 .drv-add-row{display:flex;gap:6px}
-.drv-add-input{flex:0 0 150px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:6px 10px;color:var(--ink);font-size:12px;font-weight:500;outline:none;text-transform:uppercase;font-family:var(--mono)}
+.drv-add-input{flex:0 0 150px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);height:38px;padding:0 12px;color:var(--ink);font-size:13px;font-weight:500;outline:none;text-transform:uppercase;font-family:var(--mono)}
 .drv-add-input::placeholder{color:var(--ink-4);font-weight:400;text-transform:none;font-family:var(--sans)}
 .drv-add-input:focus{border-color:var(--accent)}
 .sp-row .sp-opt.sp-btn{flex:0 0 auto;padding:5px 12px}
+.drv-add-row .sp-btn{background:var(--accent);color:#fff;border-radius:var(--r);padding:0 14px;height:38px;font-weight:600;box-shadow:none}
+.drv-add-row .sp-btn:hover{background:var(--accent-ink);color:#fff}
 
 /* ── Responsive ── */
 @media(max-width:1100px){
@@ -993,11 +995,7 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 
   <div class="sp-section">
     <div class="sp-label">Table Density</div>
-    <div class="sp-row">
-      <button class="sp-opt" onclick="setDensity('compact',this)">Compact</button>
-      <button class="sp-opt act" onclick="setDensity('default',this)">Default</button>
-      <button class="sp-opt" onclick="setDensity('relaxed',this)">Relaxed</button>
-    </div>
+    <label class="tb-field tb-select" style="min-width:0"><select id="sp-density" onchange="setDensity(this.value)"><option value="compact">Compact</option><option value="default" selected>Default</option><option value="relaxed">Relaxed</option></select></label>
   </div>
 
   <div class="sp-section">
@@ -2616,10 +2614,9 @@ applyAccentVar();
 
 function saveSettings(){ localStorage.setItem("wh_pro_settings", JSON.stringify(settingsState)); }
 
-function setDensity(d, btn){
+function setDensity(d){
   settingsState.density=d; saveSettings();
-  btn.parentElement.querySelectorAll(".sp-opt").forEach(o=>o.classList.remove("act"));
-  btn.classList.add("act");
+  const sel=document.getElementById("sp-density"); if(sel && sel.value!==d) sel.value=d;
   const pad = d==="compact"?"6px 16px":d==="relaxed"?"16px 16px":"12px 16px";
   document.querySelectorAll(".row").forEach(r=>r.style.padding=pad);
   document.querySelectorAll(".grp-header").forEach(r=>r.style.padding=d==="compact"?"6px 16px":d==="relaxed"?"14px 16px":"10px 16px");
@@ -2659,8 +2656,7 @@ function toggleSwitch(key, el){
 // Apply saved settings on load
 function applySettings(){
   // Density
-  const densBtns=document.querySelectorAll(".sp-section .sp-opt");
-  densBtns.forEach(b=>{ b.classList.remove("act"); if(b.textContent.toLowerCase()===settingsState.density) b.classList.add("act"); });
+  const densSel=document.getElementById("sp-density"); if(densSel) densSel.value=settingsState.density||"default";
   // Accent
   document.querySelectorAll("#accent-colors .color-swatch").forEach(s=>{ s.classList.toggle("act",s.style.background===settingsState.accent||rgbToHex(s.style.backgroundColor)===settingsState.accent.toUpperCase()); });
   // Invoice color
