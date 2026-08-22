@@ -77,23 +77,19 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .nav-item.active .nav-icon{color:#fff}
 .nav-group{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-4);padding:14px 12px 6px}
 .sidebar-bottom{margin-top:auto;padding-top:12px;border-top:1px solid var(--line)}
-.server-status{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--ink-3);padding:6px 14px 8px;white-space:nowrap}
-.server-status .health-badge{height:auto;padding:0;border:none;background:none;font-size:12px;font-weight:500}
-.server-status .sep{color:var(--line-2)}
 .status-dot{width:7px;height:7px;border-radius:50%;background:var(--red);flex-shrink:0}
 .status-dot.online{background:var(--green)}
 /* compact (icon-only) sidebar — settings toggle + narrow screens */
 .shell.sb-compact .sidebar{width:64px;padding-left:10px;padding-right:10px}
 .shell.sb-compact .logo{padding:4px 0 14px;text-align:center}
 .shell.sb-compact .logo-title{font-size:15px;letter-spacing:.04em}
-.shell.sb-compact .logo-sub,.shell.sb-compact .logo-app,.shell.sb-compact .nav-label,.shell.sb-compact .server-status span,.shell.sb-compact .server-status .health-badge,.shell.sb-compact .nav-group{display:none}
+.shell.sb-compact .logo-sub,.shell.sb-compact .logo-app,.shell.sb-compact .nav-label,.shell.sb-compact .nav-group{display:none}
 .shell.sb-compact .nav-item{justify-content:center;padding:0;gap:0;position:relative}
 .shell.sb-compact .sidebar{overflow:visible}
 .shell.sb-compact .nav-item::after{content:attr(data-tip);position:absolute;left:calc(100% + 12px);top:50%;transform:translateY(-50%) translateX(-4px);background:var(--ink);color:#fff;font-size:12px;font-weight:500;padding:6px 10px;border-radius:8px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .12s,transform .12s;z-index:120;box-shadow:var(--shadow-pop)}
 .shell.sb-compact .nav-item::before{content:"";position:absolute;left:calc(100% + 6px);top:50%;transform:translateY(-50%);border:6px solid transparent;border-right-color:var(--ink);border-left:0;pointer-events:none;opacity:0;transition:opacity .12s;z-index:120}
 .shell.sb-compact .nav-item:hover::after{opacity:1;transform:translateY(-50%) translateX(0)}
 .shell.sb-compact .nav-item:hover::before{opacity:1}
-.shell.sb-compact .server-status{justify-content:center;padding:6px 0 8px}
 
 /* ── Top bar ── */
 .topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:22px}
@@ -191,8 +187,8 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 
 /* ── Filters ── */
 .toolbar{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;align-items:center}
-.toolbar .whcal{margin-left:auto}
-.toolbar .whcal-chip{height:38px;padding:0 12px;font-size:14px;font-weight:600}
+.topbar-right{margin-top:-12px}  /* chip top edge level with the sidebar card top */
+.topbar-right .whcal-chip{height:38px;padding:0 12px;font-size:14px;font-weight:600}
 .tb-field{display:flex;align-items:center;gap:8px;height:38px;padding:0 12px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);min-width:190px;cursor:text}
 .tb-field svg{width:14px;height:14px;color:var(--ink-3);flex-shrink:0}
 .tb-field input,.tb-field select{flex:1;min-width:0;border:none;background:transparent;outline:none;font-size:14px;font-weight:500;color:var(--ink)}
@@ -216,7 +212,7 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 
 /* ── Table ── */
 .table-wrap{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--line);overflow:hidden;box-shadow:var(--shadow-card)}
-.thead{display:grid;grid-template-columns:76px 78px 38px 150px 1fr 70px 110px 180px 106px 120px;padding:0 16px;height:40px;align-items:center;border-bottom:1px solid var(--line);background:var(--surface-2);overflow-y:hidden;scrollbar-gutter:stable}
+.thead{display:grid;grid-template-columns:76px 78px 38px 150px 1fr 70px 110px 180px 106px 120px;padding:0 16px;height:40px;align-items:center;border-bottom:1px solid var(--line);background:var(--surface-2);overflow:hidden;scrollbar-gutter:stable}
 /* header and body reserve the same scrollbar gutter so columns line up */
 #page-log .tbody{scrollbar-gutter:stable}
 .th{font-size:11.5px;font-weight:600;color:var(--ink-3);letter-spacing:.04em;text-transform:uppercase}
@@ -236,7 +232,7 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0;font-family:var(--mono)}
 .avatar.dim{background:var(--grey-soft)!important;border:none!important;color:var(--ink-4)!important}
 .inv-block{}
-.inv-num{font-size:13px;font-weight:600;letter-spacing:0;font-family:var(--mono)}
+.inv-num{font-size:13px;font-weight:600;letter-spacing:0;font-family:var(--mono);color:var(--accent)}
 .inv-kia,.inv-hy{color:var(--accent)}
 .inv-progress{display:flex;align-items:center;gap:5px;margin-top:3px}
 .prog-bar-wrap{width:44px;height:3px;background:var(--line);border-radius:2px;overflow:hidden}
@@ -490,11 +486,25 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .sp-opt{flex:1;padding:6px;border-radius:7px;border:none;background:transparent;font-size:13px;color:var(--ink-2);cursor:pointer;text-align:center;font-weight:500}
 .sp-opt:hover{color:var(--ink)}
 .sp-opt.act{background:var(--surface);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(23,25,28,.08)}
-.color-row{display:flex;gap:8px;flex-wrap:wrap}
-.color-swatch{width:28px;height:28px;border-radius:50%;cursor:pointer;border:2px solid transparent;outline:1px solid var(--line);outline-offset:0}
-.color-swatch:hover{outline-color:var(--line-2)}
-.color-swatch.act{border-color:#fff;outline:2px solid var(--ink)}
 .sp-divider{height:1px;background:var(--line);margin:18px 0}
+.sp-card{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r);padding:2px 12px}
+.sp-kv{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;font-size:13px;color:var(--ink-3);border-bottom:1px solid var(--line)}
+.sp-kv:last-child{border-bottom:none}
+.sp-kv b{color:var(--ink);font-weight:600;display:inline-flex;align-items:center;gap:7px;text-align:right;min-width:0}
+.sp-kv .health-badge{height:auto;padding:0;border:none;background:none;font-size:13px}
+.sp-kv .sp-url{font-weight:500;font-size:11.5px;color:var(--ink-2);word-break:break-all;text-align:right}
+.sp-field{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:5px 0;font-size:13.5px;color:var(--ink-2)}
+.sp-field .tb-field{min-width:0;width:150px;height:34px;padding:0 10px;flex:none}
+.sp-field .tb-field select{font-size:13px}
+.sp-btnrow{display:flex;gap:8px;margin-top:10px}
+.sp-btn2{flex:1;height:34px;border-radius:var(--r);border:1px solid var(--line);background:var(--surface);font:inherit;font-size:13px;font-weight:500;color:var(--ink-2);cursor:pointer;white-space:nowrap}
+.sp-btn2:hover{border-color:var(--line-2);color:var(--ink)}
+.sp-btn2.danger{color:var(--red)}
+.sp-btn2.danger:hover{border-color:var(--red);background:color-mix(in srgb,var(--red) 6%,#fff)}
+.sp-sub{font-size:12.5px;color:var(--ink-3);margin:8px 0 2px}
+.sp-hint{font-size:12px;color:var(--ink-4);margin-top:6px;line-height:1.4}
+.drv-chip.off{opacity:.45;text-decoration:line-through}
+.drv-chip.pick{cursor:pointer;padding-right:10px}
 .sp-toggle-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0}
 .sp-toggle-txt{font-size:13.5px;color:var(--ink-2)}
 .sp-switch{width:40px;height:22px;border-radius:11px;background:var(--line-2);cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
@@ -616,12 +626,6 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
       <span class="nav-label">Focus Boards</span>
     </div>
     <div class="sidebar-bottom">
-      <div class="server-status">
-        <div class="status-dot" id="conn-dot"></div>
-        <span id="conn-txt">Connecting...</span>
-        <span class="sep">·</span>
-        <span class="health-badge hb-wake" id="health-badge" title="Server status"><span id="health-text">Checking…</span></span>
-      </div>
       <div class="nav-item" onclick="toggleSettings()" id="nav-settings" data-tip="Settings">
         <svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h14M3 10h14M3 14h14"/><circle cx="7" cy="6" r="1.6" fill="var(--surface)"/><circle cx="13" cy="10" r="1.6" fill="var(--surface)"/><circle cx="8.5" cy="14" r="1.6" fill="var(--surface)"/></svg>
         <span class="nav-label">Settings</span>
@@ -640,6 +644,12 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
           <div class="page-sub" id="log-date"></div>
           <div class="summary"><span><b id="stat-confirmed">0</b> confirmed today</span><span><b id="stat-manual">0</b> manual</span><span><b id="stat-users">0</b> users online</span></div>
         </div>
+        <div class="topbar-right">
+            <div class="whcal" id="cal-scan">
+            <div class="whcal-chip" onclick="calToggle('scan')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3"/></svg><span id="cal-scan-label">Today</span><span class="whcal-chev">▾</span></div>
+            <div class="whcal-pop" id="cal-scan-pop"></div>
+          </div>
+        </div>
       </div>
 
       <div class="toolbar">
@@ -648,10 +658,6 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
         <label class="tb-field tb-select"><select id="f-user" onchange="applyFilters()"><option value="">All users</option></select></label>
         <label class="tb-field tb-select"><select id="f-status" onchange="setStatusFilter(this.value)"><option value="" data-label="All statuses">All statuses</option><option value="confirmed" data-label="Confirmed">Confirmed</option><option value="manual" data-label="Manual">Manual</option><option value="short" data-label="Short supply">Short supply</option><option value="over" data-label="Over supply">Over supply</option><option value="missing" data-label="Missing">Missing</option><option value="undo" data-label="Undo">Undo</option><option value="unscanned" data-label="Unscanned">Unscanned</option></select></label>
         <label class="tb-field tb-select"><select id="f-method" onchange="setMethodFilter(this.value)"><option value="">Any method</option><option value="barcode">Barcode</option><option value="camera">Camera</option><option value="typed">Typed</option><option value="tap">Tap confirm</option></select></label>
-        <div class="whcal" id="cal-scan">
-          <div class="whcal-chip" onclick="calToggle('scan')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3"/></svg><span id="cal-scan-label">Today</span><span class="whcal-chev">▾</span></div>
-          <div class="whcal-pop" id="cal-scan-pop"></div>
-        </div>
       </div>
 
       <div class="table-wrap">
@@ -660,7 +666,7 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
           <div class="th">TIME</div>
           <div class="th">USER</div>
           <div class="th">INVOICE</div>
-          <div class="th">PART / DESCRIPTION</div>
+          <div class="th" style="white-space:nowrap">PART / DESC</div>
           <div class="th" style="text-align:center">QTY</div>
           <div class="th">ORDER REF</div>
           <div class="th">NOTE</div>
@@ -992,45 +998,41 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
   <div class="sp-title">Settings <button class="sp-close" onclick="toggleSettings()" title="Close">&times;</button></div>
 
   <div class="sp-section">
-    <div class="sp-label">Table Density</div>
-    <label class="tb-field tb-select" style="min-width:0"><select id="sp-density" onchange="setDensity(this.value)"><option value="compact">Compact</option><option value="default" selected>Default</option><option value="relaxed">Relaxed</option></select></label>
+    <div class="sp-label">Server</div>
+    <div class="sp-card">
+      <div class="sp-kv"><span>Live feed</span><b><span class="status-dot" id="conn-dot"></span><span id="conn-txt">Connecting…</span></b></div>
+      <div class="sp-kv"><span>Server</span><b><span class="health-badge hb-wake" id="health-badge"><span id="health-text">Checking…</span></span></b></div>
+      <div class="sp-kv"><span>Last update</span><b id="sp-last-update">—</b></div>
+      <div class="sp-kv"><span>Site</span><b id="sp-site">—</b></div>
+      <div class="sp-kv"><span>Scan log kept</span><b>14 days</b></div>
+      <div class="sp-kv"><span>Address</span><span class="sp-url" id="sp-url">—</span></div>
+    </div>
+    <div class="sp-btnrow"><button class="sp-btn2" onclick="spReconnect()">Reconnect</button><button class="sp-btn2" onclick="spRefresh()">Refresh data</button></div>
   </div>
 
   <div class="sp-section">
-    <div class="sp-label">Accent Color</div>
-    <div class="color-row" id="accent-colors">
-      <div class="color-swatch act" style="background:#2A5BD7" onclick="setAccent('#2A5BD7',this)" title="Blue"></div>
-      <div class="color-swatch" style="background:#1E8E5A" onclick="setAccent('#1E8E5A',this)" title="Green"></div>
-      <div class="color-swatch" style="background:#D2640F" onclick="setAccent('#D2640F',this)" title="Orange"></div>
-      <div class="color-swatch" style="background:#C23A2F" onclick="setAccent('#C23A2F',this)" title="Red"></div>
-      <div class="color-swatch" style="background:#0F7B86" onclick="setAccent('#0F7B86',this)" title="Teal"></div>
-      <div class="color-swatch" style="background:#3D4756" onclick="setAccent('#3D4756',this)" title="Slate"></div>
-    </div>
+    <div class="sp-label">Defaults</div>
+    <div class="sp-field"><span>Open on</span><label class="tb-field tb-select"><select id="sp-landing" onchange="setSetting('landing',this.value)"><option value="log">Scan Log</option><option value="import">Import CSV</option><option value="driver">Driver Log</option><option value="pickslip">Picking Slips</option><option value="boards">Focus Boards</option></select></label></div>
+    <div class="sp-field"><span>Date range</span><label class="tb-field tb-select"><select id="sp-daterange" onchange="setSetting('daterange',this.value)"><option value="today">Today</option><option value="yesterday">Yesterday</option><option value="7d">Last 7 days</option></select></label></div>
+    <div class="sp-field"><span>Time format</span><label class="tb-field tb-select"><select id="sp-timefmt" onchange="setSetting('timefmt',this.value)"><option value="24">24-hour</option><option value="12">12-hour</option></select></label></div>
   </div>
 
   <div class="sp-section">
-    <div class="sp-label">Invoice Color</div>
-    <div class="color-row" id="invoice-colors">
-      <div class="color-swatch act" style="background:#2A5BD7" onclick="setInvColor('#2A5BD7',this)" title="Blue"></div>
-      <div class="color-swatch" style="background:#1E8E5A" onclick="setInvColor('#1E8E5A',this)" title="Green"></div>
-      <div class="color-swatch" style="background:#D2640F" onclick="setInvColor('#D2640F',this)" title="Orange"></div>
-      <div class="color-swatch" style="background:#17191C" onclick="setInvColor('#17191C',this)" title="Black"></div>
-      <div class="color-swatch" style="background:#0F7B86" onclick="setInvColor('#0F7B86',this)" title="Teal"></div>
-    </div>
+    <div class="sp-label">Scan Log</div>
+    <div class="sp-field"><span>Row density</span><label class="tb-field tb-select"><select id="sp-density" onchange="setDensity(this.value)"><option value="compact">Compact</option><option value="default" selected>Default</option><option value="relaxed">Relaxed</option></select></label></div>
+    <div class="sp-toggle-row"><span class="sp-toggle-txt">Group by invoice</span><div class="sp-switch on" id="sw-grouping" onclick="toggleSwitch('grouping',this)"></div></div>
+    <div class="sp-toggle-row"><span class="sp-toggle-txt">Flash new scans</span><div class="sp-switch on" id="sw-flashnew" onclick="toggleSwitch('flashnew',this)"></div></div>
+    <div class="sp-sub">Hide users from the log</div>
+    <div class="drv-chiprow" id="sp-hide-chips"></div>
+    <div class="sp-hint">Click initials to hide or show that person's scans. Hidden users still count on the Driver Log.</div>
   </div>
 
   <div class="sp-section">
-    <div class="sp-label">Part Number Color</div>
-    <div class="color-row" id="part-colors">
-      <div class="color-swatch act" style="background:#17191C" onclick="setPartColor('#17191C',this)" title="Black"></div>
-      <div class="color-swatch" style="background:#1E8E5A" onclick="setPartColor('#1E8E5A',this)" title="Green"></div>
-      <div class="color-swatch" style="background:#2A5BD7" onclick="setPartColor('#2A5BD7',this)" title="Blue"></div>
-      <div class="color-swatch" style="background:#D2640F" onclick="setPartColor('#D2640F',this)" title="Orange"></div>
-      <div class="color-swatch" style="background:#3D4756" onclick="setPartColor('#3D4756',this)" title="Slate"></div>
-    </div>
+    <div class="sp-label">Alerts</div>
+    <div class="sp-toggle-row"><span class="sp-toggle-txt">Sound on new scan</span><div class="sp-switch" id="sw-soundnew" onclick="toggleSwitch('soundnew',this)"></div></div>
+    <div class="sp-toggle-row"><span class="sp-toggle-txt">Desktop notification</span><div class="sp-switch" id="sw-notifynew" onclick="toggleSwitch('notifynew',this)"></div></div>
+    <div class="sp-hint">Notifications only fire while this tab is in the background.</div>
   </div>
-
-  <div class="sp-divider"></div>
 
   <div class="sp-section">
     <div class="sp-label">Drivers (Driver Log)</div>
@@ -1041,14 +1043,16 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
     <div class="drv-chiprow" id="sp-drv-chips"></div>
   </div>
 
-  <div class="sp-divider"></div>
+  <div class="sp-section">
+    <div class="sp-label">Data</div>
+    <div class="sp-btnrow"><button class="sp-btn2" onclick="exportCSV()">Export visible rows</button><button class="sp-btn2" onclick="exportDiscrepancy()">Export discrepancies</button></div>
+    <div class="sp-hint">CSV of the Scan Log as currently filtered.</div>
+  </div>
 
   <div class="sp-section">
-    <div class="sp-label">Features</div>
-    <div class="sp-toggle-row"><span class="sp-toggle-txt">Group by Invoice</span><div class="sp-switch on" id="sw-grouping" onclick="toggleSwitch('grouping',this)"></div></div>
-    <div class="sp-toggle-row"><span class="sp-toggle-txt">Mini Qty Bars</span><div class="sp-switch on" id="sw-minibars" onclick="toggleSwitch('minibars',this)"></div></div>
-    <div class="sp-toggle-row"><span class="sp-toggle-txt">Show Progress in Groups</span><div class="sp-switch on" id="sw-groupprog" onclick="toggleSwitch('groupprog',this)"></div></div>
-    <div class="sp-toggle-row"><span class="sp-toggle-txt">Compact Sidebar</span><div class="sp-switch" id="sw-compactsidebar" onclick="toggleSwitch('compactsidebar',this)"></div></div>
+    <div class="sp-label">Layout</div>
+    <div class="sp-toggle-row"><span class="sp-toggle-txt">Compact sidebar</span><div class="sp-switch" id="sw-compactsidebar" onclick="toggleSwitch('compactsidebar',this)"></div></div>
+    <div class="sp-btnrow"><button class="sp-btn2 danger" onclick="resetSettings()">Reset all settings</button></div>
   </div>
 </div>
 
@@ -1119,7 +1123,7 @@ function setOtherName(k, fn){ const m=getOtherNames(); if(fn) m[k]=fn; else dele
 function fnFor(k){ return FIXED_FILENAMES[k] || getOtherNames()[k] || null; }
 
 // ── Date helpers ──────────────────────────────────────────────────────────
-function fmtTime(ts){ const d=new Date(ts); return d.getHours().toString().padStart(2,"0")+":"+d.getMinutes().toString().padStart(2,"0")+":"+d.getSeconds().toString().padStart(2,"0"); }
+function fmtTime(ts){ const d=new Date(ts); if(typeof settingsState!=="undefined" && settingsState.timefmt==="12"){ const h=d.getHours(); return (h%12||12)+":"+d.getMinutes().toString().padStart(2,"0")+":"+d.getSeconds().toString().padStart(2,"0")+(h>=12?" pm":" am"); } return d.getHours().toString().padStart(2,"0")+":"+d.getMinutes().toString().padStart(2,"0")+":"+d.getSeconds().toString().padStart(2,"0"); }
 function fmtDate(ts){ const d=new Date(ts); return d.toLocaleDateString("en-AU",{day:"2-digit",month:"short",year:"numeric"}); }
 // ── Calendar date picker (shared: Scan Log 'scan' + Driver Log 'drv') ─────
 function dateKey(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
@@ -1253,9 +1257,11 @@ function connectWS(){
         if(msg.type==="scan_log_update"){
           rollCalDays();
           allLogs.unshift(msg.entry && msg.entry.description ? { ...msg.entry, description: cleanDesc(msg.entry.description) } : msg.entry);
-          loadInvoices().then(()=>{ renderTable(true); });
+          loadInvoices().then(()=>{ renderTable(!!settingsState.flashnew); });
           loadStats();
           vmOnLog(msg.entry);
+          spAlert(msg.entry);
+          spStampUpdate();
         }
         if(msg.type==="new_file"){
           checkAllStale();
@@ -1304,6 +1310,7 @@ async function loadLogs(){
       allLogs = cleanLogDescs(d.logs || []);
       renderTable(false);
       populateUserFilter();
+      spStampUpdate();
       loadStats();
       renderVanManifest(); // PO fallback map reads allLogs/allInvoices
       setHealth("ok");
@@ -1318,7 +1325,8 @@ function loadStats(){
     const t=new Date(); t.setHours(0,0,0,0); const from=t.getTime();
     // Van scans are excluded by ACTION (below), never by initials — a driver who also
     // picks in the warehouse used to vanish from the Scan Log entirely.
-    const today=allLogs.filter(e=>e.timestamp>=from && !["on_board","off_board"].includes(e.action));
+    const hiddenU=settingsState.hiddenUsers||[];
+    const today=allLogs.filter(e=>e.timestamp>=from && !["on_board","off_board"].includes(e.action) && !hiddenU.includes(e.initials));
     const confirmed=today.filter(e=>(e.action||"confirmed")==="confirmed").length;
     const manual=today.filter(e=>e.action==="manual").length;
     const users=[...new Set(today.map(e=>e.initials))];
@@ -1396,6 +1404,7 @@ function getFiltered(){
     if(e.timestamp < win.from || e.timestamp >= win.to) return false;
     if(filters.brand && e.brand !== filters.brand) return false;
     if(filters.user && e.initials !== filters.user) return false;
+    if(settingsState.hiddenUsers.length && settingsState.hiddenUsers.includes(e.initials)) return false;
     if(filters.invoice && !e.invoiceId.includes(filters.invoice.toUpperCase())) return false;
     if(filters.part && !e.partNumber.includes(filters.part.toUpperCase())) return false;
     if(filters.action && e.action !== filters.action) return false;
@@ -1486,7 +1495,6 @@ function renderRow(e, isNew){
   const badgeClass = "b-"+(e.action||"confirmed");
   const badgeLabel = e.action==="confirmed"?"Confirmed":e.action==="manual"?"Manual":e.action==="not_found"?"Not found":e.action==="unscanned"?"Unscanned":e.action==="short"?"Short supply":e.action==="over"?"Over supply":e.action==="missing"?"Missing":e.action==="on_board"?"On board":e.action==="off_board"?"Off board":"Undo";
   const dotColor = e.action==="confirmed"?"#22C55E":e.action==="manual"?"#3B82F6":e.action==="not_found"?"#EF4444":e.action==="short"?"#FBBF24":e.action==="over"?"#3B82F6":e.action==="missing"?"#EF4444":e.action==="on_board"?"#FBBF24":e.action==="off_board"?"#22C55E":"#9D9DA8";
-  const partColor = settingsState.partColor||SETTINGS_DEFAULTS.partColor;
   // Mini progress bar for qty
   let qtyHtml = "—";
   let miniBar = "";
@@ -1494,7 +1502,7 @@ function renderRow(e, isNew){
     const c = e.confirmed ?? 0;
     const cls = c===e.qty?"qty-done":c>e.qty?"qty-over":c<e.qty&&c>0?"qty-short":"";
     qtyHtml = `<span class="${cls}">${c}</span><span class="qty-sep">/</span>${e.qty}`;
-    if(settingsState.minibars){
+    {
       const pct = Math.min(Math.round(c/e.qty*100),100);
       const barCol = c>=e.qty?"var(--green)":c>0?"var(--amber)":"var(--line)";
       miniBar = `<div class="qty-mini-bar"><div class="qty-mini-fill" style="width:${pct}%;background:${barCol}"></div></div>`;
@@ -1504,8 +1512,8 @@ function renderRow(e, isNew){
     <div><div class="brand-chip brand-${(e.brand||'').toString().toLowerCase().replace(/[^a-z]/g,'')}">${e.brand||"?"}</div></div>
     <div class="time-cell">${isUnscan?"—":fmtTime(e.timestamp)}</div>
     <div><div class="avatar${isUnscan?" dim":""}" style="${isUnscan?"":avatarStyle}">${isUnscan?"—":e.initials}</div></div>
-    <div class="inv-block"><div class="inv-num" style="color:${settingsState.invColor||SETTINGS_DEFAULTS.invColor}">${e.invoiceId}</div></div>
-    <div class="part-cell"><div class="part-num${isUnscan?" dim":""}" style="${isUnscan?"":"color:"+partColor}">${e.partNumber}</div><div class="part-desc${isUnscan?" dim":""}">${e.description||""}</div></div>
+    <div class="inv-block"><div class="inv-num">${e.invoiceId}</div></div>
+    <div class="part-cell"><div class="part-num${isUnscan?" dim":""}">${e.partNumber}</div><div class="part-desc${isUnscan?" dim":""}">${e.description||""}</div></div>
     <div class="qty-cell${isUnscan?" dim":""}">${qtyHtml}${miniBar}</div>
     <div>${e.orderRef?`<div class="order-ref${isUnscan?" dim":""}">${e.orderRef}</div>`:`<div class="order-ref dim">—</div>`}</div>
     <div>${e.note?`<div class="note-cell" title="${(e.note||'').replace(/"/g,'&quot;')}">${e.note}</div>`:'<div class="note-empty">—</div>'}</div>
@@ -1541,12 +1549,12 @@ function renderTable(flashFirst){
       const pct = totalParts>0?Math.round(doneParts/totalParts*100):0;
       const progColor = pct===100?"var(--green)":pct>0?"var(--amber)":"var(--line-2)";
       const fracColor = pct===100?"var(--green)":pct>0?"var(--amber)":"var(--ink-3)";
-      const showProg = settingsState.groupprog;
+      const showProg = true;
 
       const safeGrpId = invId.replace(/'/g,"\\'");
       html += `<div class="grp-header" onclick="toggleGroup('${safeGrpId}')">
         <svg class="grp-chev${isCollapsed?"":" open"}" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2l4 4-4 4"/></svg>
-        <span class="grp-inv" style="color:${settingsState.invColor||SETTINGS_DEFAULTS.invColor}">${invId}</span>
+        <span class="grp-inv">${invId}</span>
         <span class="grp-brand">${brand}</span>
         <span class="grp-count">${totalParts} part${totalParts!==1?"s":""}</span>
         <div class="grp-right">
@@ -2595,36 +2603,25 @@ document.addEventListener("keydown",e=>{
 
 // ── Settings Panel ──────────────────────────────────────────────────────
 function toggleSettings(){
-  document.getElementById("settings-overlay").classList.toggle("show");
+  const ov=document.getElementById("settings-overlay");
+  ov.classList.toggle("show");
+  if(ov.classList.contains("show")) renderHideChips();
 }
 
-// Settings state
-const SETTINGS_DEFAULTS = { accent: "#2A5BD7", invColor: "#2A5BD7", partColor: "#17191C" };
-const SETTINGS_ALLOWED = {
-  accent:    ["#2A5BD7","#1E8E5A","#D2640F","#C23A2F","#0F7B86","#3D4756"],
-  invColor:  ["#2A5BD7","#1E8E5A","#D2640F","#17191C","#0F7B86"],
-  partColor: ["#17191C","#1E8E5A","#2A5BD7","#D2640F","#3D4756"],
-};
 let settingsState = {
   density: "default",
-  accent: SETTINGS_DEFAULTS.accent,
-  invColor: SETTINGS_DEFAULTS.invColor,
-  partColor: SETTINGS_DEFAULTS.partColor,
   grouping: true,
-  minibars: true,
-  groupprog: true,
-  compactsidebar: false
+  flashnew: true,
+  compactsidebar: false,
+  landing: "import",
+  daterange: "today",
+  timefmt: "24",
+  soundnew: false,
+  notifynew: false,
+  hiddenUsers: [],
 };
-// Load saved settings
 try{ const s=JSON.parse(localStorage.getItem("wh_pro_settings")||"{}"); Object.assign(settingsState, s); }catch{}
-// Colours saved under the old dark theme (light text, indigo accent) are unreadable on
-// the light theme — anything not in the current swatch set falls back to the default.
-for(const k of Object.keys(SETTINGS_DEFAULTS)){
-  if(!SETTINGS_ALLOWED[k].includes(String(settingsState[k]||"").toUpperCase())) settingsState[k]=SETTINGS_DEFAULTS[k];
-}
-function applyAccentVar(){ document.documentElement.style.setProperty("--accent", settingsState.accent); document.documentElement.style.setProperty("--accent-ink", settingsState.accent); }
-applyAccentVar();
-
+if(!Array.isArray(settingsState.hiddenUsers)) settingsState.hiddenUsers=[];
 function saveSettings(){ localStorage.setItem("wh_pro_settings", JSON.stringify(settingsState)); }
 
 function setDensity(d){
@@ -2635,68 +2632,103 @@ function setDensity(d){
   document.querySelectorAll(".grp-header").forEach(r=>r.style.padding=d==="compact"?"6px 16px":d==="relaxed"?"14px 16px":"10px 16px");
 }
 
-function setAccent(c, btn){
-  settingsState.accent=c; saveSettings();
-  document.querySelectorAll("#accent-colors .color-swatch").forEach(s=>s.classList.remove("act"));
-  btn.classList.add("act");
-  applyAccentVar();
-}
-
-function setInvColor(c, btn){
-  settingsState.invColor=c; saveSettings();
-  document.querySelectorAll("#invoice-colors .color-swatch").forEach(s=>s.classList.remove("act"));
-  btn.classList.add("act");
-  document.querySelectorAll(".inv-num").forEach(el=>el.style.color=c);
-  document.querySelectorAll(".grp-inv").forEach(el=>el.style.color=c);
-}
-
-function setPartColor(c, btn){
-  settingsState.partColor=c; saveSettings();
-  document.querySelectorAll("#part-colors .color-swatch").forEach(s=>s.classList.remove("act"));
-  btn.classList.add("act");
-  document.querySelectorAll(".part-num:not(.dim)").forEach(el=>el.style.color=c);
+function setSetting(key, val){
+  settingsState[key]=val; saveSettings();
+  if(key==="daterange") calQuick("scan", val);
+  if(key==="timefmt") renderTable(false);
 }
 
 function toggleSwitch(key, el){
-  settingsState[key]=!settingsState[key]; saveSettings();
-  el.classList.toggle("on", settingsState[key]);
-  if(key==="compactsidebar"){
-    document.querySelector(".shell").classList.toggle("sb-compact", settingsState.compactsidebar);
+  settingsState[key]=!settingsState[key];
+  if(key==="notifynew" && settingsState.notifynew){
+    if(!("Notification" in window)){ settingsState.notifynew=false; showToast("Notifications not supported in this browser","error"); }
+    else if(Notification.permission==="granted"){ /* fine */ }
+    else if(Notification.permission==="denied"){ settingsState.notifynew=false; showToast("Notifications are blocked for this site in the browser","error"); }
+    else {
+      Notification.requestPermission().then(p=>{
+        if(p!=="granted"){ settingsState.notifynew=false; saveSettings(); el.classList.remove("on"); }
+      });
+    }
   }
-  if(key==="grouping"||key==="minibars"||key==="groupprog") renderTable(false);
+  saveSettings();
+  el.classList.toggle("on", settingsState[key]);
+  if(key==="compactsidebar") document.querySelector(".shell").classList.toggle("sb-compact", settingsState.compactsidebar);
+  if(key==="grouping") renderTable(false);
+  if(key==="soundnew" && settingsState.soundnew) beep();
+}
+
+// Hide users: chips of everyone who has scanned; click = hide / show
+function renderHideChips(){
+  const box=document.getElementById("sp-hide-chips"); if(!box) return;
+  const users=[...new Set(allLogs.filter(e=>!["on_board","off_board"].includes(e.action)).map(e=>e.initials))].filter(Boolean).sort();
+  const hidden=new Set(settingsState.hiddenUsers||[]);
+  for(const h of hidden) if(!users.includes(h)) users.push(h);
+  if(!users.length){ box.innerHTML='<span class="sp-hint">No scans yet.</span>'; return; }
+  box.innerHTML=users.map(u=>`<span class="drv-chip pick${hidden.has(u)?" off":""}" onclick="toggleHideUser('${u.replace(/'/g,"")}')">${u}</span>`).join("");
+}
+function toggleHideUser(u){
+  const set=new Set(settingsState.hiddenUsers||[]);
+  if(set.has(u)) set.delete(u); else set.add(u);
+  settingsState.hiddenUsers=[...set]; saveSettings();
+  renderHideChips(); renderTable(false); loadStats();
+}
+
+// Alerts
+let _ac=null;
+function beep(){
+  try{
+    _ac=_ac||new (window.AudioContext||window.webkitAudioContext)();
+    const o=_ac.createOscillator(), g=_ac.createGain();
+    o.type="sine"; o.frequency.value=880; g.gain.value=0.0001;
+    o.connect(g); g.connect(_ac.destination);
+    const t=_ac.currentTime; g.gain.exponentialRampToValueAtTime(0.18,t+0.01); g.gain.exponentialRampToValueAtTime(0.0001,t+0.14);
+    o.start(t); o.stop(t+0.15);
+  }catch{}
+}
+function spAlert(entry){
+  if(!entry || ["on_board","off_board"].includes(entry.action)) return;
+  if((settingsState.hiddenUsers||[]).includes(entry.initials)) return;
+  if(settingsState.soundnew) beep();
+  if(settingsState.notifynew && document.hidden && "Notification" in window && Notification.permission==="granted"){
+    try{ new Notification((entry.initials||"?")+" · "+(entry.invoiceId||""), { body:(entry.partNumber||"")+(entry.description?" — "+entry.description:""), silent:true }); }catch{}
+  }
+}
+
+// Server card
+function spStampUpdate(){ const el=document.getElementById("sp-last-update"); if(el) el.textContent=fmtTime(Date.now()); }
+function spReconnect(){ try{ if(ws) ws.close(); }catch{} pingServer(); showToast("Reconnecting…","info"); }
+function spRefresh(){ loadInvoices().then(()=>{ loadLogs(); loadStats(); }); showToast("Refreshing data…","info"); }
+function resetSettings(){
+  if(!confirm("Reset all dashboard settings on this PC?")) return;
+  localStorage.removeItem("wh_pro_settings"); location.reload();
 }
 
 // Apply saved settings on load
 function applySettings(){
-  // Density
-  const densSel=document.getElementById("sp-density"); if(densSel) densSel.value=settingsState.density||"default";
-  // Accent
-  document.querySelectorAll("#accent-colors .color-swatch").forEach(s=>{ s.classList.toggle("act",s.style.background===settingsState.accent||rgbToHex(s.style.backgroundColor)===settingsState.accent.toUpperCase()); });
-  // Invoice color
-  document.querySelectorAll("#invoice-colors .color-swatch").forEach(s=>{ s.classList.toggle("act",rgbToHex(s.style.backgroundColor)===settingsState.invColor.toUpperCase()); });
-  // Part color
-  document.querySelectorAll("#part-colors .color-swatch").forEach(s=>{ s.classList.toggle("act",rgbToHex(s.style.backgroundColor)===settingsState.partColor.toUpperCase()); });
-  // Switches
-  ["grouping","minibars","groupprog","compactsidebar"].forEach(k=>{
-    const sw=document.getElementById("sw-"+k);
-    if(sw) sw.classList.toggle("on", settingsState[k]);
+  const set=(id,v)=>{ const el=document.getElementById(id); if(el) el.value=v; };
+  set("sp-density", settingsState.density||"default");
+  set("sp-landing", settingsState.landing||"import");
+  set("sp-daterange", settingsState.daterange||"today");
+  set("sp-timefmt", settingsState.timefmt||"24");
+  ["grouping","flashnew","compactsidebar","soundnew","notifynew"].forEach(k=>{
+    const sw=document.getElementById("sw-"+k); if(sw) sw.classList.toggle("on", !!settingsState[k]);
   });
-  // Apply compact sidebar directly (don't use toggleSwitch which flips the boolean)
   document.querySelector(".shell").classList.toggle("sb-compact", !!settingsState.compactsidebar);
-  // Apply density padding on load
   if(settingsState.density!=="default"){
     const pad = settingsState.density==="compact"?"6px 16px":"16px 16px";
     document.querySelectorAll(".row").forEach(r=>r.style.padding=pad);
   }
+  const site=document.getElementById("sp-site"); if(site) site.textContent=SITE.name+" · "+SITE.group;
+  const url=document.getElementById("sp-url"); if(url) url.textContent=SERVER.replace(/^https?:\/\//,"");
+  if(settingsState.daterange && settingsState.daterange!=="today") calQuick("scan", settingsState.daterange);
 }
-function rgbToHex(rgb){ if(rgb.startsWith("#")) return rgb.toUpperCase(); const m=rgb.match(/(\d+)/g); if(!m||m.length<3) return rgb; return "#"+m.slice(0,3).map(n=>(+n).toString(16).padStart(2,"0")).join("").toUpperCase(); }
 
 // ── Init ──────────────────────────────────────────────────────────────────
 
 initRowToggles();
 applySettings();
 renderDriverChips();
-showPage("import");
+showPage(["log","import","driver","pickslip","boards"].includes(settingsState.landing)?settingsState.landing:"import");
 setHealth("wake");
 pingServer().finally(()=>{ loadInvoices().then(()=>{ loadLogs(); loadStats(); }); });
 setTimeout(connectWS, 800); // slight delay lets ping wake the server first
