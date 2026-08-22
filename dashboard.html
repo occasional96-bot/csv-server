@@ -54,7 +54,7 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .main{flex:1;padding:12px 12px 0 6px;overflow-x:hidden;overflow-y:auto;min-width:0}
 /* Scan Log: freeze topbar/stats/filters/column headers — only the rows scroll */
 #page-log{display:flex;flex-direction:column;height:100%;min-height:0}
-#page-log .table-wrap{flex:1;min-height:0;display:flex;flex-direction:column}
+#page-log .table-wrap{flex:1;min-height:0;display:flex;flex-direction:column;margin-bottom:0}
 #page-log .thead{flex-shrink:0}
 #page-log .tbody{flex:1;min-height:0;overflow-y:auto}
 
@@ -179,7 +179,9 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .tab.active{background:var(--ink);border-color:var(--ink);color:#fff}
 
 /* ── Filters ── */
-.toolbar{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;align-items:center}
+.toolbar .whcal{margin-left:auto}
+.toolbar .whcal-chip{height:38px;padding:0 12px;font-size:14px;font-weight:500}
 .tb-field{display:flex;align-items:center;gap:8px;height:38px;padding:0 12px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);min-width:190px;cursor:text}
 .tb-field svg{width:14px;height:14px;color:var(--ink-3);flex-shrink:0}
 .tb-field input,.tb-field select{flex:1;min-width:0;border:none;background:transparent;outline:none;font-size:14px;font-weight:500;color:var(--ink)}
@@ -583,8 +585,8 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
   <!-- Sidebar -->
   <aside class="sidebar">
     <div class="logo">
-      <div class="logo-title">HMG</div>
-      <div class="logo-sub">Hopper Motor Group</div>
+      <div class="logo-title" id="logo-title">HMG</div>
+      <div class="logo-sub" id="logo-site">Werribee · Hopper Motor Group</div>
       <div class="logo-app">Warehouse PRO</div>
     </div>
     <div class="nav-item" onclick="showPage('log')" id="nav-log">
@@ -632,17 +634,6 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
           <div class="page-sub" id="log-date"></div>
           <div class="summary"><span><b id="stat-confirmed">0</b> confirmed today</span><span><b id="stat-manual">0</b> manual</span><span><b id="stat-users">0</b> users online</span></div>
         </div>
-        <div class="topbar-right">
-          <div class="cmd-search-bar" onclick="toggleCmdPalette()">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="5"/><path d="M11 11l3.5 3.5"/></svg>
-            <span>Search...</span>
-            <kbd>Ctrl K</kbd>
-          </div>
-          <div class="whcal" id="cal-scan">
-            <div class="whcal-chip" onclick="calToggle('scan')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3"/></svg><span id="cal-scan-label">Today</span><span class="whcal-chev">▾</span></div>
-            <div class="whcal-pop" id="cal-scan-pop"></div>
-          </div>
-        </div>
       </div>
 
       <div class="toolbar">
@@ -651,6 +642,10 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
         <label class="tb-field tb-select"><select id="f-user" onchange="applyFilters()"><option value="">All users</option></select></label>
         <label class="tb-field tb-select"><select id="f-status" onchange="setStatusFilter(this.value)"><option value="" data-label="All statuses">All statuses</option><option value="confirmed" data-label="Confirmed">Confirmed</option><option value="manual" data-label="Manual">Manual</option><option value="short" data-label="Short supply">Short supply</option><option value="over" data-label="Over supply">Over supply</option><option value="missing" data-label="Missing">Missing</option><option value="undo" data-label="Undo">Undo</option><option value="unscanned" data-label="Unscanned">Unscanned</option></select></label>
         <label class="tb-field tb-select"><select id="f-method" onchange="setMethodFilter(this.value)"><option value="">Any method</option><option value="barcode">Barcode</option><option value="camera">Camera</option><option value="typed">Typed</option><option value="tap">Tap confirm</option></select></label>
+        <div class="whcal" id="cal-scan">
+          <div class="whcal-chip" onclick="calToggle('scan')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3"/></svg><span id="cal-scan-label">Today</span><span class="whcal-chev">▾</span></div>
+          <div class="whcal-pop" id="cal-scan-pop"></div>
+        </div>
       </div>
 
       <div class="table-wrap">
@@ -671,9 +666,6 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
         </div>
       </div>
 
-      <div class="footer-bar">
-        <div class="footer-txt" id="footer-txt">—</div>
-      </div>
     </div>
 
     <!-- ── IMPORT PAGE ── -->
@@ -1056,6 +1048,13 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 </div>
 
 <script>
+// ── Site identity ──────────────────────────────────────────────────────────
+// One dashboard per dealership site. Essendon gets its own SITE (and later a toggle
+// that swaps SITE + SERVER); everything that says "Werribee" reads from here.
+const SITE = { key: "werribee", name: "Werribee", group: "Hopper Motor Group", code: "HMG" };
+document.title = "Warehouse PRO — " + SITE.code + " " + SITE.name;
+{ const t=document.getElementById("logo-title"), st=document.getElementById("logo-site");
+  if(t) t.textContent = SITE.code; if(st) st.textContent = SITE.name + " · " + SITE.group; }
 const SERVER = (location.protocol === "file:" || location.hostname === "localhost") ? "https://csv-server-production-efc6.up.railway.app" : location.origin;
 const WS_URL = SERVER.replace(/^http/, "ws");
 
@@ -1505,7 +1504,7 @@ function renderTable(flashFirst){
   const lookup = buildPartLookup();
   const rows = [...getFiltered().map(e=>enrich(e,lookup)), ...getUnscannedRows()];
   const tbody = document.getElementById("log-tbody");
-  if(!rows.length){ tbody.innerHTML='<div class="empty-state">No events match your filters</div>'; document.getElementById("footer-txt").textContent="No results"; return; }
+  if(!rows.length){ tbody.innerHTML='<div class="empty-state">No events match your filters</div>'; { const ft=document.getElementById("footer-txt"); if(ft) ft.textContent="No results"; } return; }
 
   // Grouped mode
   if(settingsState.grouping){
@@ -1550,7 +1549,7 @@ function renderTable(flashFirst){
     tbody.innerHTML = rows.map((e,i)=>renderRow(e, flashFirst && i===0)).join("");
   }
 
-  document.getElementById("footer-txt").textContent = `Showing ${rows.length} event${rows.length!==1?"s":""} · Auto-refreshes every 5s · Last 14 days retained`;
+  { const ft=document.getElementById("footer-txt"); if(ft) ft.textContent = `Showing ${rows.length} event${rows.length!==1?"s":""}`; }
 }
 
 // ── Filter controls ───────────────────────────────────────────────────────
