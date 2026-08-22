@@ -87,7 +87,12 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .shell.sb-compact .logo{padding:4px 0 14px;text-align:center}
 .shell.sb-compact .logo-title{font-size:15px;letter-spacing:.04em}
 .shell.sb-compact .logo-sub,.shell.sb-compact .logo-app,.shell.sb-compact .nav-label,.shell.sb-compact .server-status span,.shell.sb-compact .server-status .health-badge,.shell.sb-compact .nav-group{display:none}
-.shell.sb-compact .nav-item{justify-content:center;padding:0;gap:0}
+.shell.sb-compact .nav-item{justify-content:center;padding:0;gap:0;position:relative}
+.shell.sb-compact .sidebar{overflow:visible}
+.shell.sb-compact .nav-item::after{content:attr(data-tip);position:absolute;left:calc(100% + 12px);top:50%;transform:translateY(-50%) translateX(-4px);background:var(--ink);color:#fff;font-size:12px;font-weight:500;padding:6px 10px;border-radius:8px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .12s,transform .12s;z-index:120;box-shadow:var(--shadow-pop)}
+.shell.sb-compact .nav-item::before{content:"";position:absolute;left:calc(100% + 6px);top:50%;transform:translateY(-50%);border:6px solid transparent;border-right-color:var(--ink);border-left:0;pointer-events:none;opacity:0;transition:opacity .12s;z-index:120}
+.shell.sb-compact .nav-item:hover::after{opacity:1;transform:translateY(-50%) translateX(0)}
+.shell.sb-compact .nav-item:hover::before{opacity:1}
 .shell.sb-compact .server-status{justify-content:center;padding:6px 0 8px}
 
 /* ── Top bar ── */
@@ -110,10 +115,10 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 
 /* ── Calendar date picker (shared: Scan Log + Driver Log) ── */
 .whcal{position:relative}
-.whcal-chip{display:inline-flex;align-items:center;gap:7px;height:36px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:0 10px;font-size:12px;font-weight:500;color:var(--ink);cursor:pointer;white-space:nowrap;user-select:none}
-.whcal-chip:hover{border-color:var(--line-2)}
-.whcal-chip svg{width:14px;height:14px;color:var(--ink-3);flex:none}
-.whcal-chev{color:var(--ink-4);font-size:10px}
+.whcal-chip{display:inline-flex;align-items:center;gap:7px;height:36px;background:var(--surface);border:1px solid var(--accent-line);border-radius:var(--r);padding:0 10px;font-size:12px;font-weight:600;color:var(--ink);cursor:pointer;white-space:nowrap;user-select:none;box-shadow:0 1px 2px rgba(42,91,215,.08)}
+.whcal-chip:hover,.whcal.open .whcal-chip{background:var(--accent-soft);border-color:var(--accent)}
+.whcal-chip svg{width:15px;height:15px;color:var(--accent);flex:none}
+.whcal-chev{color:var(--accent);font-size:10px}
 .whcal-pop{display:none;position:absolute;top:calc(100% + 6px);right:0;width:264px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:12px;box-shadow:var(--shadow-pop);z-index:80}
 .whcal.open .whcal-pop{display:block}
 .whcal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
@@ -187,7 +192,7 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 /* ── Filters ── */
 .toolbar{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;align-items:center}
 .toolbar .whcal{margin-left:auto}
-.toolbar .whcal-chip{height:38px;padding:0 12px;font-size:14px;font-weight:500}
+.toolbar .whcal-chip{height:38px;padding:0 12px;font-size:14px;font-weight:600}
 .tb-field{display:flex;align-items:center;gap:8px;height:38px;padding:0 12px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);min-width:190px;cursor:text}
 .tb-field svg{width:14px;height:14px;color:var(--ink-3);flex-shrink:0}
 .tb-field input,.tb-field select{flex:1;min-width:0;border:none;background:transparent;outline:none;font-size:14px;font-weight:500;color:var(--ink)}
@@ -453,13 +458,7 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .qty-mini-bar{width:36px;height:3px;background:var(--line);border-radius:2px;overflow:hidden;margin:3px auto 0}
 .qty-mini-fill{height:100%;border-radius:2px}
 
-/* ── Hover quick actions ── */
-.row-actions{position:absolute;right:8px;top:50%;transform:translateY(-50%);display:none;gap:2px;align-items:center;background:var(--surface);padding:2px;border-radius:var(--r);border:1px solid var(--line);box-shadow:0 1px 3px rgba(23,25,28,.08);z-index:5}
 .row{position:relative}
-.row:hover .row-actions{display:flex}
-.ra-btn{width:26px;height:26px;border-radius:4px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-3);border:none;background:transparent}
-.ra-btn:hover{background:var(--grey-soft);color:var(--ink)}
-.ra-btn svg{width:13px;height:13px}
 
 /* ── Command palette ── */
 .cmd-overlay{position:fixed;inset:0;background:rgba(23,25,28,.35);display:none;z-index:100;align-items:flex-start;justify-content:center;padding-top:15vh}
@@ -596,23 +595,23 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
       <div class="logo-app">Warehouse PRO</div>
     </div>
     <nav class="site-switch" id="site-switch" title="Switch dealership"></nav>
-    <div class="nav-item" onclick="showPage('log')" id="nav-log">
+    <div class="nav-item" onclick="showPage('log')" id="nav-log" data-tip="Scan Log">
       <svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5h12M4 10h12M4 14.5h7"/></svg>
       <span class="nav-label">Scan Log</span>
     </div>
-    <div class="nav-item active" onclick="showPage('import')" id="nav-import">
+    <div class="nav-item active" onclick="showPage('import')" id="nav-import" data-tip="Import CSV">
       <svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13V4M6.5 7.5L10 4l3.5 3.5M4 15.5h12"/></svg>
       <span class="nav-label">Import CSV</span>
     </div>
-    <div class="nav-item" onclick="showPage('driver')" id="nav-driver">
+    <div class="nav-item" onclick="showPage('driver')" id="nav-driver" data-tip="Driver Log">
       <svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 5.5h9v8h-9z"/><path d="M11.5 8h3.2l2.8 3v2.5h-6"/><circle cx="5.5" cy="14.5" r="1.6"/><circle cx="14" cy="14.5" r="1.6"/></svg>
       <span class="nav-label">Driver Log</span>
     </div>
-    <div class="nav-item" onclick="showPage('pickslip')" id="nav-pickslip">
+    <div class="nav-item" onclick="showPage('pickslip')" id="nav-pickslip" data-tip="Picking Slips">
       <svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3.5" width="12" height="14" rx="1.5"/><path d="M7.5 2.5h5v2.5h-5z"/><path d="M7 11l2 2 4-4.5"/></svg>
       <span class="nav-label">Picking Slips</span>
     </div>
-    <div class="nav-item" onclick="showPage('boards')" id="nav-boards">
+    <div class="nav-item" onclick="showPage('boards')" id="nav-boards" data-tip="Focus Boards">
       <svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="11" y="3" width="6" height="6" rx="1"/><rect x="3" y="11" width="6" height="6" rx="1"/><rect x="11" y="11" width="6" height="6" rx="1"/></svg>
       <span class="nav-label">Focus Boards</span>
     </div>
@@ -623,7 +622,7 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
         <span class="sep">·</span>
         <span class="health-badge hb-wake" id="health-badge" title="Server status"><span id="health-text">Checking…</span></span>
       </div>
-      <div class="nav-item" onclick="toggleSettings()" id="nav-settings">
+      <div class="nav-item" onclick="toggleSettings()" id="nav-settings" data-tip="Settings">
         <svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h14M3 10h14M3 14h14"/><circle cx="7" cy="6" r="1.6" fill="var(--surface)"/><circle cx="13" cy="10" r="1.6" fill="var(--surface)"/><circle cx="8.5" cy="14" r="1.6" fill="var(--surface)"/></svg>
         <span class="nav-label">Settings</span>
       </div>
@@ -1048,7 +1047,6 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
     <div class="sp-label">Features</div>
     <div class="sp-toggle-row"><span class="sp-toggle-txt">Group by Invoice</span><div class="sp-switch on" id="sw-grouping" onclick="toggleSwitch('grouping',this)"></div></div>
     <div class="sp-toggle-row"><span class="sp-toggle-txt">Mini Qty Bars</span><div class="sp-switch on" id="sw-minibars" onclick="toggleSwitch('minibars',this)"></div></div>
-    <div class="sp-toggle-row"><span class="sp-toggle-txt">Hover Actions</span><div class="sp-switch on" id="sw-hoveractions" onclick="toggleSwitch('hoveractions',this)"></div></div>
     <div class="sp-toggle-row"><span class="sp-toggle-txt">Show Progress in Groups</span><div class="sp-switch on" id="sw-groupprog" onclick="toggleSwitch('groupprog',this)"></div></div>
     <div class="sp-toggle-row"><span class="sp-toggle-txt">Compact Sidebar</span><div class="sp-switch" id="sw-compactsidebar" onclick="toggleSwitch('compactsidebar',this)"></div></div>
   </div>
@@ -1502,14 +1500,6 @@ function renderRow(e, isNew){
       miniBar = `<div class="qty-mini-bar"><div class="qty-mini-fill" style="width:${pct}%;background:${barCol}"></div></div>`;
     }
   }
-  // Hover quick actions
-  const safePart = (e.partNumber||"").replace(/'/g,"\\'");
-  const safeInv = (e.invoiceId||"").replace(/'/g,"\\'");
-  const actions = settingsState.hoveractions ? `<div class="row-actions">
-    <button class="ra-btn" title="Copy Part #" onclick="event.stopPropagation();navigator.clipboard.writeText('${safePart}');showToast('Copied ${safePart}','success')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="8" height="8" rx="1.5"/><path d="M3 11V3a1 1 0 011-1h8"/></svg></button>
-    <button class="ra-btn" title="Copy Invoice" onclick="event.stopPropagation();navigator.clipboard.writeText('${safeInv}');showToast('Copied ${safeInv}','success')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 2h8l2 2v10a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z"/><path d="M6 8h4M6 11h2"/></svg></button>
-    <button class="ra-btn" title="Filter this invoice" onclick="event.stopPropagation();document.getElementById('f-invoice').value='${safeInv}';applyFilters()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 3h12L9 8.5V13l-2-1V8.5L2 3z"/></svg></button>
-  </div>` : "";
   return `<div class="row${isNew?" flash-new":""}${isUnscan?" unscanned-row":""}">
     <div><div class="brand-chip brand-${(e.brand||'').toString().toLowerCase().replace(/[^a-z]/g,'')}">${e.brand||"?"}</div></div>
     <div class="time-cell">${isUnscan?"—":fmtTime(e.timestamp)}</div>
@@ -1521,7 +1511,6 @@ function renderRow(e, isNew){
     <div>${e.note?`<div class="note-cell" title="${(e.note||'').replace(/"/g,'&quot;')}">${e.note}</div>`:'<div class="note-empty">—</div>'}</div>
     <div>${methodHtml(e.method)}</div>
     <div><span class="badge ${badgeClass}"><span class="badge-dot" style="background:${dotColor}"></span>${badgeLabel}</span></div>
-    ${actions}
   </div>`;
 }
 
@@ -2623,7 +2612,6 @@ let settingsState = {
   partColor: SETTINGS_DEFAULTS.partColor,
   grouping: true,
   minibars: true,
-  hoveractions: true,
   groupprog: true,
   compactsidebar: false
 };
@@ -2675,7 +2663,7 @@ function toggleSwitch(key, el){
   if(key==="compactsidebar"){
     document.querySelector(".shell").classList.toggle("sb-compact", settingsState.compactsidebar);
   }
-  if(key==="grouping"||key==="minibars"||key==="hoveractions"||key==="groupprog") renderTable(false);
+  if(key==="grouping"||key==="minibars"||key==="groupprog") renderTable(false);
 }
 
 // Apply saved settings on load
@@ -2689,7 +2677,7 @@ function applySettings(){
   // Part color
   document.querySelectorAll("#part-colors .color-swatch").forEach(s=>{ s.classList.toggle("act",rgbToHex(s.style.backgroundColor)===settingsState.partColor.toUpperCase()); });
   // Switches
-  ["grouping","minibars","hoveractions","groupprog","compactsidebar"].forEach(k=>{
+  ["grouping","minibars","groupprog","compactsidebar"].forEach(k=>{
     const sw=document.getElementById("sw-"+k);
     if(sw) sw.classList.toggle("on", settingsState[k]);
   });
