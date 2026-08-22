@@ -19,15 +19,32 @@ const DATA_DIR  = fs.existsSync("/data") ? "/data" : __dirname;
 // list only feeds the dashboard's site switcher (a link to the other origin).
 const SITES = {
   werribee: { key: "werribee", name: "Werribee", group: "Hopper Motor Group", code: "HMG",
+              label: "Werribee · Hopper Motor Group",
               brands: ["KIA", "HY", "BYD", "ISUZU", "NISSAN"],
+              files: ["kia", "hy", "inve"],          // Import CSV rows this site uses
               url: "https://csv-server-production-efc6.up.railway.app" },
-  essendon: { key: "essendon", name: "Essendon", group: "Essendon Kia", code: "EK",
+  essendon: { key: "essendon", name: "Essendon", group: "Essendon Kia", code: "HMG",
+              label: "Essendon Kia",
               brands: ["KIA"],
+              files: ["kia", "inve"],
               url: "https://csv-server-essendon-production.up.railway.app" },
 };
 const SITE_KEY = String(process.env.SITE_KEY || "werribee").toLowerCase();
 const SITE = SITES[SITE_KEY] || SITES.werribee;
-const siteInfo = () => ({ ...SITE, sites: Object.values(SITES).map(s => ({ key: s.key, name: s.name, url: s.url })) });
+const siteInfo = () => ({ ...SITE, retentionDays: siteSettings().retentionDays, sites: Object.values(SITES).map(s => ({ key: s.key, name: s.name, url: s.url })) });
+
+// ── Per-site server settings (persist on this site's volume) ──────────────────
+const SITE_SETTINGS_FILE = path.join(DATA_DIR, "site_settings.json");
+const RETENTION_CHOICES = [7, 14, 30, 60, 90];
+function siteSettings() {
+  let s = {};
+  try { s = JSON.parse(fs.readFileSync(SITE_SETTINGS_FILE, "utf8")) || {}; } catch {}
+  if (!RETENTION_CHOICES.includes(s.retentionDays)) s.retentionDays = 14;
+  return s;
+}
+function saveSiteSettings(s) {
+  try { fs.writeFileSync(SITE_SETTINGS_FILE, JSON.stringify(s, null, 2)); } catch (e) { console.error("saveSiteSettings:", e); }
+}
 const UPLOAD    = path.join(DATA_DIR, "uploads");
 const META      = path.join(DATA_DIR, "meta.json");
 
@@ -112,7 +129,8 @@ const saveScanLog = (log) => {
     fs.renameSync(SCANLOG_TMP, SCANLOG_FILE);
   } catch(e) { console.error("saveScanLog error:", e); }
 };
-const purgeScanLog = (log) => log.filter(e => Date.now() - e.timestamp < FOURTEEN_DAYS);
+// Retention is a per-site setting (Settings → Scan log kept); default 14 days.
+const purgeScanLog = (log) => { const ms = siteSettings().retentionDays * 24 * 60 * 60 * 1000; return log.filter(e => Date.now() - e.timestamp < ms); };
 
 // ── Invoice store ────────────────────────────────────────────────────────────
 const INVOICES_FILE = path.join(DATA_DIR, "invoices.json");
@@ -1093,6 +1111,16 @@ app.get("/pickslips", (req, res) => {
 // ── Health / keep-alive ───────────────────────────────────────────────────────
 app.get("/ping", (req, res) => res.json({ ok: true, ts: Date.now() }));
 app.get("/site", (req, res) => res.json(siteInfo()));
+app.get("/settings", (req, res) => res.json(siteSettings()));
+app.post("/settings", (req, res) => {
+  const cur = siteSettings();
+  const days = Number(req.body && req.body.retentionDays);
+  if (!RETENTION_CHOICES.includes(days)) return res.status(400).json({ error: "retentionDays must be one of " + RETENTION_CHOICES.join(", ") });
+  cur.retentionDays = days;
+  saveSiteSettings(cur);
+  console.log("[settings] scan log retention → " + days + " days");
+  res.json({ ok: true, ...cur });
+});
 
 // ── Dashboard ─────────────────────────────────────────────────────────────────
 app.get("/dashboard", (req, res) => {
