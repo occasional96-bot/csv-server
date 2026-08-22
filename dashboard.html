@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <title>Warehouse PRO — HMG</title>
 <style>
 /* ═══════════════════════════════════════════════════════════════════════
@@ -12,15 +12,15 @@
    No gradients, no blur, no glow. Everything reads from these tokens.
    ═══════════════════════════════════════════════════════════════════════ */
 :root{
-  --bg:#F4F5F7;            /* page ground */
+  --bg:#EDF0F4;            /* page ground */
   --surface:#FFFFFF;       /* cards, sidebar, table */
   --surface-2:#F8F9FA;     /* table header, hover, segmented control track */
   --line:#E3E6EA;          /* default border */
   --line-2:#CBD1D8;        /* stronger border (focus rings, chevrons) */
   --ink:#17191C;           /* primary text */
-  --ink-2:#4A525B;         /* secondary text */
-  --ink-3:#79828C;         /* muted labels */
-  --ink-4:#A7AFB8;         /* placeholders, disabled */
+  --ink-2:#3B434C;         /* secondary text */
+  --ink-3:#5C6670;         /* muted labels */
+  --ink-4:#8A939D;         /* placeholders, disabled */
   --accent:#2A5BD7;
   --accent-ink:#1F47AD;
   --accent-soft:color-mix(in srgb,var(--accent) 10%,#fff);
@@ -32,12 +32,13 @@
   --grey-soft:#EEF0F3;
   --sans:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
   --mono:'IBM Plex Sans',-apple-system,'Segoe UI',sans-serif; /* sans + tabular figures: no dotted zero */
-  --r:6px; --r-lg:8px;
+  --r:10px; --r-lg:14px;
+  --shadow-card:0 1px 2px rgba(23,25,28,.04),0 6px 20px rgba(23,25,28,.05);
   --shadow-pop:0 8px 24px rgba(23,25,28,0.12),0 1px 2px rgba(23,25,28,0.08);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{height:100%}
-body{background:var(--bg);font-family:var(--sans);color:var(--ink);min-height:100vh;font-size:13px;font-variant-numeric:tabular-nums;line-height:1.45;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+body{background:var(--bg);font-family:var(--sans);color:var(--ink);min-height:100vh;font-size:14px;font-variant-numeric:tabular-nums;line-height:1.45;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
 a{color:var(--accent);text-decoration:none}
 a:hover{color:var(--accent-ink)}
 button,input,select{font-family:inherit;font-size:inherit;color:inherit}
@@ -48,9 +49,9 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
 /* ── Layout ── */
-.shell{display:flex;height:100vh}
-.sidebar{width:232px;background:var(--surface);border-right:1px solid var(--line);padding:20px 12px 16px;flex-shrink:0;display:flex;flex-direction:column;overflow-y:auto;transition:width .15s}
-.main{flex:1;padding:28px 32px;overflow-x:hidden;overflow-y:auto;min-width:0}
+.shell{display:flex;height:100vh;padding:14px;gap:14px}
+.sidebar{width:236px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow-card);padding:22px 14px 14px;flex-shrink:0;display:flex;flex-direction:column;overflow-y:auto;transition:width .15s}
+.main{flex:1;padding:12px 12px 0 6px;overflow-x:hidden;overflow-y:auto;min-width:0}
 /* Scan Log: freeze topbar/stats/filters/column headers — only the rows scroll */
 #page-log{display:flex;flex-direction:column;height:100%;min-height:0}
 #page-log .table-wrap{flex:1;min-height:0;display:flex;flex-direction:column}
@@ -58,11 +59,11 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 #page-log .tbody{flex:1;min-height:0;overflow-y:auto}
 
 /* ── Sidebar ── */
-.logo{padding:4px 12px 18px;border-bottom:1px solid var(--line);margin-bottom:14px}
+.logo{padding:2px 14px 18px;border-bottom:1px solid var(--line);margin-bottom:14px}
 .logo-title{font-size:22px;font-weight:600;color:var(--ink);letter-spacing:.06em;line-height:1}
-.logo-sub{font-size:11px;color:var(--ink-3);margin-top:5px;letter-spacing:.01em}
+.logo-sub{font-size:12px;color:var(--ink-3);margin-top:5px;letter-spacing:.01em}
 .logo-app{font-size:10px;font-weight:600;color:var(--ink-4);margin-top:10px;letter-spacing:.1em;text-transform:uppercase}
-.nav-item{display:flex;align-items:center;gap:11px;height:38px;padding:0 12px;margin:2px 0;cursor:pointer;font-size:13px;font-weight:500;color:var(--ink-2);border-radius:var(--r);white-space:nowrap;user-select:none}
+.nav-item{display:flex;align-items:center;gap:12px;height:40px;padding:0 14px;margin:3px 0;cursor:pointer;font-size:14px;font-weight:500;color:var(--ink-2);border-radius:10px;white-space:nowrap;user-select:none}
 .nav-item:hover{background:var(--surface-2);color:var(--ink)}
 .nav-item.active{background:var(--accent);color:#fff}
 .nav-icon{width:18px;height:18px;flex-shrink:0;color:var(--ink-3)}
@@ -70,25 +71,29 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .nav-item.active .nav-icon{color:#fff}
 .nav-group{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-4);padding:14px 12px 6px}
 .sidebar-bottom{margin-top:auto;padding-top:12px;border-top:1px solid var(--line)}
-.server-status{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--ink-3);padding:6px 12px 8px}
+.server-status{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--ink-3);padding:6px 14px 8px;white-space:nowrap}
+.server-status .health-badge{height:auto;padding:0;border:none;background:none;font-size:12px;font-weight:500}
+.server-status .sep{color:var(--line-2)}
 .status-dot{width:7px;height:7px;border-radius:50%;background:var(--red);flex-shrink:0}
 .status-dot.online{background:var(--green)}
 /* compact (icon-only) sidebar — settings toggle + narrow screens */
 .shell.sb-compact .sidebar{width:64px;padding-left:10px;padding-right:10px}
 .shell.sb-compact .logo{padding:4px 0 14px;text-align:center}
 .shell.sb-compact .logo-title{font-size:15px;letter-spacing:.04em}
-.shell.sb-compact .logo-sub,.shell.sb-compact .logo-app,.shell.sb-compact .nav-label,.shell.sb-compact .server-status span,.shell.sb-compact .nav-group{display:none}
+.shell.sb-compact .logo-sub,.shell.sb-compact .logo-app,.shell.sb-compact .nav-label,.shell.sb-compact .server-status span,.shell.sb-compact .server-status .health-badge,.shell.sb-compact .nav-group{display:none}
 .shell.sb-compact .nav-item{justify-content:center;padding:0;gap:0}
 .shell.sb-compact .server-status{justify-content:center;padding:6px 0 8px}
 
 /* ── Top bar ── */
 .topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:22px}
-.page-title{font-size:20px;font-weight:600;color:var(--ink);letter-spacing:-.01em;line-height:1.2}
-.page-sub{font-size:12px;color:var(--ink-3);margin-top:4px}
+.page-title{font-size:22px;font-weight:600;color:var(--ink);letter-spacing:-.01em;line-height:1.2}
+.page-sub{font-size:13px;color:var(--ink-3);margin-top:4px}
+.summary{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:13px;color:var(--ink-3);margin-top:6px}
+.summary b{color:var(--ink);font-weight:600}
 .topbar-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
-.live-badge{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);font-size:11px;font-weight:600;color:var(--green)}
+.live-badge{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 6px;font-size:12px;font-weight:600;color:var(--green)}
 .pulse{width:7px;height:7px;border-radius:50%;background:var(--green);animation:blink 2.5s ease-in-out infinite}
-.health-badge{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);font-size:11px;font-weight:600;color:var(--ink-2)}
+.health-badge{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 10px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);font-size:12px;font-weight:600;color:var(--ink-2)}
 .health-badge.hb-ok{color:var(--green)}
 .health-badge.hb-wake{color:var(--amber)}
 .health-badge.hb-down{color:var(--red)}
@@ -99,7 +104,7 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 
 /* ── Calendar date picker (shared: Scan Log + Driver Log) ── */
 .whcal{position:relative}
-.whcal-chip{display:inline-flex;align-items:center;gap:7px;height:30px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:0 10px;font-size:12px;font-weight:500;color:var(--ink);cursor:pointer;white-space:nowrap;user-select:none}
+.whcal-chip{display:inline-flex;align-items:center;gap:7px;height:36px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:0 10px;font-size:12px;font-weight:500;color:var(--ink);cursor:pointer;white-space:nowrap;user-select:none}
 .whcal-chip:hover{border-color:var(--line-2)}
 .whcal-chip svg{width:14px;height:14px;color:var(--ink-3);flex:none}
 .whcal-chev{color:var(--ink-4);font-size:10px}
@@ -125,7 +130,7 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .whcal-q.on{color:var(--accent);border-color:var(--accent-line);background:var(--accent-soft)}
 
 /* ── Stat strip (Driver Log + Picking Slips) ── */
-.vm-strip{display:grid;grid-template-columns:repeat(3,1fr);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);margin-bottom:20px;overflow:hidden}
+.vm-strip{display:grid;grid-template-columns:repeat(3,1fr);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);margin-bottom:20px;overflow:hidden;box-shadow:var(--shadow-card)}
 .vm-sbox{padding:14px 18px;border-right:1px solid var(--line)}
 .vm-sbox:last-child{border-right:none}
 .vm-sl{font-size:11px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3)}
@@ -157,7 +162,7 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .vm-fempty{padding:20px 16px;text-align:center;color:var(--ink-3);font-size:12px}
 
 /* ── Scan Log stats ── */
-.stats{display:grid;grid-template-columns:repeat(3,1fr);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);margin-bottom:20px;overflow:hidden}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);margin-bottom:20px;overflow:hidden;box-shadow:var(--shadow-card)}
 .stat{padding:14px 18px;border-right:1px solid var(--line);position:relative;cursor:default}
 .stat:last-child{border-right:none}
 .stat-bar,.stat-ic{display:none}
@@ -174,13 +179,15 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .tab.active{background:var(--ink);border-color:var(--ink);color:#fff}
 
 /* ── Filters ── */
-.filters{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
-.filter{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:6px 10px 7px}
-.filter:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
-.filter-label{font-size:10px;color:var(--ink-3);font-weight:600;letter-spacing:.06em;margin-bottom:2px;text-transform:uppercase}
-.filter select,.filter input{width:100%;background:transparent;border:none;color:var(--ink);font-size:13px;font-weight:500;outline:none;cursor:pointer;height:20px}
-.filter input::placeholder{color:var(--ink-4);font-weight:400}
-.filter select option{background:var(--surface);color:var(--ink)}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+.tb-field{display:flex;align-items:center;gap:8px;height:38px;padding:0 12px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);min-width:190px;cursor:text}
+.tb-field svg{width:14px;height:14px;color:var(--ink-3);flex-shrink:0}
+.tb-field input,.tb-field select{flex:1;min-width:0;border:none;background:transparent;outline:none;font-size:14px;font-weight:500;color:var(--ink)}
+.tb-field input::placeholder{color:var(--ink-4);font-weight:400}
+.tb-field select{cursor:pointer}
+.tb-field:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.tb-select{cursor:pointer;min-width:160px}
+.tb-field select option{background:var(--surface);color:var(--ink)}
 
 /* ── Toggles (legacy) ── */
 .toggles{display:flex;gap:6px;margin-bottom:16px;align-items:center;flex-wrap:wrap}
@@ -195,40 +202,40 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .export-disc:hover{border-color:var(--line-2);color:var(--ink)}
 
 /* ── Table ── */
-.table-wrap{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--line);overflow:hidden}
-.thead{display:grid;grid-template-columns:56px 78px 38px 150px 1fr 70px 110px 180px 106px 120px;padding:0 16px;height:36px;align-items:center;border-bottom:1px solid var(--line);background:var(--surface-2);overflow-y:hidden;scrollbar-gutter:stable}
+.table-wrap{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--line);overflow:hidden;box-shadow:var(--shadow-card)}
+.thead{display:grid;grid-template-columns:56px 78px 38px 150px 1fr 70px 110px 180px 106px 120px;padding:0 16px;height:40px;align-items:center;border-bottom:1px solid var(--line);background:var(--surface-2);overflow-y:hidden;scrollbar-gutter:stable}
 /* header and body reserve the same scrollbar gutter so columns line up */
 #page-log .tbody{scrollbar-gutter:stable}
-.th{font-size:11px;font-weight:600;color:var(--ink-3);letter-spacing:.04em;text-transform:uppercase}
+.th{font-size:11.5px;font-weight:600;color:var(--ink-3);letter-spacing:.04em;text-transform:uppercase}
 .tbody{}
-.row{display:grid;grid-template-columns:56px 78px 38px 150px 1fr 70px 110px 180px 106px 120px;padding:11px 16px;border-bottom:1px solid var(--line);align-items:center}
+.row{display:grid;grid-template-columns:56px 78px 38px 150px 1fr 70px 110px 180px 106px 120px;padding:12px 16px;border-bottom:1px solid var(--line);align-items:center}
 .row:last-child{border-bottom:none}
 .row:hover{background:var(--surface-2)}
 .row.flash-new{animation:flashrow 1.5s ease-out}
 @keyframes flashrow{0%{background:var(--green-soft)}100%{background:transparent}}
 .row.unscanned-row{background:var(--surface-2)}
-.method-cell{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-2);white-space:nowrap}
+.method-cell{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-2);white-space:nowrap}
 .method-cell svg{width:13px;height:13px;flex-shrink:0;color:var(--ink-3)}
 .method-empty{font-size:12px;color:var(--ink-4)}
 
-.brand-chip{border-radius:4px;padding:2px 6px;font-size:10px;font-weight:600;letter-spacing:.04em;text-align:center;background:var(--grey-soft);color:var(--ink-2);display:inline-block;font-family:var(--mono)}
-.time-cell{font-size:12px;color:var(--ink-2);font-family:var(--mono);font-variant-numeric:tabular-nums}
-.avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;flex-shrink:0;font-family:var(--mono)}
+.brand-chip{border-radius:5px;padding:3px 7px;font-size:11px;font-weight:600;letter-spacing:.04em;text-align:center;background:var(--grey-soft);color:var(--ink-2);display:inline-block;font-family:var(--mono)}
+.time-cell{font-size:13px;color:var(--ink-2);font-family:var(--mono);font-variant-numeric:tabular-nums}
+.avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0;font-family:var(--mono)}
 .avatar.dim{background:var(--grey-soft)!important;border:none!important;color:var(--ink-4)!important}
 .inv-block{}
-.inv-num{font-size:12px;font-weight:600;letter-spacing:0;font-family:var(--mono)}
+.inv-num{font-size:13px;font-weight:600;letter-spacing:0;font-family:var(--mono)}
 .inv-kia,.inv-hy{color:var(--accent)}
 .inv-progress{display:flex;align-items:center;gap:5px;margin-top:3px}
 .prog-bar-wrap{width:44px;height:3px;background:var(--line);border-radius:2px;overflow:hidden}
 .prog-bar{height:3px;border-radius:2px}
 .prog-text{font-size:10px;color:var(--ink-3);font-weight:500}
 .part-cell{min-width:0}
-.part-num{font-size:12px;font-weight:600;color:var(--ink);font-family:var(--mono);letter-spacing:0}
+.part-num{font-size:13px;font-weight:600;color:var(--ink);font-family:var(--mono);letter-spacing:0}
 .part-num.dim{color:var(--ink-4)}
-.part-desc{font-size:11.5px;color:var(--ink-3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.part-desc{font-size:12.5px;color:var(--ink-3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .part-desc.dim{color:var(--ink-4)}
 .part-qty{color:var(--ink-2);font-weight:600;font-style:normal}
-.qty-cell{font-size:12px;font-weight:600;color:var(--ink-2);font-variant-numeric:tabular-nums;text-align:center;font-family:var(--mono)}
+.qty-cell{font-size:13px;font-weight:600;color:var(--ink-2);font-variant-numeric:tabular-nums;text-align:center;font-family:var(--mono)}
 .qty-cell .qty-done{color:var(--green)}
 .qty-cell .qty-short{color:var(--amber)}
 .qty-cell .qty-over{color:var(--accent)}
@@ -237,20 +244,21 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .order-ref{font-size:12px;font-weight:500;color:var(--ink-2);font-family:var(--mono)}
 .order-ref.dim{color:var(--ink-4)}
 /* ── Status / method filter: segmented control ── */
-.status-filters{display:flex;flex-wrap:wrap;align-items:center;gap:2px;margin-bottom:10px;background:var(--grey-soft);border-radius:var(--r);padding:3px;width:fit-content;max-width:100%}
-.sf-label{font-size:10px;font-weight:600;color:var(--ink-3);letter-spacing:.06em;padding:0 10px 0 8px;flex-shrink:0;text-transform:uppercase}
-.sf-btn{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 11px;font-size:12px;font-weight:500;color:var(--ink-2);cursor:pointer;border:none;background:transparent;white-space:nowrap;user-select:none;border-radius:4px}
-.sf-btn::before{content:"";width:6px;height:6px;border-radius:50%;flex-shrink:0;background:currentColor;opacity:.55}
-.sf-btn.sf-all::before,.sf-btn.sf-undo::before,.sf-btn.sf-unscanned::before{display:none}
-.sf-btn:hover{color:var(--ink)}
-.sf-btn.active{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(23,25,28,.08);font-weight:600}
-.sf-btn.sf-confirmed::before{color:var(--green);opacity:1}
-.sf-btn.sf-manual::before,.sf-btn.sf-short::before{color:var(--amber);opacity:1}
-.sf-btn.sf-over::before{color:var(--accent);opacity:1}
-.sf-btn.sf-missing::before,.sf-btn.sf-not_found::before{color:var(--red);opacity:1}
-.note-cell{font-size:11.5px;color:var(--amber);line-height:1.4;max-width:175px;word-break:break-word;white-space:normal}
-.note-empty{font-size:12px;color:var(--ink-4)}
-.badge{display:inline-flex;align-items:center;gap:4px;border-radius:4px;padding:3px 8px;font-size:11px;font-weight:600;white-space:nowrap;letter-spacing:.01em}
+.tabs{display:flex;gap:2px;padding:4px 10px 0;border-bottom:1px solid var(--line);background:var(--surface);overflow-x:auto;flex-shrink:0}
+.tab{display:inline-flex;align-items:center;gap:7px;height:40px;padding:0 12px;font-size:13.5px;font-weight:500;color:var(--ink-3);border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer;white-space:nowrap;user-select:none}
+.tab::before{content:"";width:7px;height:7px;border-radius:50%;flex-shrink:0;background:currentColor}
+.tab.sf-all::before,.tab.sf-undo::before,.tab.sf-unscanned::before{display:none}
+.tab.sf-confirmed::before{background:var(--green)}
+.tab.sf-manual::before,.tab.sf-short::before{background:var(--amber)}
+.tab.sf-over::before{background:var(--accent)}
+.tab.sf-missing::before{background:var(--red)}
+.tab:hover{color:var(--ink)}
+.tab.active{color:var(--ink);border-bottom-color:var(--ink);font-weight:600}
+.tab-n{font-size:11.5px;font-weight:600;color:var(--ink-3);background:var(--grey-soft);border-radius:999px;padding:1px 7px;min-width:22px;text-align:center;line-height:16px}
+.tab.active .tab-n{background:var(--ink);color:#fff}
+/* legacy segmented-control classes kept for the cmd palette + JS selectors */
+.status-filters{display:none}
+.badge{display:inline-flex;align-items:center;gap:4px;border-radius:6px;padding:4px 9px;font-size:12px;font-weight:600;white-space:nowrap;letter-spacing:.01em}
 .badge-dot{display:none}
 .b-confirmed{background:var(--green-soft);color:var(--green)}
 .b-manual{background:var(--amber-soft);color:var(--amber)}
@@ -265,7 +273,7 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 
 .empty-state{padding:48px;text-align:center;color:var(--ink-3);font-size:13px}
 .footer-bar{display:flex;align-items:center;justify-content:space-between;margin-top:10px}
-.footer-txt{font-size:11px;color:var(--ink-3)}
+.footer-txt{font-size:12px;color:var(--ink-3)}
 .export-csv-btn{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:6px 12px;color:var(--ink-2);font-size:12px;font-weight:500;cursor:pointer}
 .export-csv-btn:hover{border-color:var(--line-2);color:var(--ink)}
 
@@ -468,10 +476,10 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .cmd-item:hover,.cmd-item.sel{background:var(--accent-soft);color:var(--ink)}
 .cmd-item svg{width:14px;height:14px;color:var(--ink-3);flex-shrink:0}
 .cmd-kbd{margin-left:auto;font-size:10px;color:var(--ink-3);font-family:var(--mono);background:var(--grey-soft);padding:2px 6px;border-radius:4px}
-.cmd-search-bar{display:flex;align-items:center;gap:8px;height:30px;padding:0 10px;border-radius:var(--r);border:1px solid var(--line);background:var(--surface);cursor:pointer}
+.cmd-search-bar{display:flex;align-items:center;gap:8px;height:36px;padding:0 12px;border-radius:var(--r);border:1px solid var(--line);background:var(--surface);cursor:pointer}
 .cmd-search-bar:hover{border-color:var(--line-2)}
 .cmd-search-bar svg{width:13px;height:13px;color:var(--ink-3)}
-.cmd-search-bar span{font-size:12px;color:var(--ink-4);min-width:100px}
+.cmd-search-bar span{font-size:13px;color:var(--ink-4);min-width:110px}
 .cmd-search-bar kbd{font-size:10px;color:var(--ink-3);background:var(--grey-soft);padding:2px 6px;border-radius:4px;font-family:var(--mono)}
 
 /* ── Settings panel ── */
@@ -497,7 +505,7 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .sp-switch.on{background:var(--accent)}
 .sp-switch::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 2px rgba(0,0,0,.15)}
 .sp-switch.on::after{transform:translateX(14px)}
-.gear-btn{width:30px;height:30px;border-radius:var(--r);border:1px solid var(--line);background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-3)}
+.gear-btn{width:36px;height:36px;border-radius:var(--r);border:1px solid var(--line);background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-3)}
 .gear-btn:hover{border-color:var(--line-2);color:var(--ink)}
 .gear-btn svg{width:15px;height:15px}
 .drv-chiprow{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
@@ -612,6 +620,8 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
       <div class="server-status">
         <div class="status-dot" id="conn-dot"></div>
         <span id="conn-txt">Connecting...</span>
+        <span class="sep">·</span>
+        <span class="health-badge hb-wake" id="health-badge" title="Server status"><span id="health-text">Checking…</span></span>
       </div>
       <div class="nav-item" onclick="toggleSettings()" id="nav-settings">
         <svg class="nav-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h14M3 10h14M3 14h14"/><circle cx="7" cy="6" r="1.6" fill="var(--surface)"/><circle cx="13" cy="10" r="1.6" fill="var(--surface)"/><circle cx="8.5" cy="14" r="1.6" fill="var(--surface)"/></svg>
@@ -629,6 +639,7 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
         <div>
           <div class="page-title">Scan Log</div>
           <div class="page-sub" id="log-date"></div>
+          <div class="summary"><span><b id="stat-confirmed">0</b> confirmed today</span><span><b id="stat-manual">0</b> manual</span><span><b id="stat-users">0</b> users online</span></div>
         </div>
         <div class="topbar-right">
           <div class="cmd-search-bar" onclick="toggleCmdPalette()">
@@ -640,75 +651,27 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
             <div class="whcal-chip" onclick="calToggle('scan')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3"/></svg><span id="cal-scan-label">Today</span><span class="whcal-chev">▾</span></div>
             <div class="whcal-pop" id="cal-scan-pop"></div>
           </div>
-          <div class="health-badge hb-wake" id="health-badge" title="Server status"><div class="hb-dot"></div><span id="health-text">Checking…</span></div>
-          <div class="live-badge"><div class="pulse"></div>Live</div>
-          <div class="gear-btn" onclick="toggleSettings()" title="Settings">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="2.5"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.3 3.3l1.4 1.4M11.3 11.3l1.4 1.4M3.3 12.7l1.4-1.4M11.3 4.7l1.4-1.4"/></svg>
-          </div>
         </div>
       </div>
 
-      <div class="stats">
-        <div class="stat sv-confirmed">
-          <svg class="stat-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.3 12.3l2.5 2.5 4.8-5.4"/></svg>
-          <div class="stat-bar" id="bar-confirmed" style="background:#22C55E"></div>
-          <div class="stat-label">Confirmed</div>
-          <div class="stat-val" id="stat-confirmed">0</div>
-          <div class="stat-sub">today</div>
-        </div>
-        <div class="stat sv-manual">
-          <svg class="stat-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l4-1L18 9a1.6 1.6 0 00-2.2-2.2L6 17l-2 3z"/><path d="M13.5 6.5l4 4"/></svg>
-          <div class="stat-bar" id="bar-manual" style="background:#FBBF24"></div>
-          <div class="stat-label">Manual</div>
-          <div class="stat-val" id="stat-manual">0</div>
-          <div class="stat-sub">today</div>
-        </div>
-        <div class="stat sv-users">
-          <svg class="stat-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.4"/><path d="M3.5 19a5.5 5.5 0 0111 0"/><path d="M16 6.4a3 3 0 010 5.6"/><path d="M21 19a5.4 5.4 0 00-3.6-5.1"/></svg>
-          <div class="stat-bar" id="bar-users" style="background:#3B82F6"></div>
-          <div class="stat-label">Active Users</div>
-          <div class="stat-val" id="stat-users">0</div>
-          <div class="stat-sub">online</div>
-        </div>
-      </div>
-
-      <div class="filters">
-        <div class="filter">
-          <div class="filter-label">INVOICE</div>
-          <input id="f-invoice" placeholder="e.g. L12345" oninput="applyFilters()" />
-        </div>
-        <div class="filter">
-          <div class="filter-label">PART NUMBER</div>
-          <input id="f-part" placeholder="e.g. 123456" oninput="applyFilters()" />
-        </div>
-        <div class="filter">
-          <div class="filter-label">USER</div>
-          <select id="f-user" onchange="applyFilters()"><option value="">All users</option></select>
-        </div>
-      </div>
-
-      <div class="status-filters">
-        <span class="sf-label">STATUS:</span>
-        <div class="sf-btn sf-all active" id="sf-all" onclick="setStatusFilter('')">All</div>
-        <div class="sf-btn sf-confirmed" id="sf-confirmed" onclick="setStatusFilter('confirmed')">Confirmed</div>
-        <div class="sf-btn sf-manual" id="sf-manual" onclick="setStatusFilter('manual')">Manual</div>
-        <div class="sf-btn sf-short" id="sf-short" onclick="setStatusFilter('short')">Short supply</div>
-        <div class="sf-btn sf-over" id="sf-over" onclick="setStatusFilter('over')">Over supply</div>
-        <div class="sf-btn sf-missing" id="sf-missing" onclick="setStatusFilter('missing')">Missing</div>
-        <div class="sf-btn sf-undo" id="sf-undo" onclick="setStatusFilter('undo')">Undo</div>
-        <div class="sf-btn sf-unscanned" id="sf-unscanned" onclick="setStatusFilter('unscanned')">Unscanned</div>
-      </div>
-
-      <div class="status-filters">
-        <span class="sf-label">METHOD:</span>
-        <div class="sf-btn sf-all active" id="mf-all" onclick="setMethodFilter('')">All</div>
-        <div class="sf-btn sf-undo" id="mf-barcode" onclick="setMethodFilter('barcode')">Barcode</div>
-        <div class="sf-btn sf-undo" id="mf-camera" onclick="setMethodFilter('camera')">Camera</div>
-        <div class="sf-btn sf-undo" id="mf-typed" onclick="setMethodFilter('typed')">Typed</div>
-        <div class="sf-btn sf-undo" id="mf-tap" onclick="setMethodFilter('tap')">Tap confirm</div>
+      <div class="toolbar">
+        <label class="tb-field"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5l3.5 3.5"/></svg><input id="f-invoice" placeholder="Invoice" oninput="applyFilters()" /></label>
+        <label class="tb-field"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5l3.5 3.5"/></svg><input id="f-part" placeholder="Part number" oninput="applyFilters()" /></label>
+        <label class="tb-field tb-select"><select id="f-user" onchange="applyFilters()"><option value="">All users</option></select></label>
+        <label class="tb-field tb-select"><select id="f-method" onchange="setMethodFilter(this.value)"><option value="">Any method</option><option value="barcode">Barcode</option><option value="camera">Camera</option><option value="typed">Typed</option><option value="tap">Tap confirm</option></select></label>
       </div>
 
       <div class="table-wrap">
+        <div class="tabs" id="status-tabs">
+          <div class="tab sf-btn sf-all active" id="sf-all" data-n="all" onclick="setStatusFilter('')">All<span class="tab-n">0</span></div>
+          <div class="tab sf-btn sf-confirmed" id="sf-confirmed" data-n="confirmed" onclick="setStatusFilter('confirmed')">Confirmed<span class="tab-n">0</span></div>
+          <div class="tab sf-btn sf-manual" id="sf-manual" data-n="manual" onclick="setStatusFilter('manual')">Manual<span class="tab-n">0</span></div>
+          <div class="tab sf-btn sf-short" id="sf-short" data-n="short" onclick="setStatusFilter('short')">Short supply<span class="tab-n">0</span></div>
+          <div class="tab sf-btn sf-over" id="sf-over" data-n="over" onclick="setStatusFilter('over')">Over supply<span class="tab-n">0</span></div>
+          <div class="tab sf-btn sf-missing" id="sf-missing" data-n="missing" onclick="setStatusFilter('missing')">Missing<span class="tab-n">0</span></div>
+          <div class="tab sf-btn sf-undo" id="sf-undo" data-n="undo" onclick="setStatusFilter('undo')">Undo<span class="tab-n">0</span></div>
+          <div class="tab sf-btn sf-unscanned" id="sf-unscanned" data-n="unscanned" onclick="setStatusFilter('unscanned')">Unscanned<span class="tab-n">0</span></div>
+        </div>
         <div class="thead">
           <div class="th" style="display:flex;align-items:center;gap:6px"><svg id="collapse-all-icon" onclick="toggleAllGroups()" title="Collapse/Expand all" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;cursor:pointer;flex:none;transition:transform .2s"><path d="M4 6l4 4 4-4"/></svg>BRAND</div>
           <div class="th">TIME</div>
@@ -1580,6 +1543,7 @@ function renderRow(e, isNew){
 }
 
 function renderTable(flashFirst){
+  updateStatusCounts();
   const lookup = buildPartLookup();
   const rows = [...getFiltered().map(e=>enrich(e,lookup)), ...getUnscannedRows()];
   const tbody = document.getElementById("log-tbody");
@@ -1658,11 +1622,24 @@ function setStatusFilter(action){
 }
 
 function setMethodFilter(method){
-  filters.method = method;
-  document.querySelectorAll("[id^='mf-']").forEach(b=>b.classList.remove("active"));
-  const el = document.getElementById(method===""?"mf-all":"mf-"+method);
-  if(el) el.classList.add("active");
+  filters.method = method || "";
+  const sel = document.getElementById("f-method");
+  if(sel && sel.value !== filters.method) sel.value = filters.method;
   renderTable(false);
+}
+
+// Per-status counts on the tabs — same filters as the table, minus the status itself.
+function updateStatusCounts(){
+  const saved = filters.action;
+  filters.action = "";
+  let base = [], unscanned = 0;
+  try{ base = getFiltered(); filters.action = "unscanned"; unscanned = getUnscannedRows().length; }catch{}
+  filters.action = saved;
+  const n = { all: base.length + unscanned, unscanned };
+  for(const e of base){ const a = e.action || "confirmed"; n[a] = (n[a]||0) + 1; }
+  document.querySelectorAll("#status-tabs .tab").forEach(t=>{
+    const el = t.querySelector(".tab-n"); if(el) el.textContent = n[t.dataset.n] || 0;
+  });
 }
 
 function toggleAction(action){
