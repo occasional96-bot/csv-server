@@ -780,6 +780,66 @@ app.get("/room/:roomId/updates", (req, res) => {
   res.json({ invoiceUpdates: room.invoiceUpdates || {}, invoices: room.invoices || [], focusList: room.focusList || [], pinnedIds: room.pinnedIds || [] });
 });
 
+// ── Brand resolution ─────────────────────────────────────────────────────────
+// Prefixed ids (L/F/I/E-BYDAU) give the brand directly. Panel invoices are NUMERIC;
+// their brand lives in the 2-letter PART# prefix of the panel CSV (HY86360KL000 → HY)
+// which the app strips before logging. Parse the panel CSV(s) in uploads/ into
+// inv|part → brand and inv → brand maps, cached by file mtime.
+const PREFIX_BRAND = { KI: "KIA", HY: "HY", BY: "BYD", IA: "ISUZU", NG: "NISSAN" };
+const brandFromPrefix = p => { const k = String(p || "").toUpperCase(); return PREFIX_BRAND[k] || (/^[A-Z]{2}$/.test(k) ? k : ""); };
+const brandFromId = id => {
+  const s = String(id || "").toUpperCase();
+  return s.startsWith("E-BYDAU") ? "BYD" : s.startsWith("L") ? "KIA" : s.startsWith("F") ? "HY" : /^I\d/.test(s) ? "ISUZU" : "";
+};
+const stripPartSfx = pn => String(pn || "").toUpperCase().replace(/-\d{1,3}$/, "");
+function brandSplitCsv(line) {
+  const out = []; let cur = "", q = false;
+  for (const ch of line) {
+    if (ch === '"') q = !q;
+    else if (ch === "," && !q) { out.push(cur); cur = ""; }
+    else cur += ch;
+  }
+  out.push(cur);
+  return out;
+}
+let panelBrandCache = { key: null, byInvPart: new Map(), byInv: new Map() };
+function panelBrandMaps() {
+  let files = [];
+  try { files = fs.readdirSync(UPLOAD).filter(f => /INVOICE-SCAN-APP/i.test(f) && f.endsWith(".csv")); } catch {}
+  const key = files.map(f => { try { return f + ":" + fs.statSync(path.join(UPLOAD, f)).mtimeMs; } catch { return f; } }).join("|");
+  if (key === panelBrandCache.key) return panelBrandCache;
+  const byInvPart = new Map(), byInv = new Map();
+  for (const f of files) {
+    let text = ""; try { text = fs.readFileSync(path.join(UPLOAD, f), "utf8"); } catch { continue; }
+    const lines = text.split(/\r?\n/);
+    const header = (lines[0] || "").split(",").map(h => h.replace(/"/g, "").trim().toUpperCase());
+    const iInv = header.indexOf("INV#"), iPart = header.indexOf("PART#");
+    if (iInv < 0 || iPart < 0) continue;
+    for (let i = 1; i < lines.length; i++) {
+      const cols = brandSplitCsv(lines[i]);
+      const inv = (cols[iInv] || "").trim(), raw = (cols[iPart] || "").trim();
+      if (!inv || raw.length < 3) continue;
+      const brand = brandFromPrefix(raw.slice(0, 2));
+      if (!brand) continue;
+      byInvPart.set(inv + "|" + stripPartSfx(raw.slice(2)), brand);
+      if (!byInv.has(inv)) byInv.set(inv, brand);
+    }
+  }
+  panelBrandCache = { key, byInvPart, byInv };
+  console.log("[brand] panel map rebuilt: " + byInv.size + " invoices, " + byInvPart.size + " parts");
+  return panelBrandCache;
+}
+function resolveBrand(invoiceId, partNumber, given) {
+  if (given && given !== "?") return given;
+  const pfx = brandFromId(invoiceId);
+  if (pfx) return pfx;
+  const inv = String(invoiceId || "").trim();
+  const { byInvPart, byInv } = panelBrandMaps();
+  return byInvPart.get(inv + "|" + stripPartSfx(partNumber)) || byInv.get(inv) || "?";
+}
+// Read-time backfill for rows logged as "?" by older app builds. Nothing is rewritten.
+const withBrand = e => (e.brand && e.brand !== "?") ? e : { ...e, brand: resolveBrand(e.invoiceId, e.partNumber, e.brand) };
+
 // ── Scan log endpoints ────────────────────────────────────────────────────────
 app.post("/log-scan", (req, res) => {
   const { initials, color, invoiceId, orderRef, brand, partNumber, description, action, method, note, qty, confirmed, lineNo, customer } = req.body;
@@ -794,7 +854,7 @@ app.post("/log-scan", (req, res) => {
     color: color || "#8BA3BE",
     invoiceId,
     orderRef: orderRef || "",
-    brand: brand || (invoiceId.startsWith("L") ? "KIA" : invoiceId.startsWith("F") ? "HY" : "?"),
+    brand: resolveBrand(invoiceId, partNumber, brand),
     partNumber,
     description: description || "",
     action, // "confirmed" | "manual" | "not_found" | "short" | "over" | "missing" | "undo" | "on_board" | "off_board"
@@ -813,7 +873,7 @@ app.post("/log-scan", (req, res) => {
 });
 
 app.get("/scan-logs", (req, res) => {
-  let log = purgeScanLog(readScanLog());
+  let log = purgeScanLog(readScanLog()).map(withBrand);
   const { brand, invoiceId, initials, partNumber, action, method, from, to } = req.query;
   if (brand)       log = log.filter(e => e.brand === brand);
   if (invoiceId)   log = log.filter(e => e.invoiceId.includes(invoiceId.toUpperCase()));
@@ -875,7 +935,7 @@ app.post("/sync-invoices", (req, res) => {
     const entry = {
       id: inv.id,
       orderRef: inv.orderRef || "",
-      brand: inv.id.startsWith("L") ? "KIA" : inv.id.startsWith("F") ? "HY" : "?",
+      brand: resolveBrand(inv.id, "", inv.brand),
       savedAt: now,
       parts: (inv.parts || []).map(p => ({
         partNumber: p.partNumber,
