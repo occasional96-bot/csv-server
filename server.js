@@ -3,11 +3,16 @@ const multer     = require("multer");
 const path       = require("path");
 const fs         = require("fs");
 const http       = require("http");
+const crypto     = require("crypto");
 const { WebSocketServer } = require("ws");
 
 const app    = express();
 const server = http.createServer(app);
-const wss    = new WebSocketServer({ server });
+const wss    = new WebSocketServer({ server, verifyClient: (info) => {
+  // Sockets can wipe boards/invoices (clear_all_data), so they carry the key too.
+  let k = ""; try { k = new URL(info.req.url, "http://x").searchParams.get("key") || ""; } catch {}
+  return keyOk(k);
+} });
 
 const PORT      = process.env.PORT || 3000;
 const DATA_DIR  = fs.existsSync("/data") ? "/data" : __dirname;
@@ -29,6 +34,17 @@ const SITES = {
               files: ["kia", "inve"],
               url: "https://csv-server-essendon-production.up.railway.app" },
 };
+// ── Access key (optional lock) ────────────────────────────────────────────────
+// Set API_KEY on Railway and every write (POST/PUT/DELETE) plus every WebSocket
+// needs it: the phone app sends it automatically (X-Api-Key header / ?key=), the
+// dashboard asks for it once per browser. Unset = open, exactly as before.
+const API_KEY = String(process.env.API_KEY || "").trim();
+const keyOf = (req) => String(req.get("x-api-key") || (req.query && req.query.key) || "");
+function keyOk(k) {
+  if (!API_KEY) return true;
+  const a = Buffer.from(String(k || "")), b = Buffer.from(API_KEY);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
 const SITE_KEY = String(process.env.SITE_KEY || "werribee").toLowerCase();
 const SITE = SITES[SITE_KEY] || SITES.werribee;
 const siteInfo = () => ({ ...SITE, retentionDays: siteSettings().retentionDays, sites: Object.values(SITES).map(s => ({ key: s.key, name: s.name, url: s.url })) });
@@ -709,10 +725,20 @@ app.use(express.json({ limit: "25mb" }));
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,DELETE,PUT,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Api-Key");
+  res.setHeader("X-Content-Type-Options", "nosniff");
   if (req.method === "OPTIONS") return res.sendStatus(200);
   next();
 });
+// Every write needs the key once API_KEY is set. Reads stay open: phones download
+// CSVs and the dashboard polls without a key.
+app.use((req, res, next) => {
+  if (req.method === "GET" || req.method === "HEAD") return next();
+  if (keyOk(keyOf(req))) return next();
+  console.log(`[auth] refused ${req.method} ${req.path} from ${req.ip}`);
+  res.status(401).json({ error: "Access key required" });
+});
+app.get("/auth-check", (req, res) => res.json({ locked: !!API_KEY, ok: keyOk(keyOf(req)) }));
 
 // ── Filename sanitizer (prevent path traversal) ──────────────────────────
 function safeName(raw) {

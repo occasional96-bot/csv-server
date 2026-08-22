@@ -363,49 +363,54 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .no-boards{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:48px;text-align:center;color:var(--ink-3);font-size:14px;box-shadow:var(--shadow-card)}
 .boards-sub{font-size:13px;color:var(--ink-3);margin-bottom:16px}
 
-/* ── Unified import rows ── */
+/* ── Import CSV rows ── */
 .ufiles{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;margin-bottom:14px;box-shadow:var(--shadow-card)}
-.ufiles-head{display:grid;grid-template-columns:28px 1.3fr 1.2fr 1.8fr 90px 110px;gap:14px;align-items:center;padding:0 16px;height:40px;background:var(--surface-2);border-bottom:1px solid var(--line)}
-.ufiles-head div{font-size:11.5px;font-weight:600;color:var(--ink-3);letter-spacing:.04em;text-transform:uppercase}
+.ufiles-head{display:grid;grid-template-columns:1.25fr 170px 1.6fr 96px 84px;gap:16px;align-items:center;padding:0 44px 0 18px;height:38px;border-bottom:1px solid var(--line)}
+.ufiles-head div{font-size:12px;font-weight:500;color:var(--ink-3)}
+.ufiles-head div:nth-child(4){text-align:right}
 .urow{border-bottom:1px solid var(--line);position:relative}
 .urow:last-child{border-bottom:none}
-.urow:hover{background:var(--surface-2)}
-.urow-main{display:grid;grid-template-columns:28px 1.3fr 1.2fr 1.8fr 90px 110px;gap:14px;align-items:center;padding:14px 36px 14px 16px}
-.urow-toggle{position:absolute;top:12px;right:10px;width:24px;height:24px;border-radius:var(--r);display:flex;align-items:center;justify-content:center;color:var(--ink-4);cursor:pointer;user-select:none;z-index:3}
+.urow-main{display:grid;grid-template-columns:1.25fr 170px 1.6fr 96px 84px;gap:16px;align-items:center;padding:13px 44px 13px 18px}
+.urow-toggle{position:absolute;top:50%;right:12px;transform:translateY(-50%);width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--ink-4);cursor:pointer;user-select:none;z-index:3}
 .urow-toggle:hover{background:var(--grey-soft);color:var(--ink)}
-.urow-toggle svg{width:12px;height:12px;transition:transform .2s;stroke:currentColor;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.urow-toggle svg{width:12px;height:12px;transition:transform .15s;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .urow.collapsed .urow-toggle svg{transform:rotate(-90deg)}
-.urow.collapsed .urow-main{grid-template-columns:28px 1fr;padding:8px 36px 8px 16px;opacity:.55}
-.urow.collapsed .urow-main > *:nth-child(n+3){display:none}
-.urow.collapsed .ufile .ufname{display:none}
+.urow.collapsed .urow-main{grid-template-columns:1fr;padding:9px 44px 9px 18px}
+.urow.collapsed .urow-main > *:nth-child(n+2){display:none}
+.urow.collapsed .uname{font-weight:500;color:var(--ink-3);font-size:13px}
+.urow.collapsed .udot{display:none}
+.urow.collapsed .ufname{display:none}
 .urow.collapsed .upath-stale{display:none !important}
-.urow.collapsed:hover .urow-main{opacity:.8}
-.udot{width:10px;height:10px;border-radius:50%;margin:0 auto}
+.udot{width:8px;height:8px;border-radius:50%;flex:none;display:inline-block}
 .ufile{min-width:0}
-.uname{font-size:14px;font-weight:600;color:var(--ink)}
-.ufname{font-size:12px;color:var(--ink-3);margin-top:2px;font-family:var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ufname.empty{color:var(--ink-4);font-family:inherit}
-.ustatus-badge{display:inline-block;font-size:12px;font-weight:600;padding:4px 9px;border-radius:6px}
-.ustatus-meta{font-size:12px;color:var(--ink-3);margin-top:4px}
-.upath{display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:3px 3px 3px 10px;min-width:0}
+.uname{font-size:14px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:8px;line-height:1.3}
+.ufname{font-size:12px;color:var(--ink-3);margin-top:2px;padding-left:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ufname.empty{color:var(--ink-4)}
+.ustatus-badge{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:500;padding:0;border-radius:0;background:transparent !important;line-height:1.3}
+.ustatus-badge::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+.ustatus-badge.sb-live{color:var(--green)}
+.ustatus-badge.sb-outdated{color:var(--amber)}
+.ustatus-badge.sb-unknown{color:var(--ink-3)}
+.ustatus-badge.sb-unknown::before{background:transparent;border:1.5px solid currentColor;width:6px;height:6px}
+.ustatus-meta{font-size:12px;color:var(--ink-3);margin-top:2px;padding-left:14px}
+.upath{display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:2px 2px 2px 10px;min-width:0;height:34px}
 .upath:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 .upath:hover{border-color:var(--line-2)}
-.upath-input{flex:1;min-width:0;background:transparent;border:none;color:var(--ink);font-size:12.5px;font-family:var(--mono);outline:none;padding:5px 0}
+.upath-input{flex:1;min-width:0;background:transparent;border:none;color:var(--ink);font-size:13px;font-family:var(--sans);outline:none;padding:0}
 .upath-input::placeholder{color:var(--ink-4)}
-.ubrowse{background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:5px 11px;font-size:12px;font-weight:600;color:var(--ink-2);cursor:pointer;white-space:nowrap}
-.ubrowse:hover{border-color:var(--line-2);color:var(--ink)}
-.usync-time{font-size:12px;color:var(--ink-3);font-variant-numeric:tabular-nums;text-align:right}
-.usync-btn{padding:7px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;text-align:center;border:1px solid transparent;user-select:none;display:inline-block}
+.ubrowse{background:transparent;border:none;border-left:1px solid var(--line);border-radius:0 6px 6px 0;height:28px;padding:0 11px;font-size:12.5px;font-weight:500;color:var(--ink-2);cursor:pointer;white-space:nowrap;display:flex;align-items:center}
+.ubrowse:hover{background:var(--surface-2);color:var(--ink)}
+.usync-time{font-size:12.5px;color:var(--ink-3);text-align:right}
+.usync-btn{height:32px;line-height:30px;padding:0 12px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;text-align:center;border:1px solid transparent;user-select:none;display:inline-block;width:100%}
 .usync-btn.sa-ready{background:var(--surface);color:var(--accent);border-color:var(--accent-line)}
-.usync-btn.sa-ready:hover{background:var(--accent-soft)}
-.usync-btn.sa-notset{background:var(--grey-soft);color:var(--ink-4);cursor:not-allowed}
-.upath-stale{margin:0 16px 12px 50px;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;border:1px solid var(--line);display:inline-block;width:auto;max-width:calc(100% - 66px);background:var(--surface-2);color:var(--ink-2)}
-.upath-stale.st-warn{background:var(--amber-soft);border-color:var(--amber);color:var(--amber)}
-.upath-stale.st-bad{background:var(--red-soft);border-color:var(--red);color:var(--red)}
-.upath-stale.st-ok{background:var(--green-soft);border-color:var(--green);color:var(--green)}
-.urow.u-other .udot{background:transparent;border:2px dashed var(--line-2);width:12px;height:12px}
-.urow.u-other .uname{color:var(--ink-2)}
-.ubar{display:flex;align-items:center;gap:14px;padding:14px 18px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);margin-bottom:10px;box-shadow:var(--shadow-card)}
+.usync-btn.sa-ready:hover{background:var(--accent-soft);border-color:var(--accent)}
+.usync-btn.sa-notset{background:transparent;color:var(--ink-4);border-color:var(--line);cursor:not-allowed}
+.upath-stale{margin:-4px 18px 12px 34px;font-size:12.5px;font-weight:500;color:var(--ink-3);display:block;width:auto}
+.upath-stale.st-warn{color:var(--amber)}
+.upath-stale.st-bad{color:var(--red)}
+.upath-stale.st-ok{display:none !important}
+.urow.u-other .uname{color:var(--ink-2);font-weight:500}
+.ubar{display:flex;align-items:center;gap:14px;padding:12px 12px 12px 18px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);margin-bottom:10px;box-shadow:var(--shadow-card)}
 .ubar-info{flex:1;font-size:13px;color:var(--ink-3)}
 .ubar-info b{color:var(--ink);font-weight:600}
 .ubar-info .warn{color:var(--amber)}
@@ -493,6 +498,16 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .sp-kv:last-child{border-bottom:none}
 .sp-kv b{color:var(--ink);font-weight:600;display:inline-flex;align-items:center;gap:7px;text-align:right;min-width:0}
 .sp-kv .health-badge{height:auto;padding:0;border:none;background:none;font-size:13px}
+.sp-link{background:none;border:none;color:var(--accent);font:inherit;font-weight:600;cursor:pointer;padding:0 0 0 6px}
+.sp-link:hover{color:var(--accent-ink)}
+.key-gate{display:none;position:fixed;inset:0;background:rgba(23,25,28,.45);z-index:400;align-items:center;justify-content:center}
+.key-gate.show{display:flex}
+.key-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow-pop);padding:24px;width:340px}
+.key-card h3{font-size:16px;font-weight:600;margin:0 0 4px}
+.key-card p{font-size:13px;color:var(--ink-3);margin:0 0 14px}
+.key-card input{width:100%;height:38px;border:1px solid var(--line-2);border-radius:8px;padding:0 12px;font:inherit;font-size:14px;outline:none;margin-bottom:12px}
+.key-card input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.key-card button{width:100%}
 .sp-kv .sp-kv-sel{min-width:0;width:110px;height:30px;padding:0 8px;flex:none;background:var(--surface)}
 .sp-kv .sp-kv-sel select{font-size:13px;font-weight:600}
 .sp-field{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:5px 0;font-size:13.5px;color:var(--ink-2)}
@@ -544,10 +559,9 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
   .thead,.row{grid-template-columns:44px 70px 32px 100px minmax(0,1fr) 60px 116px}
   .th:nth-child(7),.row>*:nth-child(7){display:none}
   .th:nth-child(8),.row>*:nth-child(8){display:none}
-  .ufiles-head,.urow-main{grid-template-columns:20px 1fr 100px;gap:10px;padding:10px}
+  .ufiles-head,.urow-main{grid-template-columns:1fr 120px 84px;gap:10px;padding:10px 40px 10px 14px}
   .ufiles-head>*:nth-child(3),.urow-main>*:nth-child(3),
-  .ufiles-head>*:nth-child(4),.urow-main>*:nth-child(4),
-  .ufiles-head>*:nth-child(5),.urow-main>*:nth-child(5){display:none}
+  .ufiles-head>*:nth-child(4),.urow-main>*:nth-child(4){display:none}
   .ubar{flex-direction:column;align-items:stretch;gap:10px}
   .filters{grid-template-columns:repeat(2,1fr)}
   .status-filters{width:100%}
@@ -686,20 +700,19 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
       <div class="topbar">
         <div>
           <div class="page-title">Import CSV</div>
-          <div class="page-sub">Upload the parts and invoice files — every device updates instantly</div>
+          <div class="page-sub">Parts and invoice files. Sync a file and every phone has it straight away.</div>
         </div>
       </div>
 
       <div class="ufiles">
         <div class="ufiles-head">
-          <div></div><div>FILE</div><div>SERVER</div><div>LOCAL PATH</div><div>LAST SYNC</div><div></div>
+          <div>File</div><div>On server</div><div>Local file</div><div>Last sync</div><div></div>
         </div>
 
         <!-- KIA Parts -->
-        <div class="urow" id="urow-kia">
+        <div class="urow" id="urow-kia" data-rowkey="kia">
           <div class="urow-main">
-            <div class="udot" style="background:var(--accent)"></div>
-            <div class="ufile"><div class="uname">KIA Parts</div><div class="ufname" id="fn-kia">stdpartski.csv</div></div>
+            <div class="ufile"><div class="uname"><span class="udot" style="background:var(--accent)"></span>KIA Parts</div><div class="ufname" id="fn-kia">stdpartski.csv</div></div>
             <div><div class="ustatus-badge sbadge sb-unknown" id="sbadge-kia">Checking…</div><div class="ustatus-meta" id="meta-kia">—</div></div>
             <div class="upath">
               <input class="upath-input" id="pi-kia" placeholder="stdpartski.csv" oninput="savePaths()" />
@@ -714,10 +727,9 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
         </div>
 
         <!-- Hyundai Parts -->
-        <div class="urow" id="urow-hy">
+        <div class="urow" id="urow-hy" data-rowkey="hy">
           <div class="urow-main">
-            <div class="udot" style="background:var(--amber)"></div>
-            <div class="ufile"><div class="uname">Hyundai Parts</div><div class="ufname" id="fn-hy">stdpartshy.csv</div></div>
+            <div class="ufile"><div class="uname"><span class="udot" style="background:var(--amber)"></span>Hyundai Parts</div><div class="ufname" id="fn-hy">stdpartshy.csv</div></div>
             <div><div class="ustatus-badge sbadge sb-unknown" id="sbadge-hy">Checking…</div><div class="ustatus-meta" id="meta-hy">—</div></div>
             <div class="upath">
               <input class="upath-input" id="pi-hy" placeholder="stdpartshy.csv" oninput="savePaths()" />
@@ -734,10 +746,9 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
         <!-- Invoice Data (removed from UI, kept in KEYS/config for backend compat) -->
 
         <!-- Invoice Data E -->
-        <div class="urow" id="urow-inve">
+        <div class="urow" id="urow-inve" data-rowkey="inve">
           <div class="urow-main">
-            <div class="udot" style="background:var(--teal)"></div>
-            <div class="ufile"><div class="uname">Invoice Data E</div><div class="ufname" id="fn-inve">04E-INVOICE-SCAN-APP_Data.csv</div></div>
+            <div class="ufile"><div class="uname"><span class="udot" style="background:var(--teal)"></span>Invoice Data E</div><div class="ufname" id="fn-inve">04E-INVOICE-SCAN-APP_Data.csv</div></div>
             <div><div class="ustatus-badge sbadge sb-unknown" id="sbadge-inve">Checking…</div><div class="ustatus-meta" id="meta-inve">—</div></div>
             <div class="upath">
               <input class="upath-input" id="pi-inve" placeholder="04E-INVOICE-SCAN-APP_Data.csv" oninput="savePaths()" />
@@ -752,13 +763,12 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
         </div>
 
         <!-- Generic slot 1 -->
-        <div class="urow u-other">
+        <div class="urow u-other" id="urow-other1" data-rowkey="other1">
           <div class="urow-main">
-            <div class="udot"></div>
-            <div class="ufile"><div class="uname">Other File 1</div><div class="ufname empty" id="fn-other1">Pick any file…</div></div>
+            <div class="ufile"><div class="uname"><span class="udot" style="background:var(--line-2)"></span>Other File 1</div><div class="ufname empty" id="fn-other1">Optional — any extra CSV</div></div>
             <div><div class="ustatus-badge sbadge sb-unknown" id="sbadge-other1">No file</div><div class="ustatus-meta" id="meta-other1">—</div></div>
             <div class="upath">
-              <input class="upath-input" id="pi-other1" placeholder="Pick any file via Browse" oninput="savePaths()" />
+              <input class="upath-input" id="pi-other1" placeholder="Choose a file" oninput="savePaths()" />
               <div class="ubrowse" onclick="browseDirect('other1')">Browse</div>
               <input type="file" id="pf-other1" class="dz-input" onchange="pathBrowse(this,'other1')" />
             </div>
@@ -770,13 +780,12 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
         </div>
 
         <!-- Generic slot 2 -->
-        <div class="urow u-other">
+        <div class="urow u-other" id="urow-other2" data-rowkey="other2">
           <div class="urow-main">
-            <div class="udot"></div>
-            <div class="ufile"><div class="uname">Other File 2</div><div class="ufname empty" id="fn-other2">Pick any file…</div></div>
+            <div class="ufile"><div class="uname"><span class="udot" style="background:var(--line-2)"></span>Other File 2</div><div class="ufname empty" id="fn-other2">Optional — any extra CSV</div></div>
             <div><div class="ustatus-badge sbadge sb-unknown" id="sbadge-other2">No file</div><div class="ustatus-meta" id="meta-other2">—</div></div>
             <div class="upath">
-              <input class="upath-input" id="pi-other2" placeholder="Pick any file via Browse" oninput="savePaths()" />
+              <input class="upath-input" id="pi-other2" placeholder="Choose a file" oninput="savePaths()" />
               <div class="ubrowse" onclick="browseDirect('other2')">Browse</div>
               <input type="file" id="pf-other2" class="dz-input" onchange="pathBrowse(this,'other2')" />
             </div>
@@ -796,7 +805,7 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
         </div>
         <div class="hover-tip" style="flex-shrink:0">
           <button class="big-sync-btn" onclick="syncNow()">Sync &amp; Push to All Devices</button>
-          <div class="tip-chip"><b>Sync &amp; Push</b>Uploads your CSV files to the server and pushes updates to all connected devices instantly.</div>
+          <div class="tip-chip"><b>Sync &amp; Push</b>Uploads every file with a local path and pushes it to all connected devices.</div>
         </div>
       </div>
     </div><!-- /page-import -->
@@ -979,6 +988,7 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 </template>
 
 <!-- Command Palette Overlay -->
+<div class="key-gate" id="key-gate"><div class="key-card"><h3>Access key</h3><p>This server is locked. Enter the warehouse access key once for this browser.</p><input id="key-input" type="password" placeholder="Access key" onkeydown="if(event.key==='Enter')saveKey()"><button class="big-sync-btn" style="margin:0" onclick="saveKey()">Unlock</button></div></div>
 <div class="cmd-overlay" id="cmd-overlay" onclick="if(event.target===this)toggleCmdPalette()">
   <div class="cmd-box">
     <input class="cmd-input" id="cmd-input" placeholder="Type a command or search..." oninput="filterCmdPalette()" onkeydown="cmdKeyNav(event)" autocomplete="off" />
@@ -1011,6 +1021,7 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
       <div class="sp-kv"><span>Server</span><b><span class="health-badge hb-wake" id="health-badge"><span id="health-text">Checking…</span></span></b></div>
       <div class="sp-kv"><span>Last update</span><b id="sp-last-update">—</b></div>
       <div class="sp-kv"><span>Site</span><b id="sp-site">—</b></div>
+      <div class="sp-kv"><span>Access key</span><b><span id="sp-key">—</span> <button class="sp-link" onclick="showKeyGate()">Change</button></b></div>
       <div class="sp-kv"><span>Scan log kept</span><label class="tb-field tb-select sp-kv-sel"><select id="sp-retention" onchange="setRetention(this.value)"><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option><option value="60">60 days</option><option value="90">90 days</option></select></label></div>
     </div>
     <div class="sp-btnrow"><button class="sp-btn2" onclick="spReconnect()">Reconnect</button><button class="sp-btn2" onclick="spRefresh()">Refresh data</button></div>
@@ -1093,7 +1104,32 @@ document.title = "Warehouse PRO — " + SITE.code + " " + SITE.name;
   }
 }
 const SERVER = (location.protocol === "file:" || location.hostname === "localhost") ? SITE.url : location.origin;
-const WS_URL = SERVER.replace(/^http/, "ws");
+// Access key: only asked for when the server has API_KEY set (Settings → Server → Access key).
+const API_KEY_LS = "wh_pro_api_key";
+let apiKey = localStorage.getItem(API_KEY_LS) || "";
+{ const _fetch = window.fetch.bind(window);
+  window.fetch = (url, opts) => {
+    if(typeof url === "string" && url.startsWith(SERVER)){
+      opts = Object.assign({}, opts || {}); opts.headers = Object.assign({}, opts.headers || {}, apiKey ? { "X-Api-Key": apiKey } : {});
+    }
+    return _fetch(url, opts).then(r => { if(r.status === 401) showKeyGate(); return r; });
+  };
+}
+const WS_URL = SERVER.replace(/^http/, "ws") + (apiKey ? "/?key=" + encodeURIComponent(apiKey) : "");
+function showKeyGate(){
+  const g = document.getElementById("key-gate"); if(!g || g.classList.contains("show")) return;
+  g.classList.add("show"); const i = document.getElementById("key-input"); if(i){ i.value = ""; setTimeout(()=>i.focus(), 50); }
+}
+function saveKey(){
+  const v = (document.getElementById("key-input").value || "").trim(); if(!v) return;
+  localStorage.setItem(API_KEY_LS, v); location.reload();
+}
+async function checkKey(){
+  try{ const r = await fetch(SERVER+"/auth-check",{cache:"no-store"}); const j = await r.json();
+    const el = document.getElementById("sp-key"); if(el) el.textContent = j.locked ? (j.ok ? "Set on this browser" : "Missing") : "Off (server open)";
+    if(j.locked && !j.ok) showKeyGate();
+  }catch{}
+}
 
 // ── State ──────────────────────────────────────────────────────────────────
 let allLogs = [];
@@ -1716,7 +1752,7 @@ async function loadFileMeta(){
     const badge  = document.getElementById("sbadge-"+k);
     const uclass = "ustatus-badge sbadge ";
     if(!fn){
-      if(metaEl) metaEl.textContent="Pick a file to begin";
+      if(metaEl) metaEl.textContent="Nothing uploaded";
       if(badge){ badge.className=uclass+"sb-unknown"; badge.textContent="No file"; }
       continue;
     }
@@ -1726,16 +1762,16 @@ async function loadFileMeta(){
       if(d.uploadedAt){
         const age = Date.now()-d.uploadedAt;
         const days = Math.floor(age/86400000);
-        const timeStr = new Date(d.uploadedAt).toLocaleTimeString("en-AU",{hour:"2-digit",minute:"2-digit"});
+        const timeStr = new Date(d.uploadedAt).toLocaleTimeString("en-AU",{hour:"numeric",minute:"2-digit"});
         const dateStr = fmtDate(d.uploadedAt);
-        const label = age<86400000 ? "Today at "+timeStr : days===1 ? "Yesterday at "+timeStr : dateStr+" at "+timeStr;
-        if(metaEl) metaEl.textContent="Uploaded: "+label;
+        const label = age<86400000 ? "Today "+timeStr : days===1 ? "Yesterday "+timeStr : dateStr+" "+timeStr;
+        if(metaEl) metaEl.textContent=label;
         if(badge){
           badge.className=uclass+(age<86400000?"sb-live":"sb-outdated");
           badge.textContent=age<86400000?"Live · "+fmtAge(age):"Outdated · "+days+"d";
         }
       } else {
-        if(metaEl) metaEl.textContent="Not yet uploaded";
+        if(metaEl) metaEl.textContent="Sync to upload";
         if(badge){ badge.className=uclass+"sb-unknown"; badge.textContent="Not uploaded"; }
       }
     }catch{
@@ -1906,7 +1942,7 @@ async function checkStaleWarning(k){
   if(!uploadedAt){
     // Can't reach server — show neutral
     el.className="upath-stale";
-    el.textContent="Cannot reach server to compare file";
+    el.textContent="Can't reach the server to compare";
     return;
   }
 
@@ -1915,7 +1951,7 @@ async function checkStaleWarning(k){
     const diffMins = Math.floor((Date.now()-localModified)/60000);
     const age = diffMins < 1 ? "just now" : diffMins < 60 ? diffMins+"m ago" : Math.floor(diffMins/60)+"h ago";
     el.className="upath-stale st-warn";
-    el.textContent="⚠ Local file updated "+age+" — server is outdated, re-upload needed";
+    el.textContent="Local file changed "+age+" — sync to update the server";
     return;
   }
 
@@ -1927,14 +1963,14 @@ async function checkStaleWarning(k){
 
   if(upDate < todayStart && upDate >= yesterdayStart){
     el.className="upath-stale st-warn";
-    el.textContent="⚠ Server last updated yesterday — check if a newer file is available";
+    el.textContent="Server copy is from yesterday — sync if there's a newer file";
     return;
   }
 
   if(upDate < yesterdayStart){
     el.className="upath-stale st-bad";
     const days = Math.floor((now - upDate)/86400000);
-    el.textContent="⚠ Server last updated "+days+" days ago — check if a newer file is available";
+    el.textContent="Server copy is "+days+" days old — sync if there's a newer file";
     return;
   }
 
@@ -2410,7 +2446,13 @@ async function clearAllData(){
 const HIDDEN_ROWS_KEY = "wh_pro_hidden_rows";
 const CHEVRON_SVG = '<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>';
 // Empty "Other File" slots start collapsed until someone opens them (saved per browser).
-function getHiddenRows(){ try{ const raw=localStorage.getItem(HIDDEN_ROWS_KEY); return raw ? JSON.parse(raw) : ["other1","other2"]; }catch{ return []; } }
+function getHiddenRows(){
+  // Empty "Other" slots stay collapsed until a file is actually picked for them.
+  let saved=null; try{ const raw=localStorage.getItem(HIDDEN_ROWS_KEY); saved = raw ? JSON.parse(raw) : null; }catch{}
+  const set = new Set(saved || ["other1","other2"]);
+  for(const k of ["other1","other2"]) if(!fnFor(k)) set.add(k);
+  return [...set];
+}
 function setHiddenRows(arr){ localStorage.setItem(HIDDEN_ROWS_KEY, JSON.stringify(arr)); }
 function toggleRowHidden(k, ev){
   if(ev) ev.stopPropagation();
@@ -2430,9 +2472,8 @@ function applyHiddenRows(){
 }
 function initRowToggles(){
   const rows = document.querySelectorAll(".ufiles .urow");
-  rows.forEach((row, i)=>{
-    const k = KEYS[i]; if(!k) return;
-    row.setAttribute("data-rowkey", k);
+  rows.forEach((row)=>{
+    const k = row.getAttribute("data-rowkey"); if(!k || !KEYS.includes(k)) return;
     if(!row.querySelector(".urow-toggle")){
       const btn = document.createElement("div");
       btn.className = "urow-toggle";
@@ -2723,6 +2764,7 @@ async function setRetention(v){
     loadLogs();
   }catch(e){ showToast("Could not save retention: "+e.message,"error"); const sel=document.getElementById("sp-retention"); if(sel) sel.value=String(SITE.retentionDays||14); }
 }
+checkKey();
 function spStampUpdate(){ const el=document.getElementById("sp-last-update"); if(el) el.textContent=fmtTime(Date.now()); }
 function spReconnect(){ try{ if(ws) ws.close(); }catch{} pingServer(); showToast("Reconnecting…","info"); }
 function spRefresh(){ loadInvoices().then(()=>{ loadLogs(); loadStats(); }); showToast("Refreshing data…","info"); }
