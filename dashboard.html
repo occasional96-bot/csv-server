@@ -138,12 +138,12 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .vm-sv.amber{color:var(--amber)}.vm-sv.green{color:var(--green)}.vm-sv.blue{color:var(--accent)}.vm-sv.teal{color:var(--teal)}
 
 /* ── Activity feed (Driver Log + Picking Slips) ── */
-.vm-feed{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;margin-top:20px}
+.vm-feed{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;margin-top:20px;box-shadow:var(--shadow-card)}
 .vm-feed-head{display:flex;align-items:center;gap:9px;padding:11px 16px;cursor:pointer;user-select:none}
 .vm-feed-head.divide{border-bottom:1px solid var(--line)}
-.vm-feed-title{font-size:12px;font-weight:600;color:var(--ink)}
-.vm-feed-count{font-size:11px;color:var(--ink-3)}
-.vm-frow{display:flex;align-items:center;gap:12px;padding:9px 16px;border-bottom:1px solid var(--line);font-size:12px}
+.vm-feed-title{font-size:13px;font-weight:600;color:var(--ink)}
+.vm-feed-count{font-size:12px;color:var(--ink-3)}
+.vm-frow{display:flex;align-items:center;gap:12px;padding:9px 16px;border-bottom:1px solid var(--line);font-size:13px}
 .vm-frow:last-child{border-bottom:none}
 .vm-ftime{font-family:var(--mono);font-size:11px;color:var(--ink-3);width:96px;flex:none;font-variant-numeric:tabular-nums}
 .vm-fav{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:9px;font-weight:600;flex:none;font-family:var(--mono)}
@@ -159,7 +159,7 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .vm-fbadge.red{color:var(--red);background:var(--red-soft)}
 .vm-del{color:var(--ink-4);font-size:11px;font-weight:600;padding:3px 8px;border-radius:var(--r);flex:none;cursor:pointer}
 .vm-del:hover{color:var(--red);background:var(--red-soft)}
-.vm-fempty{padding:20px 16px;text-align:center;color:var(--ink-3);font-size:12px}
+.vm-fempty{padding:20px 16px;text-align:center;color:var(--ink-3);font-size:13px}
 
 /* ── Scan Log stats ── */
 .stats{display:grid;grid-template-columns:repeat(3,1fr);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);margin-bottom:20px;overflow:hidden;box-shadow:var(--shadow-card)}
@@ -244,18 +244,7 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .order-ref{font-size:12px;font-weight:500;color:var(--ink-2);font-family:var(--mono)}
 .order-ref.dim{color:var(--ink-4)}
 /* ── Status / method filter: segmented control ── */
-.tabs{display:flex;gap:2px;padding:4px 10px 0;border-bottom:1px solid var(--line);background:var(--surface);overflow-x:auto;flex-shrink:0}
-.tab{display:inline-flex;align-items:center;gap:7px;height:40px;padding:0 12px;font-size:13.5px;font-weight:500;color:var(--ink-3);border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer;white-space:nowrap;user-select:none}
-.tab::before{content:"";width:7px;height:7px;border-radius:50%;flex-shrink:0;background:currentColor}
-.tab.sf-all::before,.tab.sf-undo::before,.tab.sf-unscanned::before{display:none}
-.tab.sf-confirmed::before{background:var(--green)}
-.tab.sf-manual::before,.tab.sf-short::before{background:var(--amber)}
-.tab.sf-over::before{background:var(--accent)}
-.tab.sf-missing::before{background:var(--red)}
-.tab:hover{color:var(--ink)}
-.tab.active{color:var(--ink);border-bottom-color:var(--ink);font-weight:600}
-.tab-n{font-size:11.5px;font-weight:600;color:var(--ink-3);background:var(--grey-soft);border-radius:999px;padding:1px 7px;min-width:22px;text-align:center;line-height:16px}
-.tab.active .tab-n{background:var(--ink);color:#fff}
+.status-filters,.tabs{display:none}
 /* legacy segmented-control classes kept for the cmd palette + JS selectors */
 .status-filters{display:none}
 .badge{display:inline-flex;align-items:center;gap:4px;border-radius:6px;padding:4px 9px;font-size:12px;font-weight:600;white-space:nowrap;letter-spacing:.01em}
@@ -658,20 +647,11 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
         <label class="tb-field"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5l3.5 3.5"/></svg><input id="f-invoice" placeholder="Invoice" oninput="applyFilters()" /></label>
         <label class="tb-field"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5l3.5 3.5"/></svg><input id="f-part" placeholder="Part number" oninput="applyFilters()" /></label>
         <label class="tb-field tb-select"><select id="f-user" onchange="applyFilters()"><option value="">All users</option></select></label>
+        <label class="tb-field tb-select"><select id="f-status" onchange="setStatusFilter(this.value)"><option value="" data-label="All statuses">All statuses</option><option value="confirmed" data-label="Confirmed">Confirmed</option><option value="manual" data-label="Manual">Manual</option><option value="short" data-label="Short supply">Short supply</option><option value="over" data-label="Over supply">Over supply</option><option value="missing" data-label="Missing">Missing</option><option value="undo" data-label="Undo">Undo</option><option value="unscanned" data-label="Unscanned">Unscanned</option></select></label>
         <label class="tb-field tb-select"><select id="f-method" onchange="setMethodFilter(this.value)"><option value="">Any method</option><option value="barcode">Barcode</option><option value="camera">Camera</option><option value="typed">Typed</option><option value="tap">Tap confirm</option></select></label>
       </div>
 
       <div class="table-wrap">
-        <div class="tabs" id="status-tabs">
-          <div class="tab sf-btn sf-all active" id="sf-all" data-n="all" onclick="setStatusFilter('')">All<span class="tab-n">0</span></div>
-          <div class="tab sf-btn sf-confirmed" id="sf-confirmed" data-n="confirmed" onclick="setStatusFilter('confirmed')">Confirmed<span class="tab-n">0</span></div>
-          <div class="tab sf-btn sf-manual" id="sf-manual" data-n="manual" onclick="setStatusFilter('manual')">Manual<span class="tab-n">0</span></div>
-          <div class="tab sf-btn sf-short" id="sf-short" data-n="short" onclick="setStatusFilter('short')">Short supply<span class="tab-n">0</span></div>
-          <div class="tab sf-btn sf-over" id="sf-over" data-n="over" onclick="setStatusFilter('over')">Over supply<span class="tab-n">0</span></div>
-          <div class="tab sf-btn sf-missing" id="sf-missing" data-n="missing" onclick="setStatusFilter('missing')">Missing<span class="tab-n">0</span></div>
-          <div class="tab sf-btn sf-undo" id="sf-undo" data-n="undo" onclick="setStatusFilter('undo')">Undo<span class="tab-n">0</span></div>
-          <div class="tab sf-btn sf-unscanned" id="sf-unscanned" data-n="unscanned" onclick="setStatusFilter('unscanned')">Unscanned<span class="tab-n">0</span></div>
-        </div>
         <div class="thead">
           <div class="th" style="display:flex;align-items:center;gap:6px"><svg id="collapse-all-icon" onclick="toggleAllGroups()" title="Collapse/Expand all" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;cursor:pointer;flex:none;transition:transform .2s"><path d="M4 6l4 4 4-4"/></svg>BRAND</div>
           <div class="th">TIME</div>
@@ -821,27 +801,21 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
         <div>
           <div class="page-title">Driver Log</div>
           <div class="page-sub">Parts scanned on and off the van, by driver</div>
+          <div class="summary"><span><b id="vms-loaded">0</b> loaded on van</span><span><b id="vms-delivered">0</b> delivered</span><span><b id="vms-drivers">0</b> drivers out</span></div>
         </div>
         <div class="topbar-right">
           <div class="whcal" id="cal-drv">
             <div class="whcal-chip" onclick="calToggle('drv')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3"/></svg><span id="cal-drv-label">Today</span><span class="whcal-chev">▾</span></div>
             <div class="whcal-pop" id="cal-drv-pop"></div>
           </div>
-          <div class="live-badge" id="drv-live"><div class="pulse"></div>Live</div>
         </div>
-      </div>
-
-      <div class="vm-strip">
-        <div class="vm-sbox"><div class="vm-sl">Loaded on van</div><div class="vm-sv amber" id="vms-loaded">0</div></div>
-        <div class="vm-sbox"><div class="vm-sl">Delivered</div><div class="vm-sv green" id="vms-delivered">0</div></div>
-        <div class="vm-sbox"><div class="vm-sl">Drivers out</div><div class="vm-sv blue" id="vms-drivers">0</div></div>
       </div>
 
       <!-- ── VAN MANIFEST (explicit on/off board — Phase 4) ── -->
       <style>
         #vm-root{--vm-card:var(--surface);--vm-ink:var(--ink);--vm-dim:var(--ink-2);--vm-mut:var(--ink-3);--vm-line:var(--line);--vm-line2:var(--line-2);--vm-soft:var(--surface-2);--vm-amber:var(--amber);--vm-green:var(--green);--vm-blue:var(--accent);--vm-amberbg:var(--amber-soft);--vm-greenbg:var(--green-soft);--vm-mono:var(--mono);color:var(--vm-ink)}
-        #vm-root .vm-h{font-size:15px;font-weight:600}
-        #vm-root .vm-sub{font-size:12px;color:var(--vm-mut);font-weight:500;margin-left:8px}
+        #vm-root .vm-h{font-size:16px;font-weight:600;margin-bottom:10px}
+        #vm-root .vm-sub{font-size:13px;color:var(--vm-mut);font-weight:500;margin-left:8px}
         #vm-root .vm-amber{color:var(--vm-amber)} #vm-root .vm-green{color:var(--vm-green)}
         #vm-root .vm-zero{color:inherit;font-weight:400}
         #vm-root .vm-st-run{color:var(--vm-amber)} #vm-root .vm-st-load{color:var(--vm-blue)} #vm-root .vm-st-done{color:var(--vm-green)}
@@ -849,17 +823,17 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
         #vm-root .vm-cv{color:var(--vm-mut);font-size:11px;transition:transform .18s ease;flex:none}
         #vm-root details[open]>summary .vm-cv{transform:rotate(180deg)}
         #vm-root .vm-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
-        #vm-root .vm-drv{background:var(--vm-card);border:1px solid var(--vm-line);border-radius:var(--r-lg);overflow:hidden}
+        #vm-root .vm-drv{background:var(--vm-card);border:1px solid var(--vm-line);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow-card)}
         #vm-root .vm-drv[open]{border-color:var(--vm-line2)}
         #vm-root .vm-sum{cursor:pointer;display:flex;align-items:center;gap:12px;padding:12px 16px}
         #vm-root .vm-av{width:34px;height:34px;border-radius:var(--r);background:var(--vm-soft);border:1px solid var(--vm-line);display:grid;place-items:center;font-size:12px;font-weight:600;color:var(--vm-dim);flex:none;font-family:var(--vm-mono)}
         #vm-root .vm-id{display:flex;flex-direction:column;gap:2px;min-width:0}
         #vm-root .vm-nm{font-size:14px;font-weight:600}
-        #vm-root .vm-stt{font-size:11px;font-weight:600}
+        #vm-root .vm-stt{font-size:12px;font-weight:600}
         #vm-root .vm-hd{margin-left:auto;display:flex;gap:6px}
         #vm-root .vm-hd-box{background:var(--vm-soft);border:1px solid var(--vm-line);border-radius:var(--r);padding:5px 12px;display:flex;flex-direction:column;gap:1px;align-items:center;min-width:64px}
         #vm-root .vm-hd-n{font-size:16px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.1}
-        #vm-root .vm-hd-l{font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:var(--vm-mut);font-weight:600}
+        #vm-root .vm-hd-l{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--vm-mut);font-weight:600}
         #vm-root .vm-invs{padding:0 16px 12px;display:flex;flex-direction:column;gap:6px}
         #vm-root .vm-inv{background:var(--vm-card);border:1px solid var(--vm-line);border-radius:var(--r);overflow:hidden}
         #vm-root .vm-isum{cursor:pointer;display:flex;align-items:center;gap:10px;padding:10px 12px}
@@ -868,29 +842,28 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
         #vm-root .vm-idot.onvan{background:var(--vm-amber)} #vm-root .vm-idot.delivered{background:var(--vm-green)}
         #vm-root .vm-iblock{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
         #vm-root .vm-ishop{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        #vm-root .vm-isub{font-size:11px;color:var(--vm-mut);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        #vm-root .vm-ic{font-size:11.5px;color:var(--vm-dim);font-variant-numeric:tabular-nums;white-space:nowrap;flex:none}
-        #vm-root .vm-it{font-family:var(--vm-mono);font-size:11px;color:var(--vm-mut);white-space:nowrap;flex:none;margin-right:10px}
-        #vm-root .vm-po-t{font-family:var(--vm-mono);font-size:11px;color:var(--vm-mut);white-space:nowrap;flex:none}
+        #vm-root .vm-isub{font-size:12px;color:var(--vm-mut);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        #vm-root .vm-ic{font-size:12.5px;color:var(--vm-dim);font-variant-numeric:tabular-nums;white-space:nowrap;flex:none}
+        #vm-root .vm-it{font-family:var(--vm-mono);font-size:12px;color:var(--vm-mut);white-space:nowrap;flex:none;margin-right:10px}
+        #vm-root .vm-po-t{font-family:var(--vm-mono);font-size:12px;color:var(--vm-mut);white-space:nowrap;flex:none}
         #vm-root .vm-ic b{font-weight:600}
-        #vm-root .vm-search{width:100%;box-sizing:border-box;background:var(--surface);border:1px solid var(--vm-line);border-radius:var(--r);padding:8px 12px;color:var(--vm-ink);font-size:13px;font-family:inherit;outline:none;margin-top:10px}
+        #vm-root .vm-search{width:100%;max-width:520px;display:block;box-sizing:border-box;background:var(--surface);border:1px solid var(--vm-line);border-radius:var(--r);height:38px;padding:0 12px;color:var(--vm-ink);font-size:14px;font-weight:500;font-family:inherit;outline:none;margin-top:10px}
         #vm-root .vm-search::placeholder{color:var(--ink-4)}
         #vm-root .vm-search:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
         #vm-root .vm-pos{padding:0 12px 10px;border-top:1px solid var(--vm-line)}
         #vm-root .vm-poh{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--vm-mut);font-weight:600;margin:8px 0 4px}
         #vm-root .vm-po{display:flex;align-items:center;gap:10px;padding:7px 0}
         #vm-root .vm-po+.vm-po{border-top:1px solid var(--vm-line)}
-        #vm-root .vm-po-pn{font-family:var(--vm-mono);font-size:12px;white-space:nowrap;color:var(--vm-ink);font-weight:500}
-        #vm-root .vm-po-ds{font-size:12px;color:var(--vm-mut);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-        #vm-root .vm-po-qty{font-family:var(--vm-mono);font-size:12px;font-weight:600;color:var(--vm-ink);white-space:nowrap;flex:none}
+        #vm-root .vm-po-pn{font-family:var(--vm-mono);font-size:13px;white-space:nowrap;color:var(--vm-ink);font-weight:500}
+        #vm-root .vm-po-ds{font-size:13px;color:var(--vm-mut);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        #vm-root .vm-po-qty{font-family:var(--vm-mono);font-size:13px;font-weight:600;color:var(--vm-ink);white-space:nowrap;flex:none}
         #vm-root .vm-mi{flex:none;width:22px;height:22px;border-radius:4px;background:var(--vm-soft);border:1px solid var(--vm-line);color:var(--vm-dim);display:grid;place-items:center}
         #vm-root .vm-mi svg{width:14px;height:14px;display:block}
         #vm-root .vm-mi-none{flex:none;width:22px;text-align:center;font-size:11px;color:var(--ink-4)}
-        #vm-root .vm-chip{font-size:10px;font-weight:600;letter-spacing:.02em;padding:2px 7px;border-radius:4px;flex:none}
+        #vm-root .vm-chip{font-size:11px;font-weight:600;letter-spacing:.02em;padding:2px 7px;border-radius:4px;flex:none}
         #vm-root .vm-chip.amber{color:var(--vm-amber);background:var(--vm-amberbg)} #vm-root .vm-chip.green{color:var(--vm-green);background:var(--vm-greenbg)}
         #vm-root .vm-empty{background:var(--vm-card);border:1px solid var(--vm-line);border-radius:var(--r-lg);padding:26px;text-align:center;color:var(--vm-mut);font-size:13px}
       </style>
-      <div class="section-label">Van manifest</div>
       <div id="vm-root">
         <div class="vm-h">Drivers <span class="vm-sub" id="vm-sub"></span></div>
         <input class="vm-search" id="vm-search" type="search" autocomplete="off" placeholder="Filter by invoice #, PO, part #, or shop name…" oninput="vmSetQuery(this.value)" />
@@ -914,29 +887,21 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
         <div>
           <div class="page-title">Picking Slips</div>
           <div class="page-sub">Panel shop slips — what was picked and what is on order</div>
+          <div class="summary"><span><b id="pss-slips">0</b> slips on board</span><span><b id="pss-picked">0</b> parts picked</span><span><b id="pss-onorder">0</b> on order</span></div>
         </div>
-        <div class="topbar-right">
-          <div class="live-badge" id="ps-live"><div class="pulse"></div>Live</div>
-        </div>
-      </div>
-
-      <div class="vm-strip">
-        <div class="vm-sbox"><div class="vm-sl">Slips on board</div><div class="vm-sv blue" id="pss-slips">0</div></div>
-        <div class="vm-sbox"><div class="vm-sl">Parts picked</div><div class="vm-sv green" id="pss-picked">0</div></div>
-        <div class="vm-sbox"><div class="vm-sl">On order</div><div class="vm-sv teal" id="pss-onorder">0</div></div>
       </div>
 
       <style>
         #ps-root{--ps-card:var(--surface);--ps-ink:var(--ink);--ps-dim:var(--ink-2);--ps-mut:var(--ink-3);--ps-line:var(--line);--ps-line2:var(--line-2);--ps-soft:var(--surface-2);--ps-teal:var(--teal);--ps-green:var(--green);--ps-blue:var(--accent);--ps-red:var(--red);--ps-tealbg:var(--teal-soft);--ps-greenbg:var(--green-soft);--ps-redbg:var(--red-soft);--ps-mono:var(--mono);color:var(--ps-ink)}
-        #ps-root .ps-h{font-size:15px;font-weight:600}
-        #ps-root .ps-sub{font-size:12px;color:var(--ps-mut);font-weight:500;margin-left:8px}
+        #ps-root .ps-h{font-size:16px;font-weight:600;margin-bottom:10px}
+        #ps-root .ps-sub{font-size:13px;color:var(--ps-mut);font-weight:500;margin-left:8px}
         #ps-root .ps-zero{color:inherit;font-weight:400}
         #ps-root .ps-green{color:var(--ps-green)} #ps-root .ps-teal{color:var(--ps-teal)}
         #ps-root summary{list-style:none} #ps-root summary::-webkit-details-marker{display:none}
         #ps-root .ps-cv{color:var(--ps-mut);font-size:11px;transition:transform .18s ease;flex:none}
         #ps-root details[open]>summary .ps-cv{transform:rotate(180deg)}
         #ps-root .ps-list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
-        #ps-root .ps-slip{background:var(--ps-card);border:1px solid var(--ps-line);border-radius:var(--r-lg);overflow:hidden}
+        #ps-root .ps-slip{background:var(--ps-card);border:1px solid var(--ps-line);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow-card)}
         #ps-root .ps-slip[open]{border-color:var(--ps-line2)}
         #ps-root .ps-slip.gone{opacity:.55}
         #ps-root .ps-sum{cursor:pointer;display:flex;align-items:center;gap:12px;padding:12px 16px}
@@ -944,35 +909,34 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
         #ps-root .ps-dot.picking{background:var(--ps-blue)} #ps-root .ps-dot.complete{background:var(--ps-green)} #ps-root .ps-dot.gone{background:var(--ink-4)}
         #ps-root .ps-id{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
         #ps-root .ps-nm{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        #ps-root .ps-stt{font-size:11px;color:var(--ps-mut);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        #ps-root .ps-stt{font-size:12px;color:var(--ps-mut);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
         #ps-root .ps-stt b{font-weight:600}
         #ps-root .ps-hd{margin-left:auto;display:flex;gap:6px;align-items:center}
         #ps-root .ps-hd-box{background:var(--ps-soft);border:1px solid var(--ps-line);border-radius:var(--r);padding:5px 12px;display:flex;flex-direction:column;gap:1px;align-items:center;min-width:64px}
         #ps-root .ps-hd-n{font-size:16px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.1}
-        #ps-root .ps-hd-l{font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:var(--ps-mut);font-weight:600}
-        #ps-root .ps-tag{font-size:10px;font-weight:600;letter-spacing:.02em;padding:3px 8px;border-radius:4px;flex:none}
+        #ps-root .ps-hd-l{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--ps-mut);font-weight:600}
+        #ps-root .ps-tag{font-size:11px;font-weight:600;letter-spacing:.02em;padding:3px 8px;border-radius:4px;flex:none}
         #ps-root .ps-tag.teal{color:var(--ps-teal);background:var(--ps-tealbg)}
         #ps-root .ps-tag.gone{color:var(--ink-3);background:var(--grey-soft)}
         #ps-root .ps-parts{padding:0 16px 12px;border-top:1px solid var(--ps-line)}
         #ps-root .ps-poh{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--ps-mut);font-weight:600;margin:10px 0 4px}
         #ps-root .ps-po{display:flex;align-items:center;gap:10px;padding:7px 0}
         #ps-root .ps-po+.ps-po{border-top:1px solid var(--ps-line)}
-        #ps-root .ps-po-pn{font-family:var(--ps-mono);font-size:12px;white-space:nowrap;color:var(--ps-ink);font-weight:500}
-        #ps-root .ps-po-ds{font-size:12px;color:var(--ps-mut);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-        #ps-root .ps-po-who{font-family:var(--ps-mono);font-size:11px;color:var(--ps-mut);white-space:nowrap;flex:none}
+        #ps-root .ps-po-pn{font-family:var(--ps-mono);font-size:13px;white-space:nowrap;color:var(--ps-ink);font-weight:500}
+        #ps-root .ps-po-ds{font-size:13px;color:var(--ps-mut);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        #ps-root .ps-po-who{font-family:var(--ps-mono);font-size:12px;color:var(--ps-mut);white-space:nowrap;flex:none}
         #ps-root .ps-mi{flex:none;width:22px;height:22px;border-radius:4px;background:var(--ps-soft);border:1px solid var(--ps-line);color:var(--ps-dim);display:grid;place-items:center}
         #ps-root .ps-mi svg{width:14px;height:14px;display:block}
         #ps-root .ps-mi-none{flex:none;width:22px;text-align:center;font-size:11px;color:var(--ink-4)}
-        #ps-root .ps-chip{font-size:10px;font-weight:600;letter-spacing:.02em;padding:2px 7px;border-radius:4px;flex:none}
+        #ps-root .ps-chip{font-size:11px;font-weight:600;letter-spacing:.02em;padding:2px 7px;border-radius:4px;flex:none}
         #ps-root .ps-chip.green{color:var(--ps-green);background:var(--ps-greenbg)}
         #ps-root .ps-chip.teal{color:var(--ps-teal);background:var(--ps-tealbg)}
         #ps-root .ps-chip.red{color:var(--ps-red);background:var(--ps-redbg)}
-        #ps-root .ps-search{width:100%;box-sizing:border-box;background:var(--surface);border:1px solid var(--ps-line);border-radius:var(--r);padding:8px 12px;color:var(--ps-ink);font-size:13px;font-family:inherit;outline:none;margin-top:10px}
+        #ps-root .ps-search{width:100%;max-width:520px;display:block;box-sizing:border-box;background:var(--surface);border:1px solid var(--ps-line);border-radius:var(--r);height:38px;padding:0 12px;color:var(--ps-ink);font-size:14px;font-weight:500;font-family:inherit;outline:none;margin-top:10px}
         #ps-root .ps-search::placeholder{color:var(--ink-4)}
         #ps-root .ps-search:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
         #ps-root .ps-empty{background:var(--ps-card);border:1px solid var(--ps-line);border-radius:var(--r-lg);padding:26px;text-align:center;color:var(--ps-mut);font-size:13px}
       </style>
-      <div class="section-label">Picking slip board</div>
       <div id="ps-root">
         <div class="ps-h">Slips <span class="ps-sub" id="ps-sub"></span></div>
         <input class="ps-search" id="ps-search" type="search" autocomplete="off" placeholder="Filter by slip #, part #, or shop name…" oninput="psSetQuery(this.value)" />
@@ -1613,11 +1577,9 @@ function setBrand(b){
 }
 
 function setStatusFilter(action){
-  filters.action = action;
-  document.querySelectorAll(".sf-btn").forEach(b=>b.classList.remove("active"));
-  const id = action===""?"sf-all":"sf-"+action;
-  const el = document.getElementById(id);
-  if(el) el.classList.add("active");
+  filters.action = action || "";
+  const sel = document.getElementById("f-status");
+  if(sel && sel.value !== filters.action) sel.value = filters.action;
   renderTable(false);
 }
 
@@ -1635,10 +1597,10 @@ function updateStatusCounts(){
   let base = [], unscanned = 0;
   try{ base = getFiltered(); filters.action = "unscanned"; unscanned = getUnscannedRows().length; }catch{}
   filters.action = saved;
-  const n = { all: base.length + unscanned, unscanned };
+  const n = { "": base.length + unscanned, unscanned };
   for(const e of base){ const a = e.action || "confirmed"; n[a] = (n[a]||0) + 1; }
-  document.querySelectorAll("#status-tabs .tab").forEach(t=>{
-    const el = t.querySelector(".tab-n"); if(el) el.textContent = n[t.dataset.n] || 0;
+  document.querySelectorAll("#f-status option").forEach(o=>{
+    o.textContent = (o.dataset.label || o.value) + " (" + (n[o.value] || 0) + ")";
   });
 }
 
