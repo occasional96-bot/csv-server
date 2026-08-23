@@ -1566,7 +1566,7 @@ function renderRow(e, isNew){
       miniBar = `<div class="qty-mini-bar"><div class="qty-mini-fill" style="width:${pct}%;background:${barCol}"></div></div>`;
     }
   }
-  const noteShown = !!e.note && e.note!=="arrived"; // "arrived" = picking-slip on-order tag, not an operator note
+  const noteShown = !!e.note && !["arrived","manual"].includes(e.note); // app-internal tags, not operator notes
   return `<div class="row${isNew?" flash-new":""}${isUnscan?" unscanned-row":""}">
     <div><div class="brand-chip brand-${(e.brand||'').toString().toLowerCase().replace(/[^a-z]/g,'')}">${e.brand||"?"}</div></div>
     <div class="time-cell">${isUnscan?"—":fmtTime(e.timestamp)}</div>
