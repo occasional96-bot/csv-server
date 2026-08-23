@@ -905,9 +905,12 @@ function resolveBrand(invoiceId, partNumber, given) {
 }
 // Read-time backfill for rows logged as "?" by older app builds. Nothing is rewritten.
 const withBrand = e => (e.brand && e.brand !== "?") ? e : { ...e, brand: resolveBrand(e.invoiceId, e.partNumber, e.brand) };
-// Order ref: app builds before 2026-08-23 never read PO# off the panel CSV, so panel-counter scans logged "".
-const resolveOrderRef = (invoiceId, given) => given || panelBrandMaps().byInvPo.get(String(invoiceId || "").trim()) || "";
-const withOrderRef = e => e.orderRef ? e : { ...e, orderRef: resolveOrderRef(e.invoiceId, e.orderRef) };
+// Order ref. For an invoice that is in the panel CSV, its PO# column IS the order ref — it beats whatever
+// the app sent (the van board used to guess a ref from the part number, which picked up the warehouse
+// dealer-order ref — PAN37084 / DO37148 — for the same part on a different document). Invoices not in
+// the CSV (warehouse L/F ids, supplier E-BYDAU ids, rolled-off panel invoices) keep what was logged.
+const resolveOrderRef = (invoiceId, given) => panelBrandMaps().byInvPo.get(String(invoiceId || "").trim()) || given || "";
+const withOrderRef = e => { const r = resolveOrderRef(e.invoiceId, e.orderRef); return r === (e.orderRef || "") ? e : { ...e, orderRef: r }; };
 
 // ── Scan log endpoints ────────────────────────────────────────────────────────
 app.post("/log-scan", (req, res) => {
