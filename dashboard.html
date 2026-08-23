@@ -508,6 +508,7 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .key-card input{width:100%;height:38px;border:1px solid var(--line-2);border-radius:8px;padding:0 12px;font:inherit;font-size:14px;outline:none;margin-bottom:12px}
 .key-card input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 .key-card button{width:100%}
+.key-card .key-cancel{margin-top:8px}
 .sp-kv .sp-kv-sel{min-width:0;width:110px;height:30px;padding:0 8px;flex:none;background:var(--surface)}
 .sp-kv .sp-kv-sel select{font-size:13px;font-weight:600}
 .sp-field{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:5px 0;font-size:13.5px;color:var(--ink-2)}
@@ -988,7 +989,7 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 </template>
 
 <!-- Command Palette Overlay -->
-<div class="key-gate" id="key-gate"><div class="key-card"><h3>Access key</h3><p>This server is locked. Enter the warehouse access key once for this browser.</p><input id="key-input" type="password" placeholder="Access key" onkeydown="if(event.key==='Enter')saveKey()"><button class="big-sync-btn" style="margin:0" onclick="saveKey()">Unlock</button></div></div>
+<div class="key-gate" id="key-gate" onclick="if(event.target===this)hideKeyGate()"><div class="key-card"><h3>Access key</h3><p>This server is locked. Enter the warehouse access key once for this browser.</p><input id="key-input" type="password" placeholder="Access key" onkeydown="if(event.key==='Enter')saveKey();if(event.key==='Escape')hideKeyGate()"><button class="big-sync-btn" style="margin:0" onclick="saveKey()">Unlock</button><button class="sp-btn2 key-cancel" onclick="hideKeyGate()">Cancel</button></div></div>
 <div class="cmd-overlay" id="cmd-overlay" onclick="if(event.target===this)toggleCmdPalette()">
   <div class="cmd-box">
     <input class="cmd-input" id="cmd-input" placeholder="Type a command or search..." oninput="filterCmdPalette()" onkeydown="cmdKeyNav(event)" autocomplete="off" />
@@ -1021,7 +1022,7 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
       <div class="sp-kv"><span>Server</span><b><span class="health-badge hb-wake" id="health-badge"><span id="health-text">Checking…</span></span></b></div>
       <div class="sp-kv"><span>Last update</span><b id="sp-last-update">—</b></div>
       <div class="sp-kv"><span>Site</span><b id="sp-site">—</b></div>
-      <div class="sp-kv"><span>Access key</span><b><span id="sp-key">—</span> <button class="sp-link" onclick="showKeyGate()">Change</button></b></div>
+      <div class="sp-kv" id="sp-key-row" style="display:none"><span>Access key</span><b><span id="sp-key">—</span> <button class="sp-link" onclick="showKeyGate()">Change</button></b></div>
       <div class="sp-kv"><span>Scan log kept</span><label class="tb-field tb-select sp-kv-sel"><select id="sp-retention" onchange="setRetention(this.value)"><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option><option value="60">60 days</option><option value="90">90 days</option></select></label></div>
     </div>
     <div class="sp-btnrow"><button class="sp-btn2" onclick="spReconnect()">Reconnect</button><button class="sp-btn2" onclick="spRefresh()">Refresh data</button></div>
@@ -1120,13 +1121,16 @@ function showKeyGate(){
   const g = document.getElementById("key-gate"); if(!g || g.classList.contains("show")) return;
   g.classList.add("show"); const i = document.getElementById("key-input"); if(i){ i.value = ""; setTimeout(()=>i.focus(), 50); }
 }
+function hideKeyGate(){ const g=document.getElementById("key-gate"); if(g) g.classList.remove("show"); }
 function saveKey(){
   const v = (document.getElementById("key-input").value || "").trim(); if(!v) return;
   localStorage.setItem(API_KEY_LS, v); location.reload();
 }
 async function checkKey(){
   try{ const r = await fetch(SERVER+"/auth-check",{cache:"no-store"}); const j = await r.json();
-    const el = document.getElementById("sp-key"); if(el) el.textContent = j.locked ? (j.ok ? "Set on this browser" : "Missing") : "Off (server open)";
+    // Row only appears once API_KEY is set on Railway; until then the lock stays out of sight.
+    const row = document.getElementById("sp-key-row"); if(row) row.style.display = j.locked ? "" : "none";
+    const el = document.getElementById("sp-key"); if(el) el.textContent = j.locked ? (j.ok ? "Set on this browser" : "Missing") : "Off";
     if(j.locked && !j.ok) showKeyGate();
   }catch{}
 }
