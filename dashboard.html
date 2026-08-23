@@ -187,6 +187,7 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 
 /* ── Filters ── */
 .toolbar{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;align-items:center}
+.toolbar>.tb-field{flex:1 1 160px}  /* fields share the width so the row ends flush with the table */
 .topbar-right{margin-top:-12px}  /* chip top edge level with the sidebar card top */
 .topbar-right .whcal-chip{height:38px;padding:0 12px;font-size:14px;font-weight:600}
 .tb-field{display:flex;align-items:center;gap:8px;height:38px;padding:0 12px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);min-width:190px;cursor:text}
@@ -1097,10 +1098,16 @@ document.title = "Warehouse PRO — " + SITE.code + " " + SITE.name;
 { const t=document.getElementById("logo-title"), st=document.getElementById("logo-site");
   if(t) t.textContent = SITE.code; if(st) st.textContent = SITE.label || (SITE.name + " · " + SITE.group);
   const sw=document.getElementById("site-switch"), list=(SITE.sites||[]).filter(s=>s.url);
+  // Last-site memory. Sites are separate origins, so each origin remembers where the user wants to be:
+  // arriving with ?site=<me> pins this site; a bookmark that lands on the other site bounces back.
+  const SITE_LS="wh_pro_site", qs=new URLSearchParams(location.search), pinned=qs.get("site");
+  if(pinned){ if(pinned===SITE.key) localStorage.setItem(SITE_LS, SITE.key); qs.delete("site"); history.replaceState(null,"",location.pathname+(qs.toString()?"?"+qs:"")+location.hash); }
+  const wanted=localStorage.getItem(SITE_LS), other=list.find(s=>s.key===wanted && s.key!==SITE.key);
+  if(other && location.protocol!=="file:" && location.hostname!=="localhost"){ location.replace(other.url+"/dashboard?site="+other.key); }
   if(sw && list.length > 1){
     sw.innerHTML = list.map(s => s.key === SITE.key
       ? `<a class="cur" aria-current="page">${s.name}</a>`
-      : `<a href="${s.url}/dashboard">${s.name}</a>`).join("");
+      : `<a href="${s.url}/dashboard?site=${s.key}" onclick="localStorage.setItem('${SITE_LS}','${s.key}')">${s.name}</a>`).join("");
     sw.classList.add("show");
   }
 }
@@ -1565,12 +1572,13 @@ function renderRow(e, isNew){
       miniBar = `<div class="qty-mini-bar"><div class="qty-mini-fill" style="width:${pct}%;background:${barCol}"></div></div>`;
     }
   }
+  const noteShown = !!e.note && e.note!=="arrived"; // "arrived" = picking-slip on-order tag, not an operator note
   return `<div class="row${isNew?" flash-new":""}${isUnscan?" unscanned-row":""}">
     <div><div class="brand-chip brand-${(e.brand||'').toString().toLowerCase().replace(/[^a-z]/g,'')}">${e.brand||"?"}</div></div>
     <div class="time-cell">${isUnscan?"—":fmtTime(e.timestamp)}</div>
     <div><div class="avatar${isUnscan?" dim":""}" style="${isUnscan?"":avatarStyle}">${isUnscan?"—":e.initials}</div></div>
     <div class="inv-block"><div class="inv-num">${e.invoiceId}</div></div>
-    <div class="part-cell"><div class="part-num${isUnscan?" dim":""}">${e.partNumber}</div><div class="part-desc${isUnscan?" dim":""}" title="${((e.description||"")+(e.note?" · "+e.note:"")).replace(/"/g,"&quot;")}">${e.description||""}${e.note?`<span class="part-note"> · ${e.note}</span>`:""}</div></div>
+    <div class="part-cell"><div class="part-num${isUnscan?" dim":""}">${e.partNumber}</div><div class="part-desc${isUnscan?" dim":""}" title="${((e.description||"")+(noteShown?" · "+e.note:"")).replace(/"/g,"&quot;")}">${e.description||""}${noteShown?`<span class="part-note"> · ${e.note}</span>`:""}</div></div>
     <div class="qty-cell${isUnscan?" dim":""}">${qtyHtml}${miniBar}</div>
     <div>${e.orderRef?`<div class="order-ref${isUnscan?" dim":""}">${e.orderRef}</div>`:`<div class="order-ref dim">—</div>`}</div>
     <div>${methodHtml(e.method)}</div>
@@ -2679,13 +2687,14 @@ let settingsState = {
   compactsidebar: false,
   landing: "import",
   daterange: "today",
-  timefmt: "24",
+  timefmt: "12",
   soundnew: false,
   notifynew: false,
   hiddenUsers: [],
 };
 try{ const s=JSON.parse(localStorage.getItem("wh_pro_settings")||"{}"); Object.assign(settingsState, s); }catch{}
 if(!Array.isArray(settingsState.hiddenUsers)) settingsState.hiddenUsers=[];
+if(settingsState.tfv!==2){ settingsState.timefmt="12"; settingsState.tfv=2; saveSettings(); } // 2026-08-23: 12-hour is the default on every site
 function saveSettings(){ localStorage.setItem("wh_pro_settings", JSON.stringify(settingsState)); }
 
 function setDensity(d){
@@ -2783,7 +2792,7 @@ function applySettings(){
   set("sp-density", settingsState.density||"default");
   set("sp-landing", settingsState.landing||"import");
   set("sp-daterange", settingsState.daterange||"today");
-  set("sp-timefmt", settingsState.timefmt||"24");
+  set("sp-timefmt", settingsState.timefmt||"12");
   ["grouping","flashnew","compactsidebar","soundnew","notifynew"].forEach(k=>{
     const sw=document.getElementById("sw-"+k); if(sw) sw.classList.toggle("on", !!settingsState[k]);
   });

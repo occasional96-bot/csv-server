@@ -863,31 +863,35 @@ function brandSplitCsv(line) {
   out.push(cur);
   return out;
 }
-let panelBrandCache = { key: null, byInvPart: new Map(), byInv: new Map() };
+let panelBrandCache = { key: null, byInvPart: new Map(), byInv: new Map(), byInvPo: new Map() };
 function panelBrandMaps() {
   let files = [];
   try { files = fs.readdirSync(UPLOAD).filter(f => /INVOICE-SCAN-APP/i.test(f) && f.endsWith(".csv")); } catch {}
   const key = files.map(f => { try { return f + ":" + fs.statSync(path.join(UPLOAD, f)).mtimeMs; } catch { return f; } }).join("|");
   if (key === panelBrandCache.key) return panelBrandCache;
-  const byInvPart = new Map(), byInv = new Map();
+  const byInvPart = new Map(), byInv = new Map(), byInvPo = new Map();
   for (const f of files) {
     let text = ""; try { text = fs.readFileSync(path.join(UPLOAD, f), "utf8"); } catch { continue; }
     const lines = text.split(/\r?\n/);
     const header = (lines[0] || "").split(",").map(h => h.replace(/"/g, "").trim().toUpperCase());
-    const iInv = header.indexOf("INV#"), iPart = header.indexOf("PART#");
+    const iInv = header.indexOf("INV#"), iPart = header.indexOf("PART#"), iPo = header.indexOf("PO#");
     if (iInv < 0 || iPart < 0) continue;
     for (let i = 1; i < lines.length; i++) {
       const cols = brandSplitCsv(lines[i]);
       const inv = (cols[iInv] || "").trim(), raw = (cols[iPart] || "").trim();
       if (!inv || raw.length < 3) continue;
+      // Panel invoices carry the customer's order number in PO# — the app only learned to read it in
+      // the 2026-08-23 build, so older scan rows arrive with orderRef "" and get it from here instead.
+      const po = iPo >= 0 ? (cols[iPo] || "").trim() : "";
+      if (po && !byInvPo.has(inv)) byInvPo.set(inv, po);
       const brand = brandFromPrefix(raw.slice(0, 2));
       if (!brand) continue;
       byInvPart.set(inv + "|" + stripPartSfx(raw.slice(2)), brand);
       if (!byInv.has(inv)) byInv.set(inv, brand);
     }
   }
-  panelBrandCache = { key, byInvPart, byInv };
-  console.log("[brand] panel map rebuilt: " + byInv.size + " invoices, " + byInvPart.size + " parts");
+  panelBrandCache = { key, byInvPart, byInv, byInvPo };
+  console.log("[brand] panel map rebuilt: " + byInv.size + " invoices, " + byInvPart.size + " parts, " + byInvPo.size + " POs");
   return panelBrandCache;
 }
 function resolveBrand(invoiceId, partNumber, given) {
@@ -901,6 +905,9 @@ function resolveBrand(invoiceId, partNumber, given) {
 }
 // Read-time backfill for rows logged as "?" by older app builds. Nothing is rewritten.
 const withBrand = e => (e.brand && e.brand !== "?") ? e : { ...e, brand: resolveBrand(e.invoiceId, e.partNumber, e.brand) };
+// Order ref: app builds before 2026-08-23 never read PO# off the panel CSV, so panel-counter scans logged "".
+const resolveOrderRef = (invoiceId, given) => given || panelBrandMaps().byInvPo.get(String(invoiceId || "").trim()) || "";
+const withOrderRef = e => e.orderRef ? e : { ...e, orderRef: resolveOrderRef(e.invoiceId, e.orderRef) };
 
 // ── Scan log endpoints ────────────────────────────────────────────────────────
 app.post("/log-scan", (req, res) => {
@@ -915,7 +922,7 @@ app.post("/log-scan", (req, res) => {
     initials: initials || "?",
     color: color || "#8BA3BE",
     invoiceId,
-    orderRef: orderRef || "",
+    orderRef: resolveOrderRef(invoiceId, orderRef),
     brand: resolveBrand(invoiceId, partNumber, brand),
     partNumber,
     description: description || "",
@@ -935,7 +942,7 @@ app.post("/log-scan", (req, res) => {
 });
 
 app.get("/scan-logs", (req, res) => {
-  let log = purgeScanLog(readScanLog()).map(withBrand);
+  let log = purgeScanLog(readScanLog()).map(withBrand).map(withOrderRef);
   const { brand, invoiceId, initials, partNumber, action, method, from, to } = req.query;
   if (brand)       log = log.filter(e => e.brand === brand);
   if (invoiceId)   log = log.filter(e => e.invoiceId.includes(invoiceId.toUpperCase()));
