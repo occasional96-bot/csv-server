@@ -1109,6 +1109,18 @@ document.title = "Warehouse PRO — " + SITE.code + " " + SITE.name;
       ? `<a class="cur" aria-current="page">${s.name}</a>`
       : `<a href="${s.url}/dashboard?site=${s.key}" onclick="localStorage.setItem('${SITE_LS}','${s.key}')">${s.name}</a>`).join("");
     sw.classList.add("show");
+    // Speed up the toggle: open the TLS connection to the other site now, and (Chrome) fully
+    // prerender its dashboard when the link is hovered — activation then swaps in instantly.
+    // The ?site= pin means the prerendered page pins itself and never bounces back here.
+    if(location.protocol!=="file:" && location.hostname!=="localhost"){
+      const others=list.filter(s=>s.key!==SITE.key);
+      others.forEach(s=>{ const pc=document.createElement("link"); pc.rel="preconnect"; pc.href=s.url; document.head.appendChild(pc); });
+      if(others.length && HTMLScriptElement.supports && HTMLScriptElement.supports("speculationrules")){
+        const sr=document.createElement("script"); sr.type="speculationrules";
+        sr.textContent=JSON.stringify({prerender:[{urls:others.map(s=>s.url+"/dashboard?site="+s.key),eagerness:"moderate"}]});
+        document.head.appendChild(sr);
+      }
+    }
   }
 }
 const SERVER = (location.protocol === "file:" || location.hostname === "localhost") ? SITE.url : location.origin;

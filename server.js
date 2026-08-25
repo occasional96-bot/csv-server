@@ -1164,6 +1164,8 @@ app.get("/dashboard", (req, res) => {
   if (!fs.existsSync(fp)) return res.status(404).send("dashboard.html not found — deploy it alongside server.js");
   res.set("Cache-Control", "no-store, no-cache, must-revalidate");
   res.set("Pragma", "no-cache");
+  // Lets the other site's dashboard prerender this one (speculation rules) so the site toggle is instant.
+  res.set("Supports-Loading-Mode", "credentialed-prerender");
   res.type("html");
   // Inject this server's site identity so the page knows who it is before any fetch.
   res.send(fs.readFileSync(fp, "utf8").replace("/*__SITE_JSON__*/null", JSON.stringify(siteInfo())));
