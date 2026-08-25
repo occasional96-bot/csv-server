@@ -28,8 +28,8 @@ const SITES = {
               brands: ["KIA", "HY", "BYD", "ISUZU", "NISSAN"],
               files: ["kia", "hy", "inve"],          // Import CSV rows this site uses
               url: "https://csv-server-production-efc6.up.railway.app" },
-  essendon: { key: "essendon", name: "Essendon", group: "Essendon Kia", code: "HMG",
-              label: "Essendon Kia",
+  essendon: { key: "essendon", name: "Essendon", group: "Hopper Motor Group", code: "HMG",
+              label: "Essendon · Hopper Motor Group",
               brands: ["KIA"],
               files: ["kia", "inve"],
               url: "https://csv-server-essendon-production.up.railway.app" },
