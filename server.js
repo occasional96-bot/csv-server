@@ -914,14 +914,22 @@ const withOrderRef = e => { const r = resolveOrderRef(e.invoiceId, e.orderRef); 
 
 // ── Scan log endpoints ────────────────────────────────────────────────────────
 app.post("/log-scan", (req, res) => {
-  const { initials, color, invoiceId, orderRef, brand, partNumber, description, action, method, note, qty, confirmed, lineNo, customer } = req.body;
+  const { initials, color, invoiceId, orderRef, brand, partNumber, description, action, method, note, qty, confirmed, lineNo, customer, at, cid } = req.body;
   const METHODS = ["barcode", "camera", "typed", "tap"];
   if (!initials || !invoiceId || !partNumber || !action) return res.status(400).json({ error: "Missing fields" });
   if (action === "not_found") return res.json({ ok: true, skipped: true });
   let log = purgeScanLog(readScanLog());
+  // The app's durable queue re-sends until it sees a response — a lost response
+  // must not double-log, so drop entries whose client id is already stored.
+  if (cid && log.some(e => e.cid === cid)) return res.json({ ok: true, dup: true });
+  // Offline scans flush late — honor the client's scan time when it's sane
+  // (not future, not older than the retention window). Otherwise stamp now.
+  const _now = Date.now();
+  const _ts = (typeof at === "number" && at <= _now + 5 * 60 * 1000 && _now - at < siteSettings().retentionDays * 24 * 60 * 60 * 1000) ? at : _now;
   const entry = {
     id: Math.random().toString(36).slice(2, 10).toUpperCase(),
-    timestamp: Date.now(),
+    timestamp: _ts,
+    cid: cid || "",
     initials: initials || "?",
     color: color || "#8BA3BE",
     invoiceId,
@@ -939,6 +947,7 @@ app.post("/log-scan", (req, res) => {
     customer: customer || "",
   };
   log.unshift(entry);
+  log.sort((a, b) => b.timestamp - a.timestamp); // late offline flushes keep the log time-ordered
   saveScanLog(log);
   broadcast({ type: "scan_log_update", entry });
   res.json({ ok: true, entry });

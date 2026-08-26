@@ -43,7 +43,7 @@
 | 639 | `GET  /rooms` — list active rooms |
 | 659 | `GET  /room/:roomId` — room detail |
 | 665 | `GET  /room/:roomId/updates` — room update log |
-| 672 | `POST /log-scan` — log a scan event; `method` field = how the part was identified ("barcode" \| "camera" \| "typed" \| "tap", anything else stored as "") |
+| 672 | `POST /log-scan` — log a scan event; `method` field = how the part was identified ("barcode" \| "camera" \| "typed" \| "tap", anything else stored as ""); accepts `at` (client scan time — honored when sane, so offline flushes keep the real time; log re-sorted) + `cid` (dedupe id — queue re-sends after a lost response return `{dup:true}` instead of double-logging) (2026-08-26) |
 | 698 | `GET  /scan-logs` — retrieve scan log; `?method=` filter (CSV list, "" matches pre-2026-07-22 rows) |
 | ~778 | `POST /delete-van-scans` — delete one invoice's on/off_board scans (password "123") |
 | 711 | `GET  /scan-log-stats` — scan log stats |
