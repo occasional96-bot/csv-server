@@ -204,6 +204,30 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .tb-field select{cursor:pointer}
 .tb-field:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
 .tb-select{cursor:pointer;min-width:160px}
+/* Filters button + drawer. Deliberately neutral: nothing on this bar should compete with the
+   table for attention, so there is no accent tint and no applied-filter count. */
+.fbtn{display:inline-flex;align-items:center;gap:9px;height:38px;padding:0 15px;flex:none;background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--r);font-size:13.5px;font-weight:600;color:var(--ink-2);
+  cursor:pointer;user-select:none;white-space:nowrap;transition:border-color .13s,color .13s,background .13s}
+.fbtn:hover{border-color:var(--line-2);color:var(--ink)}
+.fbtn svg{width:15px;height:15px;color:var(--ink-3);flex:none;transition:color .13s}
+.fbtn:hover svg,.fbtn.open svg{color:var(--ink-2)}
+.fbtn.open{background:var(--surface-2);border-color:var(--line-2);color:var(--ink)}
+.fpanel{display:none;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);
+  box-shadow:var(--shadow-card);padding:16px;margin:-4px 0 14px}
+.fpanel.open{display:block;animation:fpanelin .16s ease-out}
+@keyframes fpanelin{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:12px}
+.ffield{min-width:0}
+.fcap{display:block;font-size:10.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--ink-4);margin-bottom:5px}
+.ffield .tb-field{min-width:0}
+.fpanel-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;padding-top:13px;border-top:1px solid var(--line)}
+.fp-btn{border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:8px 14px;
+  font:inherit;font-size:12.5px;font-weight:500;color:var(--ink-2);cursor:pointer}
+.fp-btn:hover{border-color:var(--line-2);color:var(--ink)}
+.fp-done{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:600}
+.fp-done:hover{background:#000;border-color:#000}
 .tb-field select option{background:var(--surface);color:var(--ink)}
 
 /* ── Toggles (legacy) ── */
@@ -697,11 +721,16 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
       </div>
 
       <div class="toolbar">
-        <label class="tb-field"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5l3.5 3.5"/></svg><input id="f-invoice" placeholder="Invoice" oninput="applyFilters()" /></label>
-        <label class="tb-field"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5l3.5 3.5"/></svg><input id="f-part" placeholder="Part number" oninput="applyFilters()" /></label>
-        <label class="tb-field tb-select"><select id="f-user" onchange="applyFilters()"><option value="">All users</option></select></label>
-        <label class="tb-field tb-select"><select id="f-status" onchange="setStatusFilter(this.value)"><option value="" data-label="All statuses">All statuses</option><option value="confirmed" data-label="Confirmed">Confirmed</option><option value="manual" data-label="Manual">Manual</option><option value="short" data-label="Short supply">Short supply</option><option value="over" data-label="Over supply">Over supply</option><option value="missing" data-label="Missing">Missing</option><option value="undo" data-label="Undo">Undo</option><option value="unscanned" data-label="Unscanned">Unscanned</option></select></label>
-        <label class="tb-field tb-select"><select id="f-method" onchange="setMethodFilter(this.value)"><option value="">Any method</option><option value="barcode">Barcode</option><option value="camera">Camera</option><option value="typed">Typed</option><option value="tap">Tap confirm</option></select></label>
+        <label class="tb-field"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5l3.5 3.5"/></svg><input id="f-search" placeholder="Search invoice or part number" oninput="applyFilters()" /></label>
+        <div class="fbtn" id="f-btn" onclick="toggleFilterPanel()" title="Filters"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.2" y="2.2" width="4.8" height="4.8" rx="1"/><rect x="9" y="2.2" width="4.8" height="4.8" rx="1"/><rect x="2.2" y="9" width="4.8" height="4.8" rx="1"/><rect x="9" y="9" width="4.8" height="4.8" rx="1" fill="currentColor"/></svg>Filters</div>
+      </div>
+      <div class="fpanel" id="f-panel">
+        <div class="fgrid">
+          <div class="ffield"><span class="fcap">User</span><label class="tb-field tb-select"><select id="f-user" onchange="applyFilters()"><option value="">All users</option></select></label></div>
+          <div class="ffield"><span class="fcap">Status</span><label class="tb-field tb-select"><select id="f-status" onchange="setStatusFilter(this.value)"><option value="" data-label="All statuses">All statuses</option><option value="confirmed" data-label="Confirmed">Confirmed</option><option value="manual" data-label="Manual">Manual</option><option value="short" data-label="Short supply">Short supply</option><option value="over" data-label="Over supply">Over supply</option><option value="missing" data-label="Missing">Missing</option><option value="undo" data-label="Undo">Undo</option><option value="unscanned" data-label="Unscanned">Unscanned</option></select></label></div>
+          <div class="ffield"><span class="fcap">Method</span><label class="tb-field tb-select"><select id="f-method" onchange="setMethodFilter(this.value)"><option value="">Any method</option><option value="barcode">Barcode</option><option value="camera">Camera</option><option value="typed">Typed</option><option value="tap">Tap confirm</option></select></label></div>
+        </div>
+        <div class="fpanel-foot"><button class="fp-btn" onclick="clearFilters()">Clear all</button><button class="fp-btn fp-done" onclick="toggleFilterPanel(false)">Done</button></div>
       </div>
 
       <div class="table-wrap">
@@ -1228,7 +1257,7 @@ function cleanInvoiceDescs(invs){
   return (invs||[]).map(inv => !inv || !inv.parts ? inv
     : { ...inv, parts: inv.parts.map(p => p && p.description ? { ...p, description: cleanDesc(p.description) } : p) });
 }
-let filters = { brand:"", user:"", invoice:"", part:"", date:"today", action:"", method:"" };
+let filters = { brand:"", user:"", q:"", date:"today", action:"", method:"" };
 let hiddenActions = new Set();
 let pathFiles = { kia: null, hy: null, inv: null, inve: null, other1: null, other2: null };
 let ws = null;
@@ -1498,7 +1527,6 @@ function getUnscannedRows(){
     if((inv.savedAt||0) < todayMid.getTime()) continue; // store keeps 30 days now; unscanned is today-only
     if(inv.id && inv.id.startsWith("Q")) continue;
     if(filters.brand && inv.brand !== filters.brand) continue;
-    if(filters.invoice && !inv.id.includes(filters.invoice.toUpperCase())) continue;
     for(const p of (inv.parts||[])){
       const key = inv.id+"||"+p.partNumber;
       if(!scanned.has(key)){
@@ -1511,8 +1539,10 @@ function getUnscannedRows(){
       }
     }
   }
-  // Filter by part number search
-  if(filters.part) return rows.filter(r=>r.partNumber.includes(filters.part.toUpperCase()));
+  if(filters.q){
+    const q = filters.q.toUpperCase();
+    return rows.filter(r => (r.invoiceId||"").includes(q) || (r.partNumber||"").includes(q));
+  }
   return rows;
 }
 
@@ -1538,8 +1568,10 @@ function getFiltered(){
     if(filters.brand && e.brand !== filters.brand) return false;
     if(filters.user && e.initials !== filters.user) return false;
     if(settingsState.hiddenUsers.length && settingsState.hiddenUsers.includes(e.initials)) return false;
-    if(filters.invoice && !e.invoiceId.includes(filters.invoice.toUpperCase())) return false;
-    if(filters.part && !e.partNumber.includes(filters.part.toUpperCase())) return false;
+    if(filters.q){
+      const q = filters.q.toUpperCase();
+      if(!(e.invoiceId||"").includes(q) && !(e.partNumber||"").includes(q)) return false;
+    }
     if(filters.action && e.action !== filters.action) return false;
     if(filters.method && (e.method||"") !== filters.method) return false;
     const act = e.action || "confirmed";
@@ -1740,11 +1772,31 @@ function renderTable(flashFirst){
 
 // ── Filter controls ───────────────────────────────────────────────────────
 function applyFilters(){
-  filters.user    = document.getElementById("f-user").value;
-  filters.invoice = document.getElementById("f-invoice").value;
-  filters.part    = document.getElementById("f-part").value;
+  filters.user = document.getElementById("f-user").value;
+  filters.q    = document.getElementById("f-search").value.trim();
   renderTable(false);
 }
+
+// The four filters live in a drawer so the bar stays a search box and one button.
+function toggleFilterPanel(force){
+  const p = document.getElementById("f-panel"), b = document.getElementById("f-btn");
+  const on = force === undefined ? !p.classList.contains("open") : !!force;
+  p.classList.toggle("open", on);
+  b.classList.toggle("open", on);
+}
+function clearFilters(){
+  document.getElementById("f-search").value = "";
+  document.getElementById("f-user").value = "";
+  setStatusFilter("");
+  setMethodFilter("");
+  applyFilters();
+}
+// Click away or press Escape to close, same as the settings panel.
+document.addEventListener("mousedown", e => {
+  const t = e.target instanceof Element ? e.target : null;
+  if(t && !t.closest("#f-panel,#f-btn")) toggleFilterPanel(false);
+}, true);
+document.addEventListener("keydown", e => { if(e.key === "Escape") toggleFilterPanel(false); });
 
 function setBrand(b){
   filters.brand = b;
