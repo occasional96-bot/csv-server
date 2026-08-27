@@ -84,10 +84,11 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .shell.sb-compact .logo{padding:4px 0 14px;text-align:center}
 .shell.sb-compact .logo-title{font-size:15px;letter-spacing:.04em}
 .shell.sb-compact .logo-sub,.shell.sb-compact .logo-app,.shell.sb-compact .nav-label,.shell.sb-compact .nav-group{display:none}
-.shell.sb-compact .nav-item{justify-content:center;padding:0;gap:0;position:relative}
+.shell.sb-compact .nav-item{justify-content:center;padding:0;gap:0}
+.nav-item{position:relative}
 .shell.sb-compact .sidebar{overflow:visible}
-.shell.sb-compact .nav-item::after{content:attr(data-tip);position:absolute;left:calc(100% + 12px);top:50%;transform:translateY(-50%) translateX(-4px);background:var(--ink);color:#fff;font-size:12px;font-weight:500;padding:6px 10px;border-radius:8px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .12s,transform .12s;z-index:120;box-shadow:var(--shadow-pop)}
-.shell.sb-compact .nav-item::before{content:"";position:absolute;left:calc(100% + 6px);top:50%;transform:translateY(-50%);border:6px solid transparent;border-right-color:var(--ink);border-left:0;pointer-events:none;opacity:0;transition:opacity .12s;z-index:120}
+.nav-item::after{content:attr(data-tip);position:absolute;left:calc(100% + 12px);top:50%;transform:translateY(-50%) translateX(-4px);background:var(--ink);color:#fff;font-size:12px;font-weight:500;padding:6px 10px;border-radius:8px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .12s,transform .12s;z-index:120;box-shadow:var(--shadow-pop)}
+.nav-item::before{content:"";position:absolute;left:calc(100% + 6px);top:50%;transform:translateY(-50%);border:6px solid transparent;border-right-color:var(--ink);border-left:0;pointer-events:none;opacity:0;transition:opacity .12s;z-index:120}
 .shell.sb-compact .nav-item:hover::after{opacity:1;transform:translateY(-50%) translateX(0)}
 .shell.sb-compact .nav-item:hover::before{opacity:1}
 
@@ -546,7 +547,9 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 
 /* ── Responsive ── */
 @media(max-width:1100px){
-  .sidebar{width:64px;padding-left:10px;padding-right:10px}
+  .sidebar{width:64px;padding-left:10px;padding-right:10px;overflow:visible}
+  .nav-item:hover::after{opacity:1;transform:translateY(-50%) translateX(0)}
+  .nav-item:hover::before{opacity:1}
   .site-switch,.site-switch.show{display:none}  /* toggle can't fit icon-only width — back when sidebar widens */
   .logo{padding:4px 0 14px;text-align:center}
   .logo-title{font-size:15px;letter-spacing:.04em}
@@ -2683,6 +2686,20 @@ function toggleSettings(){
   ov.classList.toggle("show");
   if(ov.classList.contains("show")) renderHideChips();
 }
+// Click anywhere outside the panel closes it. mousedown is captured first because
+// controls inside the panel (hide-user chips) re-render and detach before click fires.
+let settingsClickInside=false;
+document.addEventListener("mousedown",e=>{
+  const ov=document.getElementById("settings-overlay");
+  const t=e.target instanceof Element ? e.target : null;
+  settingsClickInside = !!t && (ov.contains(t) || !!t.closest("#nav-settings,[data-cmd='settings']"));
+},true);
+document.addEventListener("click",e=>{
+  const ov=document.getElementById("settings-overlay");
+  if(!ov.classList.contains("show")) return;
+  if(settingsClickInside) return;
+  toggleSettings();
+});
 
 let settingsState = {
   density: "default",
