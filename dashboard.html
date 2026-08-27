@@ -220,13 +220,22 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 
 /* ── Table ── */
 .table-wrap{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--line);overflow:hidden;box-shadow:var(--shadow-card)}
-.thead{display:grid;grid-template-columns:76px 88px 38px 112px minmax(0,1fr) 70px 134px 124px;padding:0 16px;height:40px;align-items:center;border-bottom:1px solid var(--line);background:var(--surface-2);overflow:hidden;scrollbar-gutter:stable}
+.thead{display:grid;grid-template-columns:76px 38px minmax(0,1fr) 70px 134px 124px;padding:0 16px;height:40px;align-items:center;border-bottom:1px solid var(--line);background:var(--surface-2);overflow:hidden;scrollbar-gutter:stable}
 /* header and body reserve the same scrollbar gutter so columns line up */
 #page-log .tbody{scrollbar-gutter:stable}
 .th{font-size:11.5px;font-weight:600;color:var(--ink-3);letter-spacing:.04em;text-transform:uppercase}
 .tbody{}
-.row{display:grid;grid-template-columns:76px 88px 38px 112px minmax(0,1fr) 70px 134px 124px;padding:12px 16px;border-bottom:1px solid var(--line);align-items:center}
+.row{display:grid;grid-template-columns:76px 38px minmax(0,1fr) 70px 134px 124px;padding:12px 16px;border-bottom:1px solid var(--line);align-items:center}
 .row:last-child{border-bottom:none}
+.row{cursor:pointer}
+/* Time and invoice are pulled out of the grid — the group header already carries the invoice,
+   so both only appear in the strip a row opens when clicked. nth-child counts hidden cells too,
+   which is why the 900px rules below still target the same indexes. */
+.thead .th:nth-child(2),.thead .th:nth-child(4),.row>.time-cell,.row>.inv-block{display:none}
+.row-meta{grid-column:1/-1;display:none;gap:20px;align-items:center;margin-top:10px;padding-top:9px;border-top:1px dashed var(--line);font-size:12px;color:var(--ink-3)}
+.row.open .row-meta{display:flex}
+.row-meta b{font-weight:600;color:var(--ink-2);font-family:var(--mono);font-variant-numeric:tabular-nums;margin-left:6px}
+.row-meta .rm-inv{color:var(--accent)}
 .row:hover{background:var(--surface-2)}
 .row.flash-new{animation:flashrow 1.5s ease-out}
 @keyframes flashrow{0%{background:var(--green-soft)}100%{background:transparent}}
@@ -268,6 +277,8 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .status-filters{display:none}
 .badge{display:inline-flex;align-items:center;gap:4px;border-radius:6px;padding:4px 9px;font-size:12px;font-weight:600;white-space:nowrap;letter-spacing:.01em}
 .badge-dot{display:none}
+.badge.badge-icon{padding:0;width:26px;height:26px;justify-content:center;border-radius:7px}
+.badge.badge-icon svg{width:15px;height:15px;display:block}
 .b-confirmed{background:var(--green-soft);color:var(--green)}
 .b-manual{background:var(--amber-soft);color:var(--amber)}
 .b-not_found{background:var(--red-soft);color:var(--red)}
@@ -570,7 +581,7 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 @media(max-width:900px){
   .stats{grid-template-columns:repeat(3,1fr)}
   .import-grid{grid-template-columns:1fr}
-  .thead,.row{grid-template-columns:44px 82px 32px 100px minmax(0,1fr) 60px 140px}
+  .thead,.row{grid-template-columns:44px 32px minmax(0,1fr) 60px 140px}
   .th:nth-child(7),.row>*:nth-child(7){display:none}
   .ufiles-head,.urow-main{grid-template-columns:1fr 120px 84px;gap:10px;padding:10px 40px 10px 14px}
   .ufiles-head>*:nth-child(3),.urow-main>*:nth-child(3),
@@ -1605,11 +1616,19 @@ function methodIcon(m, cls){
 // App user colours are bright (neon green, yellow). On a white page a solid fill with
 // white initials is unreadable, so: pale tint behind, darkened version of the colour in front.
 function tintStyle(c){ c = c || "#79828C"; return `background:color-mix(in srgb,${c} 16%,#fff);color:color-mix(in srgb,${c} 58%,#000)`; }
+// Confirmed is the overwhelming majority of rows, so it reads as a tick tile rather than a word.
+// Every other status still spells itself out — "Short supply" has no obvious glyph.
+const CHECK_ICON = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M5.4 8.2l1.9 1.9 3.4-4"/></svg>';
+// Which rows are expanded, keyed so the state survives a re-render on the next scan.
+const openRows = new Set();
+const rowKey = e => (e.timestamp||"")+"|"+(e.invoiceId||"")+"|"+(e.partNumber||"");
+
 function renderRow(e, isNew){
   const isUnscan = e.action==="unscanned";
   const avatarStyle = tintStyle(e.color);
-  const badgeClass = "b-"+(e.action||"confirmed");
-  const badgeLabel = e.action==="confirmed"?"Confirmed":e.action==="manual"?"Manual":e.action==="not_found"?"Not found":e.action==="unscanned"?"Unscanned":e.action==="short"?"Short supply":e.action==="over"?"Over supply":e.action==="missing"?"Missing":e.action==="on_board"?"On board":e.action==="off_board"?"Off board":"Undo";
+  const isConfirmed = (e.action||"confirmed")==="confirmed";
+  const badgeClass = "b-"+(e.action||"confirmed")+(isConfirmed?" badge-icon":"");
+  const badgeLabel = e.action==="confirmed"?CHECK_ICON:e.action==="manual"?"Manual":e.action==="not_found"?"Not found":e.action==="unscanned"?"Unscanned":e.action==="short"?"Short supply":e.action==="over"?"Over supply":e.action==="missing"?"Missing":e.action==="on_board"?"On board":e.action==="off_board"?"Off board":"Undo";
   const dotColor = e.action==="confirmed"?"#22C55E":e.action==="manual"?"#3B82F6":e.action==="not_found"?"#EF4444":e.action==="short"?"#FBBF24":e.action==="over"?"#3B82F6":e.action==="missing"?"#EF4444":e.action==="on_board"?"#FBBF24":e.action==="off_board"?"#22C55E":"#9D9DA8";
   // Mini progress bar for qty
   let qtyHtml = "—";
@@ -1625,17 +1644,31 @@ function renderRow(e, isNew){
     }
   }
   const noteShown = !!e.note && !["arrived","manual"].includes(e.note); // app-internal tags, not operator notes
-  return `<div class="row${isNew?" flash-new":""}${isUnscan?" unscanned-row":""}">
+  const rk = rowKey(e);
+  const timeTxt = isUnscan?"—":fmtTime(e.timestamp);
+  return `<div class="row${isNew?" flash-new":""}${isUnscan?" unscanned-row":""}${openRows.has(rk)?" open":""}" data-k="${rk.replace(/"/g,"&quot;")}">
     <div><div class="brand-chip brand-${(e.brand||'').toString().toLowerCase().replace(/[^a-z]/g,'')}">${e.brand||"?"}</div></div>
-    <div class="time-cell">${isUnscan?"—":fmtTime(e.timestamp)}</div>
+    <div class="time-cell">${timeTxt}</div>
     <div><div class="avatar${isUnscan?" dim":""}" style="${isUnscan?"":avatarStyle}">${isUnscan?"—":e.initials}</div></div>
     <div class="inv-block"><div class="inv-num">${e.invoiceId}</div></div>
     <div class="part-cell"><div class="part-num${isUnscan?" dim":""}">${e.partNumber}</div><div class="part-desc${isUnscan?" dim":""}" title="${((e.description||"")+(noteShown?" · "+e.note:"")).replace(/"/g,"&quot;")}">${e.description||""}${noteShown?`<span class="part-note"> · ${e.note}</span>`:""}</div></div>
     <div class="qty-cell${isUnscan?" dim":""}">${qtyHtml}${miniBar}</div>
     <div>${e.orderRef?`<div class="order-ref${isUnscan?" dim":""}" title="${String(e.orderRef).replace(/"/g,"&quot;")}">${e.orderRef}</div>`:`<div class="order-ref dim">—</div>`}</div>
-    <div class="status-cell"><span class="badge ${badgeClass}"><span class="badge-dot" style="background:${dotColor}"></span>${badgeLabel}</span>${isUnscan?"":methodIcon(e.method,"sl")}</div>
+    <div class="status-cell"><span class="badge ${badgeClass}"${isConfirmed?' title="Confirmed"':""}><span class="badge-dot" style="background:${dotColor}"></span>${badgeLabel}</span>${isUnscan?"":methodIcon(e.method,"sl")}</div>
+    <div class="row-meta"><span>Time<b>${timeTxt}</b></span><span>Invoice<b class="rm-inv">${e.invoiceId}</b></span></div>
   </div>`;
 }
+
+// Clicking a row opens its time + invoice. Delegated on the tbody because rows are re-rendered
+// wholesale on every scan, and keyed so an open row stays open across that re-render.
+document.getElementById("log-tbody").addEventListener("click", ev => {
+  const r = ev.target.closest(".row");
+  if(!r || !r.dataset.k) return;
+  if(String(window.getSelection())) return; // don't collapse a row the user was selecting text in
+  const k = r.dataset.k;
+  if(openRows.has(k)){ openRows.delete(k); r.classList.remove("open"); }
+  else { openRows.add(k); r.classList.add("open"); }
+});
 
 function renderTable(flashFirst){
   updateStatusCounts();
