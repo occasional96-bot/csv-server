@@ -214,17 +214,16 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .fbtn:hover svg,.fbtn.open svg{color:var(--ink-2)}
 .fbtn.open{background:var(--surface-2);border-color:var(--line-2);color:var(--ink)}
 .fpanel{display:none;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);
-  box-shadow:var(--shadow-card);padding:16px;margin:-4px 0 14px}
+  box-shadow:var(--shadow-card);padding:12px;margin:-4px 0 14px}
 .fpanel.open{display:block;animation:fpanelin .16s ease-out}
 @keyframes fpanelin{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
-.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:12px}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
 .ffield{min-width:0}
-.fcap{display:block;font-size:10.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;
-  color:var(--ink-4);margin-bottom:5px}
-.ffield .tb-field{min-width:0}
-.fpanel-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;padding-top:13px;border-top:1px solid var(--line)}
-.fp-btn{border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:8px 14px;
-  font:inherit;font-size:12.5px;font-weight:500;color:var(--ink-2);cursor:pointer}
+.ffield .tb-field{min-width:0;height:34px;padding:0 10px}
+.ffield select{font-size:13px;font-weight:500;color:var(--ink-2)}
+.fpanel-foot{display:flex;justify-content:flex-end;gap:7px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.fp-btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:5px 12px;height:30px;
+  font:inherit;font-size:12px;font-weight:500;color:var(--ink-2);cursor:pointer}
 .fp-btn:hover{border-color:var(--line-2);color:var(--ink)}
 .fp-done{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:600}
 .fp-done:hover{background:#000;border-color:#000}
@@ -726,9 +725,9 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
       </div>
       <div class="fpanel" id="f-panel">
         <div class="fgrid">
-          <div class="ffield"><span class="fcap">User</span><label class="tb-field tb-select"><select id="f-user" onchange="applyFilters()"><option value="">All users</option></select></label></div>
-          <div class="ffield"><span class="fcap">Status</span><label class="tb-field tb-select"><select id="f-status" onchange="setStatusFilter(this.value)"><option value="" data-label="All statuses">All statuses</option><option value="confirmed" data-label="Confirmed">Confirmed</option><option value="manual" data-label="Manual">Manual</option><option value="short" data-label="Short supply">Short supply</option><option value="over" data-label="Over supply">Over supply</option><option value="missing" data-label="Missing">Missing</option><option value="undo" data-label="Undo">Undo</option><option value="unscanned" data-label="Unscanned">Unscanned</option></select></label></div>
-          <div class="ffield"><span class="fcap">Method</span><label class="tb-field tb-select"><select id="f-method" onchange="setMethodFilter(this.value)"><option value="">Any method</option><option value="barcode">Barcode</option><option value="camera">Camera</option><option value="typed">Typed</option><option value="tap">Tap confirm</option></select></label></div>
+          <div class="ffield"><label class="tb-field tb-select"><select id="f-user" onchange="applyFilters()"><option value="">Users</option></select></label></div>
+          <div class="ffield"><label class="tb-field tb-select"><select id="f-status" onchange="setStatusFilter(this.value)"><option value="" data-label="Statuses">Statuses</option><option value="confirmed" data-label="Confirmed">Confirmed</option><option value="manual" data-label="Manual">Manual</option><option value="short" data-label="Short supply">Short supply</option><option value="over" data-label="Over supply">Over supply</option><option value="missing" data-label="Missing">Missing</option><option value="undo" data-label="Undo">Undo</option><option value="unscanned" data-label="Unscanned">Unscanned</option></select></label></div>
+          <div class="ffield"><label class="tb-field tb-select"><select id="f-method" onchange="setMethodFilter(this.value)"><option value="">Method</option><option value="barcode">Barcode</option><option value="camera">Camera</option><option value="typed">Typed</option><option value="tap">Tap confirm</option></select></label></div>
         </div>
         <div class="fpanel-foot"><button class="fp-btn" onclick="clearFilters()">Clear all</button><button class="fp-btn fp-done" onclick="toggleFilterPanel(false)">Done</button></div>
       </div>
@@ -1551,7 +1550,7 @@ function populateUserFilter(){
   const users = [...new Set(allLogs.filter(e=>!["on_board","off_board"].includes(e.action)).map(e=>e.initials))].filter(Boolean).sort();
   const sel = document.getElementById("f-user");
   const cur = sel.value;
-  sel.innerHTML = '<option value="">All users</option>' + users.map(u=>`<option value="${u}">${u}</option>`).join("");
+  sel.innerHTML = '<option value="">Users</option>' + users.map(u=>`<option value="${u}">${u}</option>`).join("");
   if(cur) sel.value = cur;
 }
 
