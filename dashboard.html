@@ -63,11 +63,18 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .logo-title{font-size:22px;font-weight:600;color:var(--ink);letter-spacing:.06em;line-height:1}
 .logo-sub{font-size:12px;color:var(--ink-3);margin-top:5px;letter-spacing:.01em}
 .logo-app{font-size:10px;font-weight:600;color:var(--ink-4);margin-top:10px;letter-spacing:.1em;text-transform:uppercase}
-.site-switch{display:none;margin:0 14px 14px;padding:3px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;gap:2px}
+.site-switch{display:none;position:relative;margin:0 14px 14px;padding:3px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;gap:2px}
 .site-switch.show{display:flex}
-.site-switch a{flex:1;text-align:center;height:30px;line-height:30px;font-size:12px;font-weight:500;color:var(--ink-3);border-radius:8px;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.site-switch a{flex:1;position:relative;z-index:1;text-align:center;height:30px;line-height:30px;font-size:12px;font-weight:500;color:var(--ink-3);border-radius:8px;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .18s ease}
 .site-switch a:hover{color:var(--ink)}
-.site-switch a.cur{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(23,25,28,.08);cursor:default}
+.site-switch a.cur{color:var(--ink);cursor:default}
+/* The white pill slides between sites so the toggle reacts before the page navigates. */
+.ss-pill{position:absolute;top:3px;height:30px;background:var(--surface);border-radius:8px;box-shadow:0 1px 2px rgba(23,25,28,.08);transition:transform .22s cubic-bezier(.2,.8,.25,1),width .22s cubic-bezier(.2,.8,.25,1);pointer-events:none;z-index:0}
+/* Cross-domain navigation can't morph, so fade out on leave and fade in on arrival. */
+.nav-veil{position:fixed;inset:0;z-index:200;background:var(--bg);opacity:0;pointer-events:none;transition:opacity .15s ease-in}
+.nav-veil.show{opacity:1}
+@keyframes pageIn{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+.shell.page-in{animation:pageIn .19s ease-out}
 .shell.sb-compact .site-switch{display:none}
 .nav-item{display:flex;align-items:center;gap:12px;height:40px;padding:0 14px;margin:3px 0;cursor:pointer;font-size:14px;font-weight:500;color:var(--ink-2);border-radius:10px;white-space:nowrap;user-select:none}
 .nav-item:hover{background:var(--surface-2);color:var(--ink)}
@@ -482,8 +489,11 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .cmd-search-bar kbd{font-size:10px;color:var(--ink-3);background:var(--grey-soft);padding:2px 6px;border-radius:4px;font-family:var(--mono)}
 
 /* ── Settings panel ── */
-.settings-overlay{position:fixed;top:14px;right:14px;bottom:14px;width:330px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);z-index:90;padding:22px 22px;display:none;overflow-y:auto;box-shadow:var(--shadow-pop)}
-.settings-overlay.show{display:block}
+.settings-overlay{position:fixed;top:14px;right:14px;bottom:14px;width:330px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);z-index:90;padding:22px 22px;overflow-y:auto;box-shadow:var(--shadow-pop);opacity:0;visibility:hidden;pointer-events:none;transform:translateX(12px) scale(.99);transform-origin:100% 50%;transition:opacity .13s ease-in,transform .13s ease-in,visibility 0s linear .13s}
+.settings-overlay.show{opacity:1;visibility:visible;pointer-events:auto;transform:none;transition:opacity .17s ease-out,transform .17s cubic-bezier(.2,.75,.3,1),visibility 0s}
+/* Dim behind the panel so clicking away reads as deliberate. Visual only — the page stays clickable. */
+.settings-scrim{position:fixed;inset:0;z-index:89;background:rgba(23,25,28,.16);opacity:0;pointer-events:none;transition:opacity .17s ease-out}
+.settings-scrim.show{opacity:1}
 .sp-title{font-size:18px;font-weight:600;color:var(--ink);margin-bottom:20px;display:flex;align-items:center;justify-content:space-between}
 .sp-close{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink-3);border:none;background:transparent;font-size:18px}
 .sp-close:hover{background:var(--grey-soft);color:var(--ink)}
@@ -1014,6 +1024,8 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 </div>
 
 <!-- Settings Panel Overlay -->
+<div class="settings-scrim" id="settings-scrim"></div>
+<div class="nav-veil" id="nav-veil"></div>
 <div class="settings-overlay" id="settings-overlay">
   <div class="sp-title">Settings <button class="sp-close" onclick="toggleSettings()" title="Close">&times;</button></div>
 
@@ -1108,8 +1120,38 @@ document.title = "Warehouse PRO — " + SITE.code + " " + SITE.name;
   if(sw && list.length > 1){
     sw.innerHTML = list.map(s => s.key === SITE.key
       ? `<a class="cur" aria-current="page">${s.name}</a>`
-      : `<a href="${s.url}/dashboard?site=${s.key}" onclick="localStorage.setItem('${SITE_LS}','${s.key}')">${s.name}</a>`).join("");
+      : `<a href="${s.url}/dashboard?site=${s.key}" data-site="${s.key}">${s.name}</a>`).join("")
+      + `<span class="ss-pill" id="ss-pill"></span>`;
     sw.classList.add("show");
+    const pill=document.getElementById("ss-pill");
+    const seatPill=(el,animate)=>{
+      if(!pill||!el||!el.offsetWidth) return;
+      if(!animate) pill.style.transition="none";
+      pill.style.width=el.offsetWidth+"px";
+      pill.style.transform="translateX("+el.offsetLeft+"px)";
+      if(!animate) requestAnimationFrame(()=>{ pill.style.transition=""; });
+    };
+    // Re-seat whenever the switch changes size — it starts hidden on narrow screens, so a
+    // one-shot measurement on load would read zero and leave the pill parked at the edge.
+    const seatCurrent=a=>seatPill(sw.querySelector("a.cur"),!!a);
+    requestAnimationFrame(()=>seatCurrent(false));
+    window.addEventListener("load",()=>seatCurrent(false));
+    window.addEventListener("resize",()=>seatCurrent(false));
+    if(window.ResizeObserver) new ResizeObserver(()=>seatCurrent(false)).observe(sw);
+    // Click the other site: slide the pill, fade the page out, then navigate. The prerendered
+    // dashboard is usually already warm, so the fade is the only thing the wait is spent on.
+    sw.addEventListener("click",ev=>{
+      const a=ev.target.closest("a[data-site]");
+      if(!a || ev.defaultPrevented || ev.button!==0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+      ev.preventDefault();
+      localStorage.setItem(SITE_LS, a.dataset.site);
+      seatPill(a,true);
+      a.style.color="var(--ink)";
+      const veil=document.getElementById("nav-veil");
+      const go=()=>{ location.href=a.href; };
+      // Failsafe: if the navigation never happens (offline), don't leave the veil covering the page.
+      if(veil){ veil.classList.add("show"); setTimeout(go,170); setTimeout(()=>veil.classList.remove("show"),3000); } else go();
+    });
     // Speed up the toggle: open the TLS connection to the other site now, and (Chrome) fully
     // prerender its dashboard when the link is hovered — activation then swaps in instantly.
     // The ?site= pin means the prerendered page pins itself and never bounces back here.
@@ -1123,6 +1165,13 @@ document.title = "Warehouse PRO — " + SITE.code + " " + SITE.name;
       }
     }
   }
+}
+// Fade the page in on arrival. A prerendered page runs its scripts long before it is shown,
+// so hold the animation until activation.
+{ const playIn=()=>{ const sh=document.querySelector(".shell"); if(sh) sh.classList.add("page-in"); };
+  if(document.prerendering) document.addEventListener("prerenderingchange",playIn,{once:true}); else playIn();
+  // Coming back via the back button restores the faded-out page from cache — clear the veil.
+  window.addEventListener("pageshow",e=>{ if(e.persisted){ const v=document.getElementById("nav-veil"); if(v) v.classList.remove("show"); } });
 }
 const SERVER = (location.protocol === "file:" || location.hostname === "localhost") ? SITE.url : location.origin;
 // Access key: only asked for when the server has API_KEY set (Settings → Server → Access key).
@@ -2682,8 +2731,9 @@ document.addEventListener("keydown",e=>{
 
 // ── Settings Panel ──────────────────────────────────────────────────────
 function toggleSettings(){
-  const ov=document.getElementById("settings-overlay");
+  const ov=document.getElementById("settings-overlay"), sc=document.getElementById("settings-scrim");
   ov.classList.toggle("show");
+  if(sc) sc.classList.toggle("show", ov.classList.contains("show"));
   if(ov.classList.contains("show")) renderHideChips();
 }
 // Click anywhere outside the panel closes it. mousedown is captured first because
