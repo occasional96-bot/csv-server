@@ -380,13 +380,11 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .urow.collapsed .urow-main{grid-template-columns:1fr;padding:9px 44px 9px 18px}
 .urow.collapsed .urow-main > *:nth-child(n+2){display:none}
 .urow.collapsed .uname{font-weight:500;color:var(--ink-3);font-size:13px}
-.urow.collapsed .udot{display:none}
 .urow.collapsed .ufname{display:none}
 .urow.collapsed .upath-stale{display:none !important}
-.udot{width:8px;height:8px;border-radius:50%;flex:none;display:inline-block}
 .ufile{min-width:0}
 .uname{font-size:14px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:8px;line-height:1.3}
-.ufname{font-size:12px;color:var(--ink-3);margin-top:2px;padding-left:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ufname{font-size:12px;color:var(--ink-3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ufname.empty{color:var(--ink-4)}
 .ustatus-badge{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:500;padding:0;border-radius:0;background:transparent !important;line-height:1.3}
 .ustatus-badge::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
@@ -714,7 +712,7 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
         <!-- KIA Parts -->
         <div class="urow" id="urow-kia" data-rowkey="kia">
           <div class="urow-main">
-            <div class="ufile"><div class="uname"><span class="udot" style="background:var(--accent)"></span>KIA Parts</div><div class="ufname" id="fn-kia">stdpartski.csv</div></div>
+            <div class="ufile"><div class="uname">KIA Parts</div><div class="ufname" id="fn-kia">stdpartski.csv</div></div>
             <div><div class="ustatus-badge sbadge sb-unknown" id="sbadge-kia">Checking…</div><div class="ustatus-meta" id="meta-kia">—</div></div>
             <div class="upath">
               <input class="upath-input" id="pi-kia" placeholder="stdpartski.csv" oninput="savePaths()" />
@@ -731,7 +729,7 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
         <!-- Hyundai Parts -->
         <div class="urow" id="urow-hy" data-rowkey="hy">
           <div class="urow-main">
-            <div class="ufile"><div class="uname"><span class="udot" style="background:var(--amber)"></span>Hyundai Parts</div><div class="ufname" id="fn-hy">stdpartshy.csv</div></div>
+            <div class="ufile"><div class="uname">Hyundai Parts</div><div class="ufname" id="fn-hy">stdpartshy.csv</div></div>
             <div><div class="ustatus-badge sbadge sb-unknown" id="sbadge-hy">Checking…</div><div class="ustatus-meta" id="meta-hy">—</div></div>
             <div class="upath">
               <input class="upath-input" id="pi-hy" placeholder="stdpartshy.csv" oninput="savePaths()" />
@@ -750,7 +748,7 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
         <!-- Invoice Data E -->
         <div class="urow" id="urow-inve" data-rowkey="inve">
           <div class="urow-main">
-            <div class="ufile"><div class="uname"><span class="udot" style="background:var(--teal)"></span>Invoice Data E</div><div class="ufname" id="fn-inve">04E-INVOICE-SCAN-APP_Data.csv</div></div>
+            <div class="ufile"><div class="uname">Invoice Data E</div><div class="ufname" id="fn-inve">04E-INVOICE-SCAN-APP_Data.csv</div></div>
             <div><div class="ustatus-badge sbadge sb-unknown" id="sbadge-inve">Checking…</div><div class="ustatus-meta" id="meta-inve">—</div></div>
             <div class="upath">
               <input class="upath-input" id="pi-inve" placeholder="04E-INVOICE-SCAN-APP_Data.csv" oninput="savePaths()" />
@@ -767,7 +765,7 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
         <!-- Generic slot 1 -->
         <div class="urow u-other" id="urow-other1" data-rowkey="other1">
           <div class="urow-main">
-            <div class="ufile"><div class="uname"><span class="udot" style="background:var(--line-2)"></span>Other File 1</div><div class="ufname empty" id="fn-other1">Optional — any extra CSV</div></div>
+            <div class="ufile"><div class="uname">Other File 1</div><div class="ufname empty" id="fn-other1">Optional — any extra CSV</div></div>
             <div><div class="ustatus-badge sbadge sb-unknown" id="sbadge-other1">No file</div><div class="ustatus-meta" id="meta-other1">—</div></div>
             <div class="upath">
               <input class="upath-input" id="pi-other1" placeholder="Choose a file" oninput="savePaths()" />
@@ -784,7 +782,7 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
         <!-- Generic slot 2 -->
         <div class="urow u-other" id="urow-other2" data-rowkey="other2">
           <div class="urow-main">
-            <div class="ufile"><div class="uname"><span class="udot" style="background:var(--line-2)"></span>Other File 2</div><div class="ufname empty" id="fn-other2">Optional — any extra CSV</div></div>
+            <div class="ufile"><div class="uname">Other File 2</div><div class="ufname empty" id="fn-other2">Optional — any extra CSV</div></div>
             <div><div class="ustatus-badge sbadge sb-unknown" id="sbadge-other2">No file</div><div class="ustatus-meta" id="meta-other2">—</div></div>
             <div class="upath">
               <input class="upath-input" id="pi-other2" placeholder="Choose a file" oninput="savePaths()" />
