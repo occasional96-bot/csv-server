@@ -63,16 +63,15 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .logo-title{font-size:22px;font-weight:600;color:var(--ink);letter-spacing:.06em;line-height:1}
 .logo-sub{font-size:12px;color:var(--ink-3);margin-top:5px;letter-spacing:.01em}
 .logo-app{font-size:10px;font-weight:600;color:var(--ink-4);margin-top:10px;letter-spacing:.1em;text-transform:uppercase}
-.site-switch{display:none;position:relative;margin:0 14px 14px;padding:3px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;gap:2px}
+.site-switch{display:none;position:relative;margin:0 14px 14px;padding:3px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px}
 .site-switch.show{display:flex}
 .site-switch a{flex:1;position:relative;z-index:1;text-align:center;height:30px;line-height:30px;font-size:12px;font-weight:500;color:var(--ink-3);border-radius:8px;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .18s ease}
 .site-switch a:hover{color:var(--ink)}
 .site-switch a.cur{color:var(--ink);cursor:default}
 /* The white pill slides between sites so the toggle reacts before the page navigates. */
 .ss-pill{position:absolute;top:3px;height:30px;background:var(--surface);border-radius:8px;box-shadow:0 1px 2px rgba(23,25,28,.08);transition:transform .22s cubic-bezier(.2,.8,.25,1),width .22s cubic-bezier(.2,.8,.25,1);pointer-events:none;z-index:0}
-/* Cross-domain navigation can't morph, so fade out on leave and fade in on arrival. */
-.nav-veil{position:fixed;inset:0;z-index:200;background:var(--bg);opacity:0;pointer-events:none;transition:opacity .15s ease-in}
-.nav-veil.show{opacity:1}
+/* Cross-domain navigation can't morph. A prerendered page activates instantly and needs
+   nothing; only a cold load fades in. */
 @keyframes pageIn{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
 .shell.page-in{animation:pageIn .19s ease-out}
 .shell.sb-compact .site-switch{display:none}
@@ -1025,7 +1024,6 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 
 <!-- Settings Panel Overlay -->
 <div class="settings-scrim" id="settings-scrim"></div>
-<div class="nav-veil" id="nav-veil"></div>
 <div class="settings-overlay" id="settings-overlay">
   <div class="sp-title">Settings <button class="sp-close" onclick="toggleSettings()" title="Close">&times;</button></div>
 
@@ -1142,37 +1140,31 @@ document.title = "Warehouse PRO — " + SITE.code + " " + SITE.name;
     // dashboard is usually already warm, so the fade is the only thing the wait is spent on.
     sw.addEventListener("click",ev=>{
       const a=ev.target.closest("a[data-site]");
-      if(!a || ev.defaultPrevented || ev.button!==0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
-      ev.preventDefault();
+      if(!a) return;
       localStorage.setItem(SITE_LS, a.dataset.site);
+      // The pill starts moving on the way out; the browser then activates the prerendered
+      // page, which is already painted with its own pill on the other side.
       seatPill(a,true);
       a.style.color="var(--ink)";
-      const veil=document.getElementById("nav-veil");
-      const go=()=>{ location.href=a.href; };
-      // Failsafe: if the navigation never happens (offline), don't leave the veil covering the page.
-      if(veil){ veil.classList.add("show"); setTimeout(go,170); setTimeout(()=>veil.classList.remove("show"),3000); } else go();
     });
     // Speed up the toggle: open the TLS connection to the other site now, and (Chrome) fully
-    // prerender its dashboard when the link is hovered — activation then swaps in instantly.
+    // prerender its dashboard up front — eager, not on hover, so the click is always warm and
+    // the switch is an instant swap rather than a page load. Two sites only, so the cost is fixed.
     // The ?site= pin means the prerendered page pins itself and never bounces back here.
     if(location.protocol!=="file:" && location.hostname!=="localhost"){
       const others=list.filter(s=>s.key!==SITE.key);
       others.forEach(s=>{ const pc=document.createElement("link"); pc.rel="preconnect"; pc.href=s.url; document.head.appendChild(pc); });
       if(others.length && HTMLScriptElement.supports && HTMLScriptElement.supports("speculationrules")){
         const sr=document.createElement("script"); sr.type="speculationrules";
-        sr.textContent=JSON.stringify({prerender:[{urls:others.map(s=>s.url+"/dashboard?site="+s.key),eagerness:"moderate"}]});
+        sr.textContent=JSON.stringify({prerender:[{urls:others.map(s=>s.url+"/dashboard?site="+s.key),eagerness:"eager"}]});
         document.head.appendChild(sr);
       }
     }
   }
 }
-// Fade the page in on arrival. A prerendered page runs its scripts long before it is shown,
-// so hold the animation until activation.
-{ const playIn=()=>{ const sh=document.querySelector(".shell"); if(sh) sh.classList.add("page-in"); };
-  if(document.prerendering) document.addEventListener("prerenderingchange",playIn,{once:true}); else playIn();
-  // Coming back via the back button restores the faded-out page from cache — clear the veil.
-  window.addEventListener("pageshow",e=>{ if(e.persisted){ const v=document.getElementById("nav-veil"); if(v) v.classList.remove("show"); } });
-}
+// A prerendered page is swapped in fully painted, so it must not animate on arrival — that
+// would look like a reload. Only a cold load gets the fade.
+if(!document.prerendering){ const sh=document.querySelector(".shell"); if(sh) sh.classList.add("page-in"); }
 const SERVER = (location.protocol === "file:" || location.hostname === "localhost") ? SITE.url : location.origin;
 // Access key: only asked for when the server has API_KEY set (Settings → Server → Access key).
 const API_KEY_LS = "wh_pro_api_key";
