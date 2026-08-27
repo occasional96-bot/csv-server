@@ -220,18 +220,16 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 
 /* ── Table ── */
 .table-wrap{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--line);overflow:hidden;box-shadow:var(--shadow-card)}
-.thead{display:grid;grid-template-columns:76px 38px minmax(0,1fr) 70px 134px 124px;column-gap:14px;padding:0 16px;height:40px;align-items:center;border-bottom:1px solid var(--line);background:var(--surface-2);overflow:hidden;scrollbar-gutter:stable}
+.thead{display:grid;grid-template-columns:44px minmax(0,1fr) 70px 134px 86px;column-gap:14px;padding:0 16px;height:40px;align-items:center;border-bottom:1px solid var(--line);background:var(--surface-2);overflow:hidden;scrollbar-gutter:stable}
 /* header and body reserve the same scrollbar gutter so columns line up */
 #page-log .tbody{scrollbar-gutter:stable}
 .th{font-size:11.5px;font-weight:600;color:var(--ink-3);letter-spacing:.04em;text-transform:uppercase;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tbody{}
-.row{display:grid;grid-template-columns:76px 38px minmax(0,1fr) 70px 134px 124px;column-gap:14px;padding:12px 16px;border-bottom:1px solid var(--line);align-items:center}
+.row{display:grid;grid-template-columns:44px minmax(0,1fr) 70px 134px 86px;column-gap:14px;padding:12px 16px;border-bottom:1px solid var(--line);align-items:center}
 .row:last-child{border-bottom:none}
 .row{cursor:pointer}
-/* Time and invoice are pulled out of the grid — the group header already carries the invoice,
-   so both only appear in the strip a row opens when clicked. nth-child counts hidden cells too,
-   which is why the 900px rules below still target the same indexes. */
-.thead .th:nth-child(2),.thead .th:nth-child(4),.row>.time-cell,.row>.inv-block{display:none}
+/* Time, invoice and brand are off the grid entirely — the group header already carries the
+   invoice, and brand repeats it — so all three only appear in the strip a row opens when clicked. */
 .row-meta{grid-column:1/-1;display:none;gap:20px;align-items:center;margin-top:10px;padding-top:9px;border-top:1px dashed var(--line);font-size:12px;color:var(--ink-3)}
 .row.open .row-meta{display:flex}
 .row-meta b{font-weight:600;color:var(--ink-2);font-family:var(--mono);font-variant-numeric:tabular-nums;margin-left:6px}
@@ -241,13 +239,14 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 @keyframes flashrow{0%{background:var(--green-soft)}100%{background:transparent}}
 .row.unscanned-row{background:var(--surface-2)}
 .status-cell{display:flex;align-items:center;gap:6px}
+.end-cell{display:flex;align-items:center;gap:8px;justify-content:flex-end}
 .sl-mi{flex:none;width:22px;height:22px;border-radius:4px;background:var(--surface-2);border:1px solid var(--line);color:var(--ink-3);display:grid;place-items:center}
 .sl-mi svg{width:14px;height:14px;display:block}
 .sl-mi-none{flex:none;width:22px;text-align:center;font-size:11px;color:var(--ink-4)}
 
 .brand-chip{border-radius:5px;padding:3px 7px;font-size:11px;font-weight:600;letter-spacing:.04em;text-align:center;background:var(--grey-soft);color:var(--ink-2);display:inline-block;font-family:var(--mono)}
 .time-cell{font-size:13px;color:var(--ink-2);font-family:var(--mono);font-variant-numeric:tabular-nums}
-.avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0;font-family:var(--mono)}
+.avatar{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;flex-shrink:0;font-family:var(--mono)}
 .avatar.dim{background:var(--grey-soft)!important;border:none!important;color:var(--ink-4)!important}
 .inv-block{}
 .inv-num{font-size:13px;font-weight:600;letter-spacing:0;font-family:var(--mono);color:var(--accent)}
@@ -581,8 +580,8 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 @media(max-width:900px){
   .stats{grid-template-columns:repeat(3,1fr)}
   .import-grid{grid-template-columns:1fr}
-  .thead,.row{grid-template-columns:76px 38px minmax(0,1fr) 70px 124px}
-  .th:nth-child(7),.row>*:nth-child(7){display:none}
+  .thead,.row{grid-template-columns:44px minmax(0,1fr) 70px 86px}
+  .th:nth-child(4),.row>*:nth-child(4){display:none}
   .ufiles-head,.urow-main{grid-template-columns:1fr 120px 84px;gap:10px;padding:10px 40px 10px 14px}
   .ufiles-head>*:nth-child(3),.urow-main>*:nth-child(3),
   .ufiles-head>*:nth-child(4),.urow-main>*:nth-child(4){display:none}
@@ -593,7 +592,7 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 }
 
 @media(max-width:700px){
-  .thead,.row{grid-template-columns:66px 34px minmax(0,1fr) 58px 100px;column-gap:10px;padding-left:12px;padding-right:12px}
+  .thead,.row{grid-template-columns:40px minmax(0,1fr) 58px 80px;column-gap:10px;padding-left:12px;padding-right:12px}
   .brand-chip{padding:3px 5px;font-size:10px}
 }
 
@@ -707,14 +706,11 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 
       <div class="table-wrap">
         <div class="thead">
-          <div class="th" style="display:flex;align-items:center;gap:6px"><svg id="collapse-all-icon" onclick="toggleAllGroups()" title="Collapse/Expand all" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;cursor:pointer;flex:none;transition:transform .2s"><path d="M4 6l4 4 4-4"/></svg>BRAND</div>
-          <div class="th">TIME</div>
-          <div class="th">USER</div>
-          <div class="th">INVOICE</div>
+          <div class="th" style="display:flex;align-items:center;gap:6px"><svg id="collapse-all-icon" onclick="toggleAllGroups()" title="Collapse/Expand all" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;cursor:pointer;flex:none;transition:transform .2s"><path d="M4 6l4 4 4-4"/></svg></div>
           <div class="th" style="white-space:nowrap">PART / DESC</div>
           <div class="th" style="text-align:center">QTY</div>
           <div class="th">ORDER REF</div>
-          <div class="th">STATUS</div>
+          <div class="th" style="text-align:right">BY</div>
         </div>
         <div class="tbody" id="log-tbody">
           <div class="empty-state">Loading scan log...</div>
@@ -1621,9 +1617,26 @@ function methodIcon(m, cls){
 // App user colours are bright (neon green, yellow). On a white page a solid fill with
 // white initials is unreadable, so: pale tint behind, darkened version of the colour in front.
 function tintStyle(c){ c = c || "#79828C"; return `background:color-mix(in srgb,${c} 16%,#fff);color:color-mix(in srgb,${c} 58%,#000)`; }
-// Confirmed is the overwhelming majority of rows, so it reads as a tick tile rather than a word.
-// Every other status still spells itself out — "Short supply" has no obvious glyph.
-const CHECK_ICON = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><path d="M5.4 8.2l1.9 1.9 3.4-4"/></svg>';
+// Status leads the row as a fixed-width tile, so every action needs a glyph — a 44px column can't
+// hold "Short supply". The word still travels with it as a tooltip and in the strip a click opens.
+const SG = b => '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">'+b+'</svg>';
+const STATUS_ICONS = {
+  confirmed: SG('<circle cx="8" cy="8" r="6"/><path d="M5.4 8.2l1.9 1.9 3.4-4"/>'),
+  manual:    SG('<path d="M11.2 2.9l1.9 1.9-7.2 7.2-2.5.6.6-2.5z"/>'),
+  short:     SG('<circle cx="8" cy="8" r="6"/><path d="M5.3 8h5.4"/>'),
+  over:      SG('<circle cx="8" cy="8" r="6"/><path d="M8 5.3v5.4M5.3 8h5.4"/>'),
+  missing:   SG('<circle cx="8" cy="8" r="6"/><path d="M8 4.9v3.6M8 11.1h.01"/>'),
+  not_found: SG('<circle cx="8" cy="8" r="6"/><path d="M6 6l4 4M10 6l-4 4"/>'),
+  undo:      SG('<path d="M3 8a5 5 0 105-5 5 5 0 00-3.5 1.5L3 6"/><path d="M3 3v3h3"/>'),
+  unscanned: SG('<circle cx="8" cy="8" r="6" stroke-dasharray="2.4 2.2"/>'),
+  on_board:  SG('<path d="M8 11.5V4.2M5 7l3-3 3 3"/><path d="M3 13h10"/>'),
+  off_board: SG('<path d="M8 4.2v7.3M5 8.6l3 3 3-3"/><path d="M3 13h10"/>'),
+};
+const STATUS_LABELS = {
+  confirmed:"Confirmed", manual:"Manual", not_found:"Not found", unscanned:"Unscanned",
+  short:"Short supply", over:"Over supply", missing:"Missing", undo:"Undo",
+  on_board:"On board", off_board:"Off board",
+};
 // Which rows are expanded, keyed so the state survives a re-render on the next scan.
 const openRows = new Set();
 const rowKey = e => (e.timestamp||"")+"|"+(e.invoiceId||"")+"|"+(e.partNumber||"");
@@ -1631,10 +1644,10 @@ const rowKey = e => (e.timestamp||"")+"|"+(e.invoiceId||"")+"|"+(e.partNumber||"
 function renderRow(e, isNew){
   const isUnscan = e.action==="unscanned";
   const avatarStyle = tintStyle(e.color);
-  const isConfirmed = (e.action||"confirmed")==="confirmed";
-  const badgeClass = "b-"+(e.action||"confirmed")+(isConfirmed?" badge-icon":"");
-  const badgeLabel = e.action==="confirmed"?CHECK_ICON:e.action==="manual"?"Manual":e.action==="not_found"?"Not found":e.action==="unscanned"?"Unscanned":e.action==="short"?"Short supply":e.action==="over"?"Over supply":e.action==="missing"?"Missing":e.action==="on_board"?"On board":e.action==="off_board"?"Off board":"Undo";
-  const dotColor = e.action==="confirmed"?"#22C55E":e.action==="manual"?"#3B82F6":e.action==="not_found"?"#EF4444":e.action==="short"?"#FBBF24":e.action==="over"?"#3B82F6":e.action==="missing"?"#EF4444":e.action==="on_board"?"#FBBF24":e.action==="off_board"?"#22C55E":"#9D9DA8";
+  const action = e.action||"confirmed";
+  const badgeClass = "b-"+action+" badge-icon";
+  const badgeLabel = STATUS_LABELS[action]||"Undo";
+  const badgeIcon = STATUS_ICONS[action]||STATUS_ICONS.undo;
   // Mini progress bar for qty
   let qtyHtml = "—";
   let miniBar = "";
@@ -1652,15 +1665,12 @@ function renderRow(e, isNew){
   const rk = rowKey(e);
   const timeTxt = isUnscan?"—":fmtTime(e.timestamp);
   return `<div class="row${isNew?" flash-new":""}${isUnscan?" unscanned-row":""}${openRows.has(rk)?" open":""}" data-k="${rk.replace(/"/g,"&quot;")}">
-    <div><div class="brand-chip brand-${(e.brand||'').toString().toLowerCase().replace(/[^a-z]/g,'')}">${e.brand||"?"}</div></div>
-    <div class="time-cell">${timeTxt}</div>
-    <div><div class="avatar${isUnscan?" dim":""}" style="${isUnscan?"":avatarStyle}">${isUnscan?"—":e.initials}</div></div>
-    <div class="inv-block"><div class="inv-num">${e.invoiceId}</div></div>
+    <div class="status-cell"><span class="badge ${badgeClass}" title="${badgeLabel}">${badgeIcon}</span></div>
     <div class="part-cell"><div class="part-num${isUnscan?" dim":""}">${e.partNumber}</div><div class="part-desc${isUnscan?" dim":""}" title="${((e.description||"")+(noteShown?" · "+e.note:"")).replace(/"/g,"&quot;")}">${e.description||""}${noteShown?`<span class="part-note"> · ${e.note}</span>`:""}</div></div>
     <div class="qty-cell${isUnscan?" dim":""}">${qtyHtml}${miniBar}</div>
     <div>${e.orderRef?`<div class="order-ref${isUnscan?" dim":""}" title="${String(e.orderRef).replace(/"/g,"&quot;")}">${e.orderRef}</div>`:`<div class="order-ref dim">—</div>`}</div>
-    <div class="status-cell"><span class="badge ${badgeClass}"${isConfirmed?' title="Confirmed"':""}><span class="badge-dot" style="background:${dotColor}"></span>${badgeLabel}</span>${isUnscan?"":methodIcon(e.method,"sl")}</div>
-    <div class="row-meta"><span>Time<b>${timeTxt}</b></span><span>Invoice<b class="rm-inv">${e.invoiceId}</b></span></div>
+    <div class="end-cell"><div class="avatar${isUnscan?" dim":""}" style="${isUnscan?"":avatarStyle}">${isUnscan?"—":e.initials}</div>${isUnscan?"":methodIcon(e.method,"sl")}</div>
+    <div class="row-meta"><span>Time<b>${timeTxt}</b></span><span>Invoice<b class="rm-inv">${e.invoiceId}</b></span><span>Brand<b>${e.brand||"?"}</b></span><span>Status<b>${badgeLabel}</b></span></div>
   </div>`;
 }
 
