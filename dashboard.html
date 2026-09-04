@@ -138,8 +138,9 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .whcal-d.sel{background:var(--accent);color:#fff;font-weight:600}
 .whcal-d.sel::after{background:#fff}
 .whcal-d.today{outline:1px solid var(--accent-line);outline-offset:-1px}
-.whcal-quick{display:flex;gap:5px;margin-top:10px;border-top:1px solid var(--line);padding-top:10px}
-.whcal-q{flex:1;font-size:11px;font-weight:500;color:var(--ink-2);background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:5px 0;text-align:center;cursor:pointer}
+.whcal-d.in{background:var(--accent-soft);color:var(--ink)}
+.whcal-quick{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px;border-top:1px solid var(--line);padding-top:10px}
+.whcal-q{flex:1 1 30%;font-size:11px;font-weight:500;color:var(--ink-2);background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:5px 0;text-align:center;cursor:pointer;white-space:nowrap}
 .whcal-q:hover{border-color:var(--line-2);color:var(--ink)}
 .whcal-q.on{color:var(--accent);border-color:var(--accent-line);background:var(--accent-soft)}
 
@@ -1304,12 +1305,17 @@ function rollCalDays(){
 function calWindow(c){
   if(c.mode==="all") return { from: -Infinity, to: Infinity };
   if(c.mode==="7d") return { from: Date.now()-7*86400000, to: Infinity };
+  if(c.mode==="range"&&c.from&&c.to) return { from: keyToDate(c.from).getTime(), to: keyToDate(c.to).getTime()+86400000 };
   const from = keyToDate(c.day).getTime();
   return { from, to: from+86400000 };
 }
 function calLabel(c){
   if(c.mode==="all") return "All slips";
   if(c.mode==="7d") return "Last 7 days";
+  if(c.mode==="range"&&c.from&&c.to){
+    const f=d=>keyToDate(d).toLocaleDateString("en-AU",{day:"numeric",month:"short"});
+    return f(c.from)+" – "+f(c.to);
+  }
   if(c.day===dateKey(new Date())) return "Today";
   if(c.day===dateKey(new Date(Date.now()-86400000))) return "Yesterday";
   return keyToDate(c.day).toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short"});
@@ -1325,9 +1331,23 @@ function calToggle(key){
   document.querySelectorAll(".whcal.open").forEach(x=>x.classList.remove("open"));
   if(!wasOpen){
     const c=whCals[key];
-    const base=c.mode==="day"?keyToDate(c.day):new Date();
+    c.pick=null;
+    const base=c.mode==="day"?keyToDate(c.day):(c.mode==="range"&&c.from?keyToDate(c.from):new Date());
     c.vy=base.getFullYear(); c.vm=base.getMonth();
-    calRender(key); el.classList.add("open");
+    calRender(key); el.classList.add("open"); calPlace(key);
+  }
+}
+// Keep the popup on screen: it anchors to the chip's right edge, but in narrow
+// layouts the chip sits at the far left and a right-anchored popup runs off
+// screen. Flip to a left anchor when the left edge would clip.
+function calPlace(key){
+  const pop=document.getElementById("cal-"+key+"-pop"); if(!pop) return;
+  pop.style.left="auto"; pop.style.right="0";
+  let r=pop.getBoundingClientRect();
+  if(r.left<8){
+    pop.style.right="auto"; pop.style.left="0";
+    r=pop.getBoundingClientRect();
+    if(r.right>window.innerWidth-8) pop.style.left=(window.innerWidth-8-r.right)+"px";
   }
 }
 function calNav(key,d){ const c=whCals[key]; c.vm+=d; if(c.vm<0){c.vm=11;c.vy--;} if(c.vm>11){c.vm=0;c.vy++;} calRender(key); }
@@ -1343,6 +1363,8 @@ function calRender(key){
   for(let d=1;d<=dim;d++){
     const k=c.vy+"-"+String(c.vm+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
     const cls=["whcal-d"]; if(dots.has(k))cls.push("dots"); if(c.mode==="day"&&c.day===k)cls.push("sel"); if(k===tk)cls.push("today");
+    if(c.mode==="range"&&!c.pick&&c.from&&c.to&&k>=c.from&&k<=c.to)cls.push(k===c.from||k===c.to?"sel":"in");
+    if(c.pick==="end"&&k===c.from)cls.push("sel");
     cells+=`<span class="${cls.join(" ")}" onclick="calPick('${key}','${k}')">${d}</span>`;
   }
   pop.innerHTML=`<div class="whcal-head"><span class="whcal-m">${first.toLocaleDateString("en-AU",{month:"long",year:"numeric"})}</span><span class="whcal-nav"><button class="whcal-nb" onclick="calNav('${key}',-1)">‹</button><button class="whcal-nb" onclick="calNav('${key}',1)">›</button></span></div>
@@ -1351,6 +1373,7 @@ function calRender(key){
       <span class="whcal-q${c.mode==="day"&&c.day===tk?" on":""}" onclick="calQuick('${key}','today')">Today</span>
       <span class="whcal-q${c.mode==="day"&&c.day===dateKey(new Date(Date.now()-86400000))?" on":""}" onclick="calQuick('${key}','yesterday')">Yesterday</span>
       <span class="whcal-q${c.mode==="7d"?" on":""}" onclick="calQuick('${key}','7d')">Last 7 days</span>
+      <span class="whcal-q${c.mode==="range"||c.pick?" on":""}" onclick="calQuick('${key}','range')">${c.pick==="start"?"Pick start day…":c.pick==="end"?"Pick end day…":"Range"}</span>
       ${c.all?`<span class="whcal-q${c.mode==="all"?" on":""}" onclick="calQuick('${key}','all')">All</span>`:""}
     </div>`;
 }
@@ -1361,9 +1384,19 @@ function calApply(key){
   if(el) el.classList.remove("open");
   whCals[key].onChange();
 }
-function calPick(key,k){ const c=whCals[key]; c.mode="day"; c.day=k; calApply(key); }
+function calPick(key,k){
+  const c=whCals[key];
+  if(c.pick==="start"){ c.from=k; c.pick="end"; calRender(key); return; }
+  if(c.pick==="end"){
+    c.to=k; if(c.to<c.from){ const t=c.from; c.from=c.to; c.to=t; }
+    c.mode="range"; c.pick=null; calApply(key); return;
+  }
+  c.mode="day"; c.day=k; calApply(key);
+}
 function calQuick(key,q){
   const c=whCals[key];
+  if(q==="range"){ c.pick="start"; calRender(key); return; } // stay open, wait for two day taps
+  c.pick=null;
   if(q==="7d") c.mode="7d";
   else if(q==="all") c.mode="all";
   else { c.mode="day"; c.day = q==="today" ? dateKey(new Date()) : dateKey(new Date(Date.now()-86400000)); }
