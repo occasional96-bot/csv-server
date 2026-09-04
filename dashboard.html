@@ -1369,7 +1369,10 @@ function calQuick(key,q){
   else { c.mode="day"; c.day = q==="today" ? dateKey(new Date()) : dateKey(new Date(Date.now()-86400000)); }
   calApply(key);
 }
-document.addEventListener("click",e=>{ if(!e.target.closest(".whcal")) document.querySelectorAll(".whcal.open").forEach(x=>x.classList.remove("open")); });
+// Month nav (‹ ›) re-renders the popup, detaching the clicked button before this
+// listener runs — a detached target has no .whcal ancestor, which closed the
+// popup on every nav click. Skip detached targets so month paging stays open.
+document.addEventListener("click",e=>{ if(e.target.isConnected && !e.target.closest(".whcal")) document.querySelectorAll(".whcal.open").forEach(x=>x.classList.remove("open")); });
 
 function getDateWindow(){ return calWindow(whCals.scan); }
 function getDateFrom(){ return getDateWindow().from; }
