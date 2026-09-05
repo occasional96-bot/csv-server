@@ -737,7 +737,7 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
         </div>
 
       <div class="toolbar">
-        <label class="tb-field"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5l3.5 3.5"/></svg><input id="f-search" placeholder="Search invoice or part number" oninput="applyFilters()" /></label>
+        <label class="tb-field"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5l3.5 3.5"/></svg><input id="f-search" placeholder="Search invoice or part number — press Enter" onkeydown="searchKey(event)" oninput="searchTyping()" /></label>
         <div class="fbtn" id="f-btn" onclick="toggleFilterPanel()" title="Filters"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.2" y="2.2" width="4.8" height="4.8" rx="1"/><rect x="9" y="2.2" width="4.8" height="4.8" rx="1"/><rect x="2.2" y="9" width="4.8" height="4.8" rx="1"/><rect x="9" y="9" width="4.8" height="4.8" rx="1" fill="currentColor"/></svg>Filters</div>
       </div>
       <div class="fpanel" id="f-panel">
@@ -1891,6 +1891,16 @@ function renderTable(flashFirst){
 }
 
 // ── Filter controls ───────────────────────────────────────────────────────
+// Search runs on Enter, not per keystroke — re-rendering thousands of rows on
+// every letter made typing a part number feel like the page was fighting back.
+function searchKey(e){
+  if(e.key==="Enter"){ e.preventDefault(); applyFilters(); return; }
+  if(e.key==="Escape"){ e.target.value=""; applyFilters(); }
+}
+// Wiping the box still restores the full list straight away — no Enter needed.
+function searchTyping(){
+  if(!document.getElementById("f-search").value.trim() && filters.q) applyFilters();
+}
 function applyFilters(){
   filters.user = document.getElementById("f-user").value;
   filters.q    = document.getElementById("f-search").value.trim().toUpperCase();
