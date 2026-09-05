@@ -950,6 +950,44 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
         #vm-root .vm-chip{font-size:11px;font-weight:600;letter-spacing:.02em;padding:2px 7px;border-radius:4px;flex:none}
         #vm-root .vm-chip.amber{color:var(--vm-amber);background:var(--vm-amberbg)} #vm-root .vm-chip.green{color:var(--vm-green);background:var(--vm-greenbg)}
         #vm-root .vm-empty{background:var(--vm-card);border:1px solid var(--vm-line);border-radius:var(--r-lg);padding:26px;text-align:center;color:var(--vm-mut);font-size:13px}
+        /* ── Run timeline: the same van scans read as a run, stop by stop ── */
+        #vm-root .vm-seg{display:inline-flex;background:var(--vm-soft);border:1px solid var(--vm-line);border-radius:var(--r);padding:2px;gap:2px;margin:0 16px 8px}
+        #vm-root .vm-segb{font:inherit;font-size:12px;font-weight:600;color:var(--vm-mut);background:none;border:0;border-radius:5px;padding:5px 12px;cursor:pointer}
+        #vm-root .vm-segb:hover{color:var(--vm-dim)}
+        #vm-root .vm-segb.on{background:var(--vm-card);color:var(--vm-ink);box-shadow:var(--shadow-card)}
+        #vm-root .vm-tl{padding:0 16px 6px}
+        #vm-root .vm-tlrow,#vm-root .vm-tlgap{display:grid;grid-template-columns:46px 16px 1fr;gap:0 10px}
+        #vm-root .vm-tlrail{position:relative;display:flex;justify-content:center}
+        #vm-root .vm-tlrail::before{content:"";position:absolute;top:0;bottom:0;width:2px;background:var(--vm-line)}
+        #vm-root .vm-tl>.vm-tlrow:first-child .vm-tlrail::before{top:16px}
+        #vm-root .vm-tlend .vm-tlrail::before{bottom:calc(100% - 12px)}
+        #vm-root .vm-tldot{position:relative;margin-top:13px;width:10px;height:10px;border-radius:50%;background:var(--vm-green);border:2px solid var(--vm-card);box-shadow:0 0 0 1.5px var(--vm-green);align-self:flex-start;flex:none}
+        #vm-root .vm-tldot.load{background:var(--vm-blue);box-shadow:0 0 0 1.5px var(--vm-blue)}
+        #vm-root .vm-tlt{font-family:var(--vm-mono);font-size:12px;color:var(--vm-mut);text-align:right;padding-top:13px;font-variant-numeric:tabular-nums}
+        #vm-root .vm-tlgapb{display:flex;align-items:center;gap:8px;padding:6px 0}
+        #vm-root .vm-tlchip{font-family:var(--vm-mono);font-size:11px;color:var(--vm-mut);background:var(--vm-soft);border:1px solid var(--vm-line);border-radius:999px;padding:2px 8px;font-variant-numeric:tabular-nums;white-space:nowrap}
+        #vm-root .vm-tlchip.long{color:var(--vm-amber);background:var(--vm-amberbg);border-color:transparent;font-weight:600}
+        #vm-root .vm-tlnote{font-size:11px;color:var(--ink-4)}
+        #vm-root .vm-tlcard{background:var(--vm-card);border:1px solid var(--vm-line);border-radius:var(--r);margin:5px 0;overflow:hidden}
+        #vm-root .vm-tlcard[open]{border-color:var(--vm-line2)}
+        #vm-root .vm-tlsum{cursor:pointer;display:flex;align-items:center;gap:10px;padding:10px 12px}
+        #vm-root .vm-tlsum:hover{background:var(--vm-soft)}
+        #vm-root .vm-tlblock{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+        #vm-root .vm-tlnm{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        #vm-root .vm-tlsub{font-size:12px;color:var(--vm-mut);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        #vm-root .vm-tlload{background:var(--vm-soft);border:1px solid var(--vm-line);border-radius:var(--r);padding:10px 12px;margin:5px 0}
+        #vm-root .vm-tlloadt{font-size:13px;font-weight:600}
+        #vm-root .vm-tlloads{font-size:12px;color:var(--vm-mut);font-family:var(--vm-mono);font-variant-numeric:tabular-nums;margin-top:1px}
+        #vm-root .vm-tlfin{font-size:12px;color:var(--vm-mut);padding:8px 0 4px}
+        #vm-root .vm-tlday{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--vm-mut);padding:12px 0 2px}
+        #vm-root .vm-an{margin:2px 16px 14px;border:1px solid var(--vm-line);border-radius:var(--r);background:var(--vm-soft);overflow:hidden}
+        #vm-root .vm-ansum{cursor:pointer;display:flex;align-items:center;gap:8px;padding:9px 12px;font-size:12px;font-weight:600;color:var(--vm-dim)}
+        #vm-root .vm-angrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:1px;background:var(--vm-line);border-top:1px solid var(--vm-line)}
+        #vm-root .vm-anb{background:var(--vm-card);padding:10px 12px}
+        #vm-root .vm-anb b{display:block;font-family:var(--vm-mono);font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.2}
+        #vm-root .vm-anb span{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--vm-mut);font-weight:600;margin-top:2px}
+        #vm-root .vm-anb.warn b{color:var(--vm-amber)}
+        #vm-root .vm-anfoot{font-size:11px;color:var(--ink-4);padding:8px 12px;background:var(--vm-card);border-top:1px solid var(--vm-line)}
       </style>
       <div id="vm-root">
         <div class="vm-h">Drivers <span class="vm-sub" id="vm-sub"></span></div>
@@ -2459,6 +2497,7 @@ function removeDriver(d){
 let vmLogs = [];
 let vmQuery = "";
 let vmOpenKeys = new Set(); // driver/invoice panels the user expanded — survives live re-renders
+let vmInvView = new Set();  // drivers switched back to the invoice list (timeline is the default)
 function vmSetQuery(v){ vmQuery = (v||"").trim().toLowerCase(); renderVanManifest(); }
 async function vmDeleteInvoice(invId){
   const pw = prompt("Delete ALL van scans for invoice "+invId+"?\nEnter password:");
@@ -2495,6 +2534,112 @@ function vmToggleFeed(){
   const head=document.querySelector(".vm-feed-head");
   if(head) head.classList.toggle("divide", vmFeedOpen);
 }
+// ── Run timeline ──────────────────────────────────────────────────────────
+// The same van scans as the invoice view, read as a run: load the van, then
+// every stop in the order it happened. The chip between stops is scan-to-scan
+// time — it covers driving, waiting AND unloading, so it is never presented as
+// travel time. Nothing new is collected; this is only a second read of the log.
+const VM_TL_LONG = 30;        // minutes — gap worth a look (amber)
+const VM_TL_STOP_WIN = 10;    // minutes — same shop inside this window = one stop
+const vmTlDur = m => m>=60 ? Math.floor(m/60)+"h "+String(m%60).padStart(2,"0")+"m" : m+" min";
+const vmTlHM = ts => { const d=new Date(ts); return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"); };
+const vmTlDay = ts => new Date(ts).toLocaleDateString("en-AU",{weekday:"short",day:"2-digit",month:"short"});
+
+// One driver's scans → ordered events. Loads merge into a warehouse block;
+// off-board scans for the same shop inside VM_TL_STOP_WIN merge into one stop,
+// so two invoices dropped together read as one visit, not two.
+function vmBuildRun(entries){
+  const isUndo = e => (e.note||"")==="undo";
+  const cancels = new Map(); // an undo cancels the newest matching scan — drop both
+  for(const e of entries){
+    if(!isUndo(e)) continue;
+    const target = e.action==="off_board" ? "on_board" : "off_board";
+    const k = e.invoiceId+"||"+e.partNumber+"||"+target;
+    cancels.set(k,(cancels.get(k)||0)+1);
+  }
+  const kept=[];
+  for(const e of [...entries].sort((a,b)=>(b.timestamp||0)-(a.timestamp||0))){
+    if(isUndo(e)) continue;
+    const k = e.invoiceId+"||"+e.partNumber+"||"+e.action;
+    const c = cancels.get(k)||0;
+    if(c>0){ cancels.set(k,c-1); continue; }
+    kept.push(e);
+  }
+  kept.reverse();
+
+  const evs=[];
+  for(const e of kept){
+    const on = e.action==="on_board";
+    const cust = (e.customer||"").trim();
+    const key = on ? "LOAD" : (cust ? "C:"+cust.toLowerCase() : "I:"+e.invoiceId);
+    let cur = evs[evs.length-1];
+    const near = cur && ((e.timestamp||0) - cur.end) <= VM_TL_STOP_WIN*60000;
+    if(cur && cur.key===key && (on || near)){ cur.end = Math.max(cur.end, e.timestamp||0); }
+    else {
+      cur = { type:on?"load":"stop", key, start:e.timestamp||0, end:e.timestamp||0,
+              name: cust || ("Invoice "+(e.invoiceId||"?")), invs:[], parts:[] };
+      evs.push(cur);
+    }
+    if(e.invoiceId && !cur.invs.includes(e.invoiceId)) cur.invs.push(e.invoiceId);
+    cur.parts.push({ pn:e.partNumber, ds:e.description||"", inv:e.invoiceId, qty:Math.max(1,Number(e.qty)||0), mth:e.method||"" });
+  }
+  return evs;
+}
+
+function vmRunHtml(drv, evs, esc, q){
+  if(!evs.length) return '<div class="vm-tl"><div class="vm-tlfin">No van scans for this driver in this window.</div></div>';
+  const multiDay = vmTlDay(evs[0].start) !== vmTlDay(evs[evs.length-1].end);
+  let html='<div class="vm-tl">', prevEnd=0, prevDay="";
+  evs.forEach((ev,i)=>{
+    const day = vmTlDay(ev.start);
+    if(multiDay && day!==prevDay){ html += `<div class="vm-tlday">${day}</div>`; prevDay=day; prevEnd=0; }
+    if(prevEnd){
+      const m = Math.max(0, Math.round((ev.start-prevEnd)/60000));
+      const long = m > VM_TL_LONG;
+      const note = ev.type==="load" ? "back at the warehouse"
+                 : evs[i-1] && evs[i-1].type==="load" ? "since leaving the warehouse"
+                 : long ? "long gap — worth a look" : "since last stop";
+      html += `<div class="vm-tlgap"><div></div><div class="vm-tlrail"></div><div class="vm-tlgapb"><span class="vm-tlchip${long?" long":""}">${vmTlDur(m)}</span><span class="vm-tlnote">${note}</span></div></div>`;
+    }
+    if(ev.type==="load"){
+      const win = vmTlHM(ev.start) + (ev.end>ev.start ? "–"+vmTlHM(ev.end) : "");
+      html += `<div class="vm-tlrow"><div class="vm-tlt">${vmTlHM(ev.start)}</div><div class="vm-tlrail"><span class="vm-tldot load"></span></div>`
+           +  `<div class="vm-tlload"><div class="vm-tlloadt">${i===0?"Loaded van":"Reloaded at warehouse"}</div>`
+           +  `<div class="vm-tlloads">${win} · ${ev.parts.length} part${ev.parts.length!==1?"s":""} · ${ev.invs.length} invoice${ev.invs.length!==1?"s":""}</div></div></div>`;
+    } else {
+      const key = drv+"|tl|"+ev.key+"|"+ev.start;
+      const rows = ev.parts.map(p=>`<div class="vm-po"><span class="vm-po-pn">${esc(p.pn)}</span><span class="vm-po-ds">${esc(p.ds)}</span><span class="vm-po-t">INV ${esc(p.inv)}</span><span class="vm-po-qty">QTY ${p.qty}</span>${methodIcon(p.mth,"vm")}</div>`).join("");
+      html += `<div class="vm-tlrow"><div class="vm-tlt">${vmTlHM(ev.start)}</div><div class="vm-tlrail"><span class="vm-tldot"></span></div>`
+           +  `<details class="vm-tlcard"${(q||vmOpenKeys.has(key))?" open":""} data-vmkey="${esc(key)}"><summary class="vm-tlsum">`
+           +  `<span class="vm-tlblock"><span class="vm-tlnm">${esc(ev.name)}</span><span class="vm-tlsub">${ev.invs.map(v=>"INV "+esc(v)).join(" · ")}</span></span>`
+           +  `<span class="vm-chip green">${ev.parts.length} part${ev.parts.length!==1?"s":""}</span><span class="vm-cv">▾</span></summary>`
+           +  `<div class="vm-pos"><div class="vm-poh">Delivered here</div>${rows}</div></details></div>`;
+    }
+    prevEnd = ev.end;
+  });
+  const stops = evs.filter(e=>e.type==="stop").length;
+  html += `<div class="vm-tlrow vm-tlend"><div></div><div class="vm-tlrail"></div><div class="vm-tlfin">Last scan ${vmTlHM(prevEnd)} · ${stops} stop${stops!==1?"s":""}</div></div></div>`;
+  return html;
+}
+
+function vmRunStatsHtml(drv, evs){
+  const stops = evs.filter(e=>e.type==="stop");
+  if(!stops.length) return "";
+  const parts = stops.reduce((n,e)=>n+e.parts.length,0);
+  const first = evs[0].start, last = evs[evs.length-1].end;
+  const gaps=[]; let prev=0;
+  for(const ev of evs){ if(prev && ev.type==="stop") gaps.push(Math.round((ev.start-prev)/60000)); prev=ev.end; }
+  gaps.sort((a,b)=>a-b);
+  const mid = gaps.length ? (gaps.length%2 ? gaps[(gaps.length-1)/2] : Math.round((gaps[gaps.length/2-1]+gaps[gaps.length/2])/2)) : 0;
+  const worst = gaps.length ? gaps[gaps.length-1] : 0;
+  const road = Math.max(0, Math.round((last-first)/60000));
+  const key = drv+"|an";
+  const box=(v,l,warn)=>`<div class="vm-anb${warn?" warn":""}"><b>${v}</b><span>${l}</span></div>`;
+  return `<details class="vm-an"${vmOpenKeys.has(key)?" open":""} data-vmkey="${key}"><summary class="vm-ansum"><span>Run analytics</span><span style="flex:1"></span><span class="vm-cv">▾</span></summary>`
+       + `<div class="vm-angrid">${box(stops.length,"Stops")}${box(parts,"Parts dropped")}${box(vmTlHM(first),"First scan")}${box(vmTlHM(last),"Last scan")}${box(vmTlDur(road),"Out on road")}${box(vmTlDur(mid),"Typical gap")}${box(vmTlDur(worst),"Longest gap",worst>VM_TL_LONG)}</div>`
+       + `<div class="vm-anfoot">Gap = scan to scan. It covers driving, waiting and unloading — not travel time on its own.</div></details>`;
+}
+
 function renderVanManifest(){
   const page = document.getElementById("page-driver");
   const root = document.getElementById("vm-root");
@@ -2594,10 +2739,13 @@ function renderVanManifest(){
 
   // Group: driver → invoice → part (chronological — undo entries must land after the scan they cancel)
   const dmap = new Map();
+  const tlmap = new Map(); // same rows, kept flat and chronological for the run timeline
   const seq = [...dayLogs].sort((a,b)=>(a.timestamp||0)-(b.timestamp||0));
   for(const e of seq){
     if(!matchEntry(e)) continue;
     const drv = (e.initials||"?").toUpperCase();
+    if(!tlmap.has(drv)) tlmap.set(drv,[]);
+    tlmap.get(drv).push(e);
     if(!dmap.has(drv)) dmap.set(drv,{ lastTs:0, invs:new Map() });
     const D = dmap.get(drv); D.lastTs = Math.max(D.lastTs, e.timestamp||0);
     const invId = e.invoiceId||"?";
@@ -2676,12 +2824,23 @@ function renderVanManifest(){
       const sub = subBits.length ? `<span class="vm-isub">${subBits.join(" · ")}</span>` : "";
       return `<details class="vm-inv"${invOpen(drv, invId)} data-vmkey="${vmEsc(drv + "|" + invId)}"><summary class="vm-isum"><span class="vm-idot ${idot}"></span><span class="vm-iblock"><span class="vm-ishop">${title}</span>${sub}</span><span class="vm-it">${vmFmtT(IV.lastTs)}</span><span class="vm-ic"><b class="${oc(on)}">${on}</b> on van · <b class="${gc(del)}">${del}</b> delivered</span><span class="vm-del" data-vmdel="${vmEsc(invId)}" title="Delete van scans for this invoice">✕</span><span class="vm-cv">▾</span></summary><div class="vm-pos"><div class="vm-poh">Parts</div>${poRows}</div></details>`;
     }).join("");
+    // Timeline is the default read of a run; the invoice list is one tap away.
+    const showInv = vmInvView.has(drv);
+    const seg = `<div class="vm-seg">`
+      + `<button class="vm-segb${showInv?"":" on"}" data-vmview="tl" data-vmdrv="${vmEsc(drv)}">Timeline</button>`
+      + `<button class="vm-segb${showInv?" on":""}" data-vmview="inv" data-vmdrv="${vmEsc(drv)}">Invoices</button></div>`;
+    let body;
+    if(showInv) body = `<div class="vm-invs">${invHtml}</div>`;
+    else {
+      const evs = vmBuildRun(tlmap.get(drv)||[]);
+      body = vmRunHtml(drv, evs, vmEsc, q) + vmRunStatsHtml(drv, evs);
+    }
     return `<details class="vm-drv"${drvOpen(drv)} data-vmkey="${vmEsc(drv)}"><summary class="vm-sum">
       <span class="vm-av">${vmEsc(drv)}</span>
       <span class="vm-id"><span class="vm-nm">${vmEsc(drv)}</span><span class="vm-stt vm-st-${st}">${VM_STL[st]}</span></span>
       <span class="vm-hd"><span class="vm-hd-box"><span class="vm-hd-n ${oc(invOnVan)}">${invOnVan}</span><span class="vm-hd-l">On van</span></span><span class="vm-hd-box"><span class="vm-hd-n ${gc(invDelivered)}">${invDelivered}</span><span class="vm-hd-l">Delivered</span></span></span>
       <span class="vm-cv">▾</span>
-    </summary><div class="vm-invs">${invHtml}</div></details>`;
+    </summary>${seg}${body}</details>`;
   }).join("");
 
   // Keep user-expanded panels open across live re-renders; wire delete buttons
@@ -2690,6 +2849,14 @@ function renderVanManifest(){
       if(vmQuery) return; // the filter forces panels open — don't persist that
       const k=d.getAttribute("data-vmkey");
       if(d.open) vmOpenKeys.add(k); else vmOpenKeys.delete(k);
+    });
+  });
+  listEl.querySelectorAll("[data-vmview]").forEach(el=>{
+    el.addEventListener("click", ev=>{
+      ev.preventDefault(); ev.stopPropagation();
+      const d = el.getAttribute("data-vmdrv");
+      if(el.getAttribute("data-vmview")==="inv") vmInvView.add(d); else vmInvView.delete(d);
+      renderVanManifest();
     });
   });
   listEl.querySelectorAll("[data-vmdel]").forEach(el=>{
