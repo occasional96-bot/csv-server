@@ -2518,7 +2518,9 @@ function vmSetQuery(v){ vmQuery = (v||"").trim().toLowerCase(); renderVanManifes
 // Side-by-side: one column per driver so two runs can be read against each other.
 // Remembered per browser — whoever compares runs usually always compares runs.
 const VM_CMP_KEY = "wh_pro_vm_compare_v1";
-let vmCompare = (()=>{ try{ return localStorage.getItem(VM_CMP_KEY)==="1"; }catch{ return false; } })();
+// Default ON — two runs read against each other is the point of the page
+let vmCompare = (()=>{ try{ const v=localStorage.getItem(VM_CMP_KEY); return v===null ? true : v==="1"; }catch{ return true; } })();
+let vmTouched = new Set(); // panels the user opened or closed themselves — their call wins
 function vmToggleCompare(){
   vmCompare = !vmCompare;
   try{ localStorage.setItem(VM_CMP_KEY, vmCompare?"1":"0"); }catch{}
@@ -2824,7 +2826,8 @@ function renderVanManifest(){
         : '<div class="vm-empty">No van scans on '+calLabel(cal).toLowerCase()+' — pick another day on the calendar.</div>');
     return;
   }
-  const drvOpen = drv => (q || vmOpenKeys.has(drv)) ? " open" : "";
+  // Side by side opens the runs on its own — a column showing only a header compares nothing
+  const drvOpen = drv => (q || vmOpenKeys.has(drv) || (vmCompare && !vmTouched.has(drv))) ? " open" : "";
   const invOpen = (drv, invId) => (q || vmOpenKeys.has(drv + "|" + invId)) ? " open" : "";
 
   const vmFmtT = ts => {
@@ -2887,6 +2890,7 @@ function renderVanManifest(){
     d.addEventListener("toggle", ()=>{
       if(vmQuery) return; // the filter forces panels open — don't persist that
       const k=d.getAttribute("data-vmkey");
+      vmTouched.add(k);
       if(d.open) vmOpenKeys.add(k); else vmOpenKeys.delete(k);
     });
   });
