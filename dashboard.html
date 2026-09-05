@@ -956,7 +956,7 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
         #vm-root .vm-segb:hover{color:var(--vm-dim)}
         #vm-root .vm-segb.on{background:var(--vm-card);color:var(--vm-ink);box-shadow:var(--shadow-card)}
         #vm-root .vm-tl{padding:0 16px 6px}
-        #vm-root .vm-tlrow,#vm-root .vm-tlgap{display:grid;grid-template-columns:46px 16px 1fr;gap:0 10px}
+        #vm-root .vm-tlrow,#vm-root .vm-tlgap{display:grid;grid-template-columns:64px 16px 1fr;gap:0 10px}
         #vm-root .vm-tlrail{position:relative;display:flex;justify-content:center}
         #vm-root .vm-tlrail::before{content:"";position:absolute;top:0;bottom:0;width:2px;background:var(--vm-line)}
         #vm-root .vm-tl>.vm-tlrow:first-child .vm-tlrail::before{top:16px}
@@ -988,9 +988,24 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
         #vm-root .vm-anb span{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--vm-mut);font-weight:600;margin-top:2px}
         #vm-root .vm-anb.warn b{color:var(--vm-amber)}
         #vm-root .vm-anfoot{font-size:11px;color:var(--ink-4);padding:8px 12px;background:var(--vm-card);border-top:1px solid var(--vm-line)}
+        /* Side-by-side: drivers become columns so two runs can be read against each other */
+        #vm-root .vm-h{display:flex;align-items:center;gap:0}
+        #vm-root .vm-cmp{margin-left:auto;font:inherit;font-size:12px;font-weight:600;color:var(--vm-mut);background:var(--vm-soft);border:1px solid var(--vm-line);border-radius:var(--r);padding:6px 12px;cursor:pointer;display:flex;align-items:center;gap:7px}
+        #vm-root .vm-cmp:hover{color:var(--vm-dim);border-color:var(--vm-line2)}
+        #vm-root .vm-cmp.on{background:var(--accent-soft);border-color:transparent;color:var(--vm-blue)}
+        #vm-root .vm-cmp svg{width:14px;height:14px;flex:none}
+        #vm-root .vm-list.cmp{display:grid;grid-template-columns:repeat(auto-fit,minmax(400px,1fr));align-items:start}
+        #vm-root .vm-list.cmp .vm-tlt{font-size:11px}
+        #vm-root .vm-list.cmp .vm-hd-box{min-width:56px;padding:5px 9px}
+        @media (max-width:1000px){ #vm-root .vm-list.cmp{grid-template-columns:1fr} }
       </style>
       <div id="vm-root">
-        <div class="vm-h">Drivers <span class="vm-sub" id="vm-sub"></span></div>
+        <div class="vm-h">Drivers <span class="vm-sub" id="vm-sub"></span>
+          <button class="vm-cmp" id="vm-cmp-btn" onclick="vmToggleCompare()" title="Put each driver in its own column">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1.5" y="2.5" width="5.5" height="11" rx="1.2"/><rect x="9" y="2.5" width="5.5" height="11" rx="1.2"/></svg>
+            <span id="vm-cmp-lbl">Side by side</span>
+          </button>
+        </div>
         <input class="vm-search" id="vm-search" type="search" autocomplete="off" placeholder="Filter by invoice #, PO, part #, or shop name…" oninput="vmSetQuery(this.value)" />
         <div class="vm-list" id="vm-list"></div>
       </div>
@@ -2499,6 +2514,18 @@ let vmQuery = "";
 let vmOpenKeys = new Set(); // driver/invoice panels the user expanded — survives live re-renders
 let vmInvView = new Set();  // drivers switched back to the invoice list (timeline is the default)
 function vmSetQuery(v){ vmQuery = (v||"").trim().toLowerCase(); renderVanManifest(); }
+
+// Side-by-side: one column per driver so two runs can be read against each other.
+// Remembered per browser — whoever compares runs usually always compares runs.
+const VM_CMP_KEY = "wh_pro_vm_compare_v1";
+let vmCompare = (()=>{ try{ return localStorage.getItem(VM_CMP_KEY)==="1"; }catch{ return false; } })();
+function vmToggleCompare(){
+  vmCompare = !vmCompare;
+  try{ localStorage.setItem(VM_CMP_KEY, vmCompare?"1":"0"); }catch{}
+  // Turning it on opens every driver — comparing collapsed panels shows nothing
+  if(vmCompare) document.querySelectorAll("#vm-list .vm-drv[data-vmkey]").forEach(d=>vmOpenKeys.add(d.getAttribute("data-vmkey")));
+  renderVanManifest();
+}
 async function vmDeleteInvoice(invId){
   const pw = prompt("Delete ALL van scans for invoice "+invId+"?\nEnter password:");
   if(pw===null) return;
@@ -2542,7 +2569,10 @@ function vmToggleFeed(){
 const VM_TL_LONG = 30;        // minutes — gap worth a look (amber)
 const VM_TL_STOP_WIN = 10;    // minutes — same shop inside this window = one stop
 const vmTlDur = m => m>=60 ? Math.floor(m/60)+"h "+String(m%60).padStart(2,"0")+"m" : m+" min";
-const vmTlHM = ts => { const d=new Date(ts); return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"); };
+const vmTlHM = ts => { // 12-hour — how the drivers themselves talk about a run
+  const d=new Date(ts), ap=d.getHours()<12?"am":"pm", h=d.getHours()%12||12;
+  return h+":"+String(d.getMinutes()).padStart(2,"0")+" "+ap;
+};
 const vmTlDay = ts => new Date(ts).toLocaleDateString("en-AU",{weekday:"short",day:"2-digit",month:"short"});
 
 // One driver's scans → ordered events. Loads merge into a warehouse block;
@@ -2602,7 +2632,9 @@ function vmRunHtml(drv, evs, esc, q){
       html += `<div class="vm-tlgap"><div></div><div class="vm-tlrail"></div><div class="vm-tlgapb"><span class="vm-tlchip${long?" long":""}">${vmTlDur(m)}</span><span class="vm-tlnote">${note}</span></div></div>`;
     }
     if(ev.type==="load"){
-      const win = vmTlHM(ev.start) + (ev.end>ev.start ? "–"+vmTlHM(ev.end) : "");
+      const a=vmTlHM(ev.start), b=vmTlHM(ev.end);
+      // 8:10–8:49 am reads better than repeating the meridiem twice
+      const win = a!==b ? (a.slice(-2)===b.slice(-2) ? a.slice(0,-3)+"–"+b : a+"–"+b) : a;
       html += `<div class="vm-tlrow"><div class="vm-tlt">${vmTlHM(ev.start)}</div><div class="vm-tlrail"><span class="vm-tldot load"></span></div>`
            +  `<div class="vm-tlload"><div class="vm-tlloadt">${i===0?"Loaded van":"Reloaded at warehouse"}</div>`
            +  `<div class="vm-tlloads">${win} · ${ev.parts.length} part${ev.parts.length!==1?"s":""} · ${ev.invs.length} invoice${ev.invs.length!==1?"s":""}</div></div></div>`;
@@ -2646,6 +2678,13 @@ function renderVanManifest(){
   if(!page || !root || page.style.display==="none") return;
   const listEl = document.getElementById("vm-list");
   const subEl  = document.getElementById("vm-sub");
+  if(listEl) listEl.classList.toggle("cmp", vmCompare);
+  const cmpBtn = document.getElementById("vm-cmp-btn");
+  if(cmpBtn){
+    cmpBtn.classList.toggle("on", vmCompare);
+    const lbl = document.getElementById("vm-cmp-lbl");
+    if(lbl) lbl.textContent = vmCompare ? "Stacked" : "Side by side";
+  }
   const vmEsc  = s => String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
   const oc = n => n>0 ? "vm-amber" : "vm-zero";
   const gc = n => n>0 ? "vm-green" : "vm-zero";
