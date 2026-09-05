@@ -233,7 +233,8 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
   box-shadow:var(--shadow-card);padding:12px;margin:-4px 0 14px}
 .fpanel.open{display:block;animation:fpanelin .16s ease-out}
 @keyframes fpanelin{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
-.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+/* One row, always — every filter keeps an equal share of the width. */
+.fgrid{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px}
 .ffield{min-width:0}
 .ffield .tb-field{min-width:0;height:34px;padding:0 10px}
 .ffield select{font-size:13px;font-weight:500;color:var(--ink-2)}
@@ -507,6 +508,7 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .grp-count{font-size:11px;color:var(--ink-3)}
 .grp-right{margin-left:auto;display:flex;align-items:center;gap:10px}
 .grp-dow{font-size:11px;font-weight:600;color:var(--ink-3);letter-spacing:.04em;text-transform:uppercase}
+.grp-make{font-size:11px;font-weight:600;color:var(--ink-3);letter-spacing:.05em;white-space:nowrap}
 .grp-frac{font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;font-family:var(--mono)}
 .grp-prog{width:60px;height:4px;background:var(--line);border-radius:2px;overflow:hidden}
 .grp-prog-fill{height:100%;border-radius:2px;transition:width .3s}
@@ -745,6 +747,7 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
           <div class="ffield"><label class="tb-field tb-select"><select id="f-user" onchange="applyFilters()"><option value="">Users</option></select></label></div>
           <div class="ffield"><label class="tb-field tb-select"><select id="f-status" onchange="setStatusFilter(this.value)"><option value="" data-label="Statuses">Statuses</option><option value="confirmed" data-label="Confirmed">Confirmed</option><option value="manual" data-label="Manual">Manual</option><option value="short" data-label="Short supply">Short supply</option><option value="over" data-label="Over supply">Over supply</option><option value="missing" data-label="Missing">Missing</option><option value="undo" data-label="Undo">Undo</option><option value="unscanned" data-label="Unscanned">Unscanned</option></select></label></div>
           <div class="ffield"><label class="tb-field tb-select"><select id="f-method" onchange="setMethodFilter(this.value)"><option value="">Method</option><option value="barcode">Barcode</option><option value="camera">Camera</option><option value="typed">Typed</option><option value="tap">Tap confirm</option></select></label></div>
+          <div class="ffield" id="ffield-make"><label class="tb-field tb-select"><select id="f-make" onchange="setBrand(this.value)"><option value="">Make</option></select></label></div>
         </div>
         <div class="fpanel-foot"><button class="fp-btn" onclick="clearFilters()">Clear all</button><button class="fp-btn fp-done" onclick="toggleFilterPanel(false)">Done</button></div>
       </div>
@@ -1797,6 +1800,19 @@ function dayHead(k){
            sub:  named ? fmtDate(keyToDate(k).getTime()) : "",
            dow:  keyToDate(k).toLocaleDateString("en-AU",{weekday:"short"}) };
 }
+// Kia and Hyundai share part numbers, so a date header names the makes it holds.
+// Three letters keeps it discreet; unknown brands ("?") are left out entirely.
+const MAKE3 = { KIA:"KIA", HY:"HYU", HYUNDAI:"HYU", ISUZU:"IUA", ISU:"IUA", BYD:"BYD" };
+function make3(b){
+  const k = String(b||"").trim().toUpperCase();
+  if(!k || k==="?") return "";
+  return MAKE3[k] || k.slice(0,3);
+}
+function dayMakes(items){
+  const seen=[];
+  for(const e of items){ const m=make3(e.brand); if(m && !seen.includes(m)) seen.push(m); }
+  return seen.sort().join(" · ");
+}
 // Date-grouped results: one header per day, newest day first, newest scan first.
 function renderByDate(rows, flashFirst){
   const groups=new Map();
@@ -1812,10 +1828,12 @@ function renderByDate(rows, flashFirst){
     const gid="date:"+k, isCollapsed=collapsedGroups.has(gid);
     const invs=new Set(items.map(e=>e.invoiceId).filter(Boolean)).size;
     const h = k==="none" ? {lead:"Not scanned",sub:"",dow:""} : dayHead(k);
+    const makes = dayMakes(items);
     html += `<div class="grp-header" onclick="toggleGroup('${gid}')">
       <svg class="grp-chev${isCollapsed?"":" open"}" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2l4 4-4 4"/></svg>
       <span class="grp-inv">${h.lead}</span>
       <span class="grp-brand">${h.sub}</span>
+      ${makes?`<span class="grp-make">· ${makes}</span>`:""}
       <span class="grp-count">${items.length} scan${items.length!==1?"s":""}</span>
       <div class="grp-right">
         ${h.dow?`<span class="grp-dow">${h.dow}</span>`:""}
@@ -1919,6 +1937,7 @@ function clearFilters(){
   document.getElementById("f-user").value = "";
   setStatusFilter("");
   setMethodFilter("");
+  setBrand("");
   applyFilters();
 }
 // Click away or press Escape to close, same as the settings panel.
@@ -1929,13 +1948,24 @@ document.addEventListener("mousedown", e => {
 document.addEventListener("keydown", e => { if(e.key === "Escape") toggleFilterPanel(false); });
 
 function setBrand(b){
-  filters.brand = b;
-  document.querySelectorAll(".brand-tabs .tab").forEach(t=>t.classList.remove("active"));
-  const cls = b===""?"t-all":b==="KIA"?"t-kia":"t-hy";
-  const el = document.querySelector(".tab."+cls);
-  if(el) el.classList.add("active");
+  filters.brand = b || "";
+  const sel = document.getElementById("f-make");
+  if(sel && sel.value !== filters.brand) sel.value = filters.brand;
   renderTable(false);
 }
+// Make options come from the site itself, so Essendon (Kia only) never offers
+// brands it can't have — and drops the filter entirely when there's one make.
+const MAKE_LABELS = { KIA:"Kia", HY:"Hyundai", HYUNDAI:"Hyundai", ISUZU:"Isuzu", BYD:"BYD", NISSAN:"Nissan" };
+function populateMakeFilter(){
+  const brands = (typeof SITE!=="undefined" && SITE.brands) || [];
+  const field = document.getElementById("ffield-make"), sel = document.getElementById("f-make");
+  if(!field || !sel) return;
+  if(brands.length < 2){ field.style.display = "none"; return; }
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Make</option>' + brands.map(b=>`<option value="${b}">${MAKE_LABELS[b]||b}</option>`).join("");
+  if(cur) sel.value = cur;
+}
+populateMakeFilter();
 
 function setStatusFilter(action){
   filters.action = action || "";
