@@ -139,10 +139,14 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .whcal-d.sel::after{background:#fff}
 .whcal-d.today{outline:1px solid var(--accent-line);outline-offset:-1px}
 .whcal-d.in{background:var(--accent-soft);color:var(--accent-ink);border-radius:0}
-.whcal-pair{display:inline-flex;align-items:center;gap:6px}
-.whcal-arrow{color:var(--ink-4);font-size:12px;user-select:none}
-.whcal-tag{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-4)}
-.whcal.open .whcal-tag{color:var(--accent)}
+.whcal-ends{display:flex;gap:6px;margin-top:10px;border-top:1px solid var(--line);padding-top:10px}
+.whcal-end{flex:1;display:flex;flex-direction:column;gap:1px;border:1px solid var(--line);border-radius:var(--r);padding:5px 9px;cursor:pointer;user-select:none}
+.whcal-end small{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-4)}
+.whcal-end b{font-size:12px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+.whcal-end:hover{border-color:var(--line-2)}
+.whcal-end.on{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.whcal-end.on small{color:var(--accent)}
+.whcal-ends .whcal-q{flex:0 0 auto;display:flex;align-items:center;padding:5px 12px}
 .whcal-quick{display:flex;gap:5px;margin-top:10px;border-top:1px solid var(--line);padding-top:10px}
 .whcal-q{flex:1;font-size:11px;font-weight:500;color:var(--ink-2);background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:5px 0;text-align:center;cursor:pointer;white-space:nowrap}
 .whcal-q:hover{border-color:var(--line-2);color:var(--ink)}
@@ -717,16 +721,9 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
           <div class="summary"><span><b id="stat-confirmed">0</b> confirmed today</span><span><b id="stat-manual">0</b> manual</span><span><b id="stat-users">0</b> users online</span></div>
         </div>
         <div class="topbar-right">
-            <div class="whcal-pair">
-            <div class="whcal" id="cal-scan-from">
-              <div class="whcal-chip" onclick="calToggle('scan','from')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3"/></svg><span class="whcal-tag">From</span><span id="cal-scan-from-label">Today</span><span class="whcal-chev">▾</span></div>
-              <div class="whcal-pop" id="cal-scan-from-pop"></div>
-            </div>
-            <span class="whcal-arrow">→</span>
-            <div class="whcal" id="cal-scan-to">
-              <div class="whcal-chip" onclick="calToggle('scan','to')"><span class="whcal-tag">To</span><span id="cal-scan-to-label">Today</span><span class="whcal-chev">▾</span></div>
-              <div class="whcal-pop" id="cal-scan-to-pop"></div>
-            </div>
+            <div class="whcal" id="cal-scan">
+            <div class="whcal-chip" onclick="calToggle('scan')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3"/></svg><span id="cal-scan-label">Today</span><span class="whcal-chev">▾</span></div>
+            <div class="whcal-pop" id="cal-scan-pop"></div>
             </div>
           </div>
         </div>
@@ -884,16 +881,9 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
           <div class="summary"><span><b id="vms-loaded">0</b> loaded on van</span><span><b id="vms-delivered">0</b> delivered</span><span><b id="vms-drivers">0</b> drivers out</span></div>
         </div>
         <div class="topbar-right">
-          <div class="whcal-pair">
-          <div class="whcal" id="cal-drv-from">
-            <div class="whcal-chip" onclick="calToggle('drv','from')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3"/></svg><span class="whcal-tag">From</span><span id="cal-drv-from-label">Today</span><span class="whcal-chev">▾</span></div>
-            <div class="whcal-pop" id="cal-drv-from-pop"></div>
-          </div>
-          <span class="whcal-arrow">→</span>
-          <div class="whcal" id="cal-drv-to">
-            <div class="whcal-chip" onclick="calToggle('drv','to')"><span class="whcal-tag">To</span><span id="cal-drv-to-label">Today</span><span class="whcal-chev">▾</span></div>
-            <div class="whcal-pop" id="cal-drv-to-pop"></div>
-          </div>
+          <div class="whcal" id="cal-drv">
+            <div class="whcal-chip" onclick="calToggle('drv')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3"/></svg><span id="cal-drv-label">Today</span><span class="whcal-chev">▾</span></div>
+            <div class="whcal-pop" id="cal-drv-pop"></div>
           </div>
         </div>
       </div>
@@ -977,16 +967,9 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
           <div class="summary"><span><b id="pss-slips">0</b> slips on board</span><span><b id="pss-picked">0</b> parts picked</span><span><b id="pss-onorder">0</b> on order</span></div>
         </div>
         <div class="topbar-right">
-          <div class="whcal-pair">
-          <div class="whcal" id="cal-ps-from">
-            <div class="whcal-chip" onclick="calToggle('ps','from')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M2 7h12M5 1.5v3M11 1.5v3"/></svg><span class="whcal-tag">From</span><span id="cal-ps-from-label">All</span><span class="whcal-chev">▾</span></div>
-            <div class="whcal-pop" id="cal-ps-from-pop"></div>
-          </div>
-          <span class="whcal-arrow">→</span>
-          <div class="whcal" id="cal-ps-to">
-            <div class="whcal-chip" onclick="calToggle('ps','to')"><span class="whcal-tag">To</span><span id="cal-ps-to-label">All</span><span class="whcal-chev">▾</span></div>
-            <div class="whcal-pop" id="cal-ps-to-pop"></div>
-          </div>
+          <div class="whcal" id="cal-ps">
+            <div class="whcal-chip" onclick="calToggle('ps')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M2 7h12M5 1.5v3M11 1.5v3"/></svg><span id="cal-ps-label">All slips</span><span class="whcal-chev">▾</span></div>
+            <div class="whcal-pop" id="cal-ps-pop"></div>
           </div>
         </div>
       </div>
@@ -1335,9 +1318,11 @@ function calWindow(c){
   if(c.mode==="all") return { from: -Infinity, to: Infinity };
   return { from: keyToDate(c.from).getTime(), to: keyToDate(c.to).getTime()+86400000 };
 }
-function calDayName(k){
-  if(k===dateKey(new Date())) return "Today";
-  if(k===dateKey(new Date(Date.now()-86400000))) return "Yesterday";
+function calDayName(k,plain){
+  if(!plain){
+    if(k===dateKey(new Date())) return "Today";
+    if(k===dateKey(new Date(Date.now()-86400000))) return "Yesterday";
+  }
   const d=keyToDate(k), opts={day:"numeric",month:"short"};
   if(d.getFullYear()!==new Date().getFullYear()) opts.year="numeric";
   return d.toLocaleDateString("en-AU",opts);
@@ -1345,29 +1330,30 @@ function calDayName(k){
 function calLabel(c){
   if(c.mode==="all") return "All slips";
   if(c.from===c.to) return calDayName(c.from);
-  return calDayName(c.from)+" – "+calDayName(c.to);
+  return calDayName(c.from,true)+" – "+calDayName(c.to,true); // ranges read as dates, not "24 Aug – Yesterday"
 }
 function calDotDays(key){
   if(key==="ps"){ const s=new Set(); for(const sl of psSlips){ if(sl.updatedAt) s.add(dateKey(new Date(sl.updatedAt))); } return s; }
   const src = key==="drv" ? vmLogs.filter(e=>["on_board","off_board"].includes(e.action)) : allLogs;
   const s=new Set(); for(const e of src){ if(e.timestamp) s.add(dateKey(new Date(e.timestamp))); } return s;
 }
-function calToggle(key,end){
-  const el=document.getElementById("cal-"+key+"-"+end);
+function calToggle(key){
+  const el=document.getElementById("cal-"+key);
   const wasOpen=el.classList.contains("open");
   document.querySelectorAll(".whcal.open").forEach(x=>x.classList.remove("open"));
   if(!wasOpen){
     const c=whCals[key];
-    const base=c.mode==="all"?new Date():keyToDate(c[end]);
+    c.active=null;
+    const base=c.mode==="all"?new Date():keyToDate(c.from);
     c.vy=base.getFullYear(); c.vm=base.getMonth();
-    calRender(key,end); el.classList.add("open"); calPlace(key,end);
+    calRender(key); el.classList.add("open"); calPlace(key);
   }
 }
 // Keep the popup on screen: it anchors to the chip's right edge, but in narrow
 // layouts the chip sits at the far left and a right-anchored popup runs off
 // screen. Flip to a left anchor when the left edge would clip.
-function calPlace(key,end){
-  const pop=document.getElementById("cal-"+key+"-"+end+"-pop"); if(!pop) return;
+function calPlace(key){
+  const pop=document.getElementById("cal-"+key+"-pop"); if(!pop) return;
   pop.style.left="auto"; pop.style.right="0";
   let r=pop.getBoundingClientRect();
   if(r.left<8){
@@ -1376,9 +1362,9 @@ function calPlace(key,end){
     if(r.right>window.innerWidth-8) pop.style.left=(window.innerWidth-8-r.right)+"px";
   }
 }
-function calNav(key,end,d){ const c=whCals[key]; c.vm+=d; if(c.vm<0){c.vm=11;c.vy--;} if(c.vm>11){c.vm=0;c.vy++;} calRender(key,end); }
-function calRender(key,end){
-  const c=whCals[key], pop=document.getElementById("cal-"+key+"-"+end+"-pop");
+function calNav(key,d){ const c=whCals[key]; c.vm+=d; if(c.vm<0){c.vm=11;c.vy--;} if(c.vm>11){c.vm=0;c.vy++;} calRender(key); }
+function calRender(key){
+  const c=whCals[key], pop=document.getElementById("cal-"+key+"-pop");
   if(!pop) return;
   const dots=calDotDays(key), tk=dateKey(new Date());
   const first=new Date(c.vy,c.vm,1);
@@ -1390,32 +1376,43 @@ function calRender(key,end){
     const k=c.vy+"-"+String(c.vm+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
     const cls=["whcal-d"]; if(dots.has(k))cls.push("dots"); if(k===tk)cls.push("today");
     if(c.mode==="range"){ if(k===c.from||k===c.to)cls.push("sel"); else if(k>c.from&&k<c.to)cls.push("in"); }
-    cells+=`<span class="${cls.join(" ")}" onclick="calPick('${key}','${end}','${k}')">${d}</span>`;
+    cells+=`<span class="${cls.join(" ")}" onclick="calPick('${key}','${k}')">${d}</span>`;
   }
-  pop.innerHTML=`<div class="whcal-head"><span class="whcal-m">${first.toLocaleDateString("en-AU",{month:"long",year:"numeric"})}</span><span class="whcal-nav"><button class="whcal-nb" onclick="calNav('${key}','${end}',-1)">‹</button><button class="whcal-nb" onclick="calNav('${key}','${end}',1)">›</button></span></div>
+  const endBox=(end,tag)=>`<span class="whcal-end${c.active===end?" on":""}" onclick="calEnd('${key}','${end}')"><small>${tag}</small><b>${c.mode==="all"?"—":calDayName(c[end])}</b></span>`;
+  pop.innerHTML=`<div class="whcal-head"><span class="whcal-m">${first.toLocaleDateString("en-AU",{month:"long",year:"numeric"})}</span><span class="whcal-nav"><button class="whcal-nb" onclick="calNav('${key}',-1)">‹</button><button class="whcal-nb" onclick="calNav('${key}',1)">›</button></span></div>
     <div class="whcal-grid">${cells}</div>
-    ${c.all?`<div class="whcal-quick"><span class="whcal-q${c.mode==="all"?" on":""}" onclick="calQuick('${key}','all')">All slips</span></div>`:""}`;
+    <div class="whcal-ends">${endBox("from","From")}${endBox("to","To")}${c.all?`<span class="whcal-q${c.mode==="all"?" on":""}" onclick="calQuick('${key}','all')">All</span>`:""}</div>`;
 }
-function calLabels(key){
+// Tap From or To at the bottom, then tap a day to set that end.
+// From auto-advances to To so a range is two day-taps.
+function calEnd(key,end){
   const c=whCals[key];
-  for(const end of ["from","to"]){
-    const lbl=document.getElementById("cal-"+key+"-"+end+"-label");
-    if(lbl) lbl.textContent = c.mode==="all" ? "All" : calDayName(c[end]);
-  }
+  c.active = c.active===end ? null : end;
+  calRender(key);
 }
 function calApply(key){
-  calLabels(key);
-  document.querySelectorAll("#cal-"+key+"-from, #cal-"+key+"-to").forEach(el=>el.classList.remove("open"));
+  const lbl=document.getElementById("cal-"+key+"-label");
+  if(lbl) lbl.textContent=calLabel(whCals[key]);
+  const el=document.getElementById("cal-"+key);
+  if(el) el.classList.remove("open");
   whCals[key].onChange();
 }
-function calPick(key,end,k){
+function calPick(key,k){
   const c=whCals[key];
   if(c.mode==="all"){ c.from=k; c.to=k; }   // slips leaving "All": start from a single day
-  c.mode="range";
-  c[end]=k;
-  if(c.from>c.to){ if(end==="from") c.to=c.from; else c.from=c.to; } // ends never cross — the other end follows
-  calApply(key);
+  if(c.active==="from"){
+    c.mode="range"; c.from=k; if(c.to<k)c.to=k;
+    c.active="to"; calRender(key);          // stay open, pick the other end next
+    whCals[key].onChange();                 // table follows along mid-pick
+    return;
+  }
+  if(c.active==="to"){
+    c.mode="range"; c.to=k; if(c.from>k)c.from=k;
+    c.active=null; calApply(key); return;
+  }
+  c.mode="range"; c.from=k; c.to=k; calApply(key); // plain day tap = single day, as always
 }
+function calLabels(key){ const lbl=document.getElementById("cal-"+key+"-label"); if(lbl) lbl.textContent=calLabel(whCals[key]); }
 // Also drives the Settings → default date range option (today / yesterday / 7d).
 function calQuick(key,q){
   const c=whCals[key], tk=dateKey(new Date());
