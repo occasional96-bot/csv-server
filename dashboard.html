@@ -122,7 +122,10 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .whcal-chip:hover,.whcal.open .whcal-chip{background:var(--accent-soft);border-color:var(--accent)}
 .whcal-chip svg{width:15px;height:15px;color:var(--accent);flex:none}
 .whcal-chev{color:var(--accent);font-size:10px}
-.whcal-pop{display:none;position:absolute;top:calc(100% + 6px);right:0;width:264px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:12px;box-shadow:var(--shadow-pop);z-index:80}
+/* Fixed, not absolute: .main has overflow-x:hidden, which clipped an absolute
+   popup at the content edge on narrow windows (calendar looked half-eaten).
+   Fixed escapes that; calPlace() sets top/left from the chip's rect. */
+.whcal-pop{display:none;position:fixed;top:0;left:0;width:300px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:12px;box-shadow:var(--shadow-pop);z-index:200}
 .whcal.open .whcal-pop{display:block}
 .whcal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .whcal-m{font-size:13px;font-weight:600;color:var(--ink)}
@@ -1294,10 +1297,11 @@ function dateKey(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(
 function keyToDate(k){ const p=k.split("-").map(Number); return new Date(p[0],p[1]-1,p[2]); }
 // Every calendar is a from–to window; a single day is just from === to.
 // mode "all" (Picking Slips default) means no date filter.
+const retDays = () => (typeof SITE!=="undefined" && SITE.retentionDays) || 90;
 const whCals = {
-  scan: { mode:"range", from:dateKey(new Date()), to:dateKey(new Date()), vy:0, vm:0, onChange(){ renderTable(false); } },
-  drv:  { mode:"range", from:dateKey(new Date()), to:dateKey(new Date()), vy:0, vm:0, onChange(){ renderVanManifest(); } },
-  ps:   { mode:"all", from:dateKey(new Date()), to:dateKey(new Date()), vy:0, vm:0, all:true, onChange(){ renderPickslips(); } },
+  scan: { mode:"range", from:dateKey(new Date()), to:dateKey(new Date()), vy:0, vm:0, all:true, allText:()=>"All "+retDays()+" days", onChange(){ renderTable(false); } },
+  drv:  { mode:"range", from:dateKey(new Date()), to:dateKey(new Date()), vy:0, vm:0, all:true, allText:()=>"All "+retDays()+" days", onChange(){ renderVanManifest(); } },
+  ps:   { mode:"all", from:dateKey(new Date()), to:dateKey(new Date()), vy:0, vm:0, all:true, allText:()=>"All slips", onChange(){ renderPickslips(); } },
 };
 // Roll "Today" past midnight. The day key is stamped at page load; a dashboard
 // left open overnight kept filtering to the OLD day while new scans arrived —
@@ -1327,7 +1331,7 @@ function calDayName(k,plain){
   return d.toLocaleDateString("en-AU",opts);
 }
 function calLabel(c){
-  if(c.mode==="all") return "All slips";
+  if(c.mode==="all") return c.allText ? c.allText() : "All";
   if(c.from===c.to) return calDayName(c.from);
   return calDayName(c.from,true)+" – "+calDayName(c.to,true); // ranges read as dates, not "24 Aug – Yesterday"
 }
@@ -1348,19 +1352,24 @@ function calToggle(key){
     calRender(key); el.classList.add("open"); calPlace(key);
   }
 }
-// Keep the popup on screen: it anchors to the chip's right edge, but in narrow
-// layouts the chip sits at the far left and a right-anchored popup runs off
-// screen. Flip to a left anchor when the left edge would clip.
+// Position the (fixed) popup from the chip's rect and clamp it to the viewport,
+// so it can never be cut off by a narrow window or by .main's overflow clip.
+// Hangs below the chip; flips above when there's no room underneath.
 function calPlace(key){
+  const wrap=document.getElementById("cal-"+key); if(!wrap) return;
   const pop=document.getElementById("cal-"+key+"-pop"); if(!pop) return;
-  pop.style.left="auto"; pop.style.right="0";
-  let r=pop.getBoundingClientRect();
-  if(r.left<8){
-    pop.style.right="auto"; pop.style.left="0";
-    r=pop.getBoundingClientRect();
-    if(r.right>window.innerWidth-8) pop.style.left=(window.innerWidth-8-r.right)+"px";
-  }
+  const chip=wrap.querySelector(".whcal-chip"); if(!chip) return;
+  const r=chip.getBoundingClientRect(), w=pop.offsetWidth, h=pop.offsetHeight;
+  let left=Math.min(r.right-w, window.innerWidth-w-8);
+  if(left<8) left=8;
+  let top=r.bottom+6;
+  if(top+h>window.innerHeight-8) top=Math.max(8, r.top-6-h);
+  pop.style.left=left+"px"; pop.style.top=top+"px";
 }
+// A fixed popup doesn't ride along with a scrolling pane — re-place it instead.
+["scroll","resize"].forEach(ev=>window.addEventListener(ev,()=>{
+  document.querySelectorAll(".whcal.open").forEach(el=>calPlace(el.id.replace(/^cal-/,"")));
+},true));
 function calNav(key,d){ const c=whCals[key]; c.vm+=d; if(c.vm<0){c.vm=11;c.vy--;} if(c.vm>11){c.vm=0;c.vy++;} calRender(key); }
 function calRender(key){
   const c=whCals[key], pop=document.getElementById("cal-"+key+"-pop");
@@ -1381,6 +1390,8 @@ function calRender(key){
   pop.innerHTML=`<div class="whcal-head"><span class="whcal-m">${first.toLocaleDateString("en-AU",{month:"long",year:"numeric"})}</span><span class="whcal-nav"><button class="whcal-nb" onclick="calNav('${key}',-1)">‹</button><button class="whcal-nb" onclick="calNav('${key}',1)">›</button></span></div>
     <div class="whcal-grid">${cells}</div>
     <div class="whcal-ends">${endBox("from","From")}${endBox("to","To")}${c.all?`<span class="whcal-q${c.mode==="all"?" on":""}" onclick="calQuick('${key}','all')">All</span>`:""}</div>`;
+  const wrap=document.getElementById("cal-"+key);
+  if(wrap && wrap.classList.contains("open")) calPlace(key); // month/row changes alter the height
 }
 // Tap From or To at the bottom, then tap a day to set that end.
 // From auto-advances to To so a range is two day-taps.
@@ -1772,12 +1783,56 @@ document.getElementById("log-tbody").addEventListener("click", ev => {
   else { openRows.add(k); r.classList.add("open"); }
 });
 
+function calSpansDays(c){ return c.mode==="all" || c.from!==c.to; }
+// Secondary text on a date header: spell the date out behind "Today"/"Yesterday",
+// otherwise the weekday — never the same date printed twice.
+function daySubLabel(k){
+  return calDayName(k)!==calDayName(k,true)
+    ? fmtDate(keyToDate(k).getTime())
+    : keyToDate(k).toLocaleDateString("en-AU",{weekday:"short"});
+}
+// Date-grouped results: one header per day, newest day first, newest scan first.
+function renderByDate(rows, flashFirst){
+  const groups=new Map();
+  for(const e of rows){
+    const k = e.timestamp ? dateKey(new Date(e.timestamp)) : "none";
+    if(!groups.has(k)) groups.set(k,[]);
+    groups.get(k).push(e);
+  }
+  const keys=[...groups.keys()].sort((a,b)=> a==="none"?1 : b==="none"?-1 : b.localeCompare(a));
+  let html="", first=true;
+  for(const k of keys){
+    const items=groups.get(k).sort((a,b)=>(b.timestamp||0)-(a.timestamp||0));
+    const gid="date:"+k, isCollapsed=collapsedGroups.has(gid);
+    const invs=new Set(items.map(e=>e.invoiceId).filter(Boolean)).size;
+    html += `<div class="grp-header" onclick="toggleGroup('${gid}')">
+      <svg class="grp-chev${isCollapsed?"":" open"}" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2l4 4-4 4"/></svg>
+      <span class="grp-inv">${k==="none"?"Not scanned":calDayName(k)}</span>
+      <span class="grp-brand">${k==="none"?"":daySubLabel(k)}</span>
+      <span class="grp-count">${items.length} scan${items.length!==1?"s":""}</span>
+      <div class="grp-right"><span class="grp-count">${invs} invoice${invs!==1?"s":""}</span></div>
+    </div>`;
+    html += `<div class="grp-rows${isCollapsed?" collapsed":""}" style="max-height:${isCollapsed?0:items.length*80+40}px">`;
+    items.forEach((e,i)=>{ html += renderRow(e, flashFirst && first && i===0 && !isCollapsed); });
+    html += `</div>`;
+    first=false;
+  }
+  return html;
+}
 function renderTable(flashFirst){
   updateStatusCounts();
   const lookup = buildPartLookup();
   const rows = [...getFiltered().map(e=>enrich(e,lookup)), ...getUnscannedRows()];
   const tbody = document.getElementById("log-tbody");
   if(!rows.length){ tbody.innerHTML='<div class="empty-state">No events match your filters</div>'; { const ft=document.getElementById("footer-txt"); if(ft) ft.textContent="No results"; } return; }
+
+  // Searching a part across more than one day? Group by DATE, not invoice —
+  // the question then is "which days did this part get scanned on".
+  if(settingsState.grouping && filters.q && calSpansDays(whCals.scan)){
+    tbody.innerHTML = renderByDate(rows, flashFirst);
+    { const ft=document.getElementById("footer-txt"); if(ft) ft.textContent = `Showing ${rows.length} event${rows.length!==1?"s":""}`; }
+    return;
+  }
 
   // Grouped mode
   if(settingsState.grouping){
