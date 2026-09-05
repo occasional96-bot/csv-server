@@ -1156,7 +1156,7 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 const SITE = /*__SITE_JSON__*/null || {
   key: "werribee", name: "Werribee", group: "Hopper Motor Group", code: "HMG",
   label: "Werribee · Hopper Motor Group",
-  brands: ["KIA", "HY", "BYD", "ISUZU", "NISSAN"],
+  brands: ["KIA", "HY", "BYD", "ISUZU"],
   files: ["kia", "hy", "inve"],
   retentionDays: 14,
   url: "https://csv-server-production-efc6.up.railway.app",
@@ -1955,7 +1955,7 @@ function setBrand(b){
 }
 // Make options come from the site itself, so Essendon (Kia only) never offers
 // brands it can't have — and drops the filter entirely when there's one make.
-const MAKE_LABELS = { KIA:"Kia", HY:"Hyundai", HYUNDAI:"Hyundai", ISUZU:"Isuzu", BYD:"BYD", NISSAN:"Nissan" };
+const MAKE_LABELS = { KIA:"Kia", HY:"Hyundai", HYUNDAI:"Hyundai", ISUZU:"Isuzu", BYD:"BYD" };
 function populateMakeFilter(){
   const brands = (typeof SITE!=="undefined" && SITE.brands) || [];
   const field = document.getElementById("ffield-make"), sel = document.getElementById("f-make");
