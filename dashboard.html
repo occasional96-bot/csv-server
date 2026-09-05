@@ -138,9 +138,13 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
 .whcal-d.sel{background:var(--accent);color:#fff;font-weight:600}
 .whcal-d.sel::after{background:#fff}
 .whcal-d.today{outline:1px solid var(--accent-line);outline-offset:-1px}
-.whcal-d.in{background:var(--accent-soft);color:var(--ink)}
-.whcal-quick{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px;border-top:1px solid var(--line);padding-top:10px}
-.whcal-q{flex:1 1 30%;font-size:11px;font-weight:500;color:var(--ink-2);background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:5px 0;text-align:center;cursor:pointer;white-space:nowrap}
+.whcal-d.in{background:var(--accent-soft);color:var(--accent-ink);border-radius:0}
+.whcal-pair{display:inline-flex;align-items:center;gap:6px}
+.whcal-arrow{color:var(--ink-4);font-size:12px;user-select:none}
+.whcal-tag{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-4)}
+.whcal.open .whcal-tag{color:var(--accent)}
+.whcal-quick{display:flex;gap:5px;margin-top:10px;border-top:1px solid var(--line);padding-top:10px}
+.whcal-q{flex:1;font-size:11px;font-weight:500;color:var(--ink-2);background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:5px 0;text-align:center;cursor:pointer;white-space:nowrap}
 .whcal-q:hover{border-color:var(--line-2);color:var(--ink)}
 .whcal-q.on{color:var(--accent);border-color:var(--accent-line);background:var(--accent-soft)}
 
@@ -713,9 +717,17 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
           <div class="summary"><span><b id="stat-confirmed">0</b> confirmed today</span><span><b id="stat-manual">0</b> manual</span><span><b id="stat-users">0</b> users online</span></div>
         </div>
         <div class="topbar-right">
-            <div class="whcal" id="cal-scan">
-            <div class="whcal-chip" onclick="calToggle('scan')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3"/></svg><span id="cal-scan-label">Today</span><span class="whcal-chev">▾</span></div>
-            <div class="whcal-pop" id="cal-scan-pop"></div>
+            <div class="whcal-pair">
+            <div class="whcal" id="cal-scan-from">
+              <div class="whcal-chip" onclick="calToggle('scan','from')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3"/></svg><span class="whcal-tag">From</span><span id="cal-scan-from-label">Today</span><span class="whcal-chev">▾</span></div>
+              <div class="whcal-pop" id="cal-scan-from-pop"></div>
+            </div>
+            <span class="whcal-arrow">→</span>
+            <div class="whcal" id="cal-scan-to">
+              <div class="whcal-chip" onclick="calToggle('scan','to')"><span class="whcal-tag">To</span><span id="cal-scan-to-label">Today</span><span class="whcal-chev">▾</span></div>
+              <div class="whcal-pop" id="cal-scan-to-pop"></div>
+            </div>
+            </div>
           </div>
         </div>
       </div>
@@ -872,9 +884,16 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
           <div class="summary"><span><b id="vms-loaded">0</b> loaded on van</span><span><b id="vms-delivered">0</b> delivered</span><span><b id="vms-drivers">0</b> drivers out</span></div>
         </div>
         <div class="topbar-right">
-          <div class="whcal" id="cal-drv">
-            <div class="whcal-chip" onclick="calToggle('drv')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3"/></svg><span id="cal-drv-label">Today</span><span class="whcal-chev">▾</span></div>
-            <div class="whcal-pop" id="cal-drv-pop"></div>
+          <div class="whcal-pair">
+          <div class="whcal" id="cal-drv-from">
+            <div class="whcal-chip" onclick="calToggle('drv','from')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3"/></svg><span class="whcal-tag">From</span><span id="cal-drv-from-label">Today</span><span class="whcal-chev">▾</span></div>
+            <div class="whcal-pop" id="cal-drv-from-pop"></div>
+          </div>
+          <span class="whcal-arrow">→</span>
+          <div class="whcal" id="cal-drv-to">
+            <div class="whcal-chip" onclick="calToggle('drv','to')"><span class="whcal-tag">To</span><span id="cal-drv-to-label">Today</span><span class="whcal-chev">▾</span></div>
+            <div class="whcal-pop" id="cal-drv-to-pop"></div>
+          </div>
           </div>
         </div>
       </div>
@@ -958,9 +977,16 @@ button,input,select{font-family:inherit;font-size:inherit;color:inherit}
           <div class="summary"><span><b id="pss-slips">0</b> slips on board</span><span><b id="pss-picked">0</b> parts picked</span><span><b id="pss-onorder">0</b> on order</span></div>
         </div>
         <div class="topbar-right">
-          <div class="whcal" id="cal-ps">
-            <div class="whcal-chip" onclick="calToggle('ps')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M2 7h12M5 1.5v3M11 1.5v3"/></svg><span id="cal-ps-label">All slips</span><span class="whcal-chev">▾</span></div>
-            <div class="whcal-pop" id="cal-ps-pop"></div>
+          <div class="whcal-pair">
+          <div class="whcal" id="cal-ps-from">
+            <div class="whcal-chip" onclick="calToggle('ps','from')"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="2" y="3" width="12" height="11" rx="2"/><path d="M2 7h12M5 1.5v3M11 1.5v3"/></svg><span class="whcal-tag">From</span><span id="cal-ps-from-label">All</span><span class="whcal-chev">▾</span></div>
+            <div class="whcal-pop" id="cal-ps-from-pop"></div>
+          </div>
+          <span class="whcal-arrow">→</span>
+          <div class="whcal" id="cal-ps-to">
+            <div class="whcal-chip" onclick="calToggle('ps','to')"><span class="whcal-tag">To</span><span id="cal-ps-to-label">All</span><span class="whcal-chev">▾</span></div>
+            <div class="whcal-pop" id="cal-ps-to-pop"></div>
+          </div>
           </div>
         </div>
       </div>
@@ -1284,10 +1310,12 @@ function fmtDate(ts){ const d=new Date(ts); return d.toLocaleDateString("en-AU",
 // ── Calendar date picker (shared: Scan Log 'scan' + Driver Log 'drv') ─────
 function dateKey(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
 function keyToDate(k){ const p=k.split("-").map(Number); return new Date(p[0],p[1]-1,p[2]); }
+// Every calendar is a from–to window; a single day is just from === to.
+// mode "all" (Picking Slips default) means no date filter.
 const whCals = {
-  scan: { mode:"day", day:dateKey(new Date()), vy:0, vm:0, onChange(){ renderTable(false); } },
-  drv:  { mode:"day", day:dateKey(new Date()), vy:0, vm:0, onChange(){ renderVanManifest(); } },
-  ps:   { mode:"all", day:dateKey(new Date()), vy:0, vm:0, all:true, onChange(){ renderPickslips(); } }, // slips: no date filter by default
+  scan: { mode:"range", from:dateKey(new Date()), to:dateKey(new Date()), vy:0, vm:0, onChange(){ renderTable(false); } },
+  drv:  { mode:"range", from:dateKey(new Date()), to:dateKey(new Date()), vy:0, vm:0, onChange(){ renderVanManifest(); } },
+  ps:   { mode:"all", from:dateKey(new Date()), to:dateKey(new Date()), vy:0, vm:0, all:true, onChange(){ renderPickslips(); } },
 };
 // Roll "Today" past midnight. The day key is stamped at page load; a dashboard
 // left open overnight kept filtering to the OLD day while new scans arrived —
@@ -1298,50 +1326,48 @@ function rollCalDays(){
   const now = dateKey(new Date());
   if (now === calTodayKey) return;
   for (const c of Object.values(whCals)) {
-    if (c.mode === "day" && c.day === calTodayKey) c.day = now; // was on "Today" → follow it
+    if (c.mode === "range" && c.from === calTodayKey && c.to === calTodayKey) { c.from = now; c.to = now; } // was on "Today" → follow it
   }
   calTodayKey = now;
+  for (const key of Object.keys(whCals)) calLabels(key);
 }
 function calWindow(c){
   if(c.mode==="all") return { from: -Infinity, to: Infinity };
-  if(c.mode==="7d") return { from: Date.now()-7*86400000, to: Infinity };
-  if(c.mode==="range"&&c.from&&c.to) return { from: keyToDate(c.from).getTime(), to: keyToDate(c.to).getTime()+86400000 };
-  const from = keyToDate(c.day).getTime();
-  return { from, to: from+86400000 };
+  return { from: keyToDate(c.from).getTime(), to: keyToDate(c.to).getTime()+86400000 };
+}
+function calDayName(k){
+  if(k===dateKey(new Date())) return "Today";
+  if(k===dateKey(new Date(Date.now()-86400000))) return "Yesterday";
+  const d=keyToDate(k), opts={day:"numeric",month:"short"};
+  if(d.getFullYear()!==new Date().getFullYear()) opts.year="numeric";
+  return d.toLocaleDateString("en-AU",opts);
 }
 function calLabel(c){
   if(c.mode==="all") return "All slips";
-  if(c.mode==="7d") return "Last 7 days";
-  if(c.mode==="range"&&c.from&&c.to){
-    const f=d=>keyToDate(d).toLocaleDateString("en-AU",{day:"numeric",month:"short"});
-    return f(c.from)+" – "+f(c.to);
-  }
-  if(c.day===dateKey(new Date())) return "Today";
-  if(c.day===dateKey(new Date(Date.now()-86400000))) return "Yesterday";
-  return keyToDate(c.day).toLocaleDateString("en-AU",{weekday:"short",day:"numeric",month:"short"});
+  if(c.from===c.to) return calDayName(c.from);
+  return calDayName(c.from)+" – "+calDayName(c.to);
 }
 function calDotDays(key){
   if(key==="ps"){ const s=new Set(); for(const sl of psSlips){ if(sl.updatedAt) s.add(dateKey(new Date(sl.updatedAt))); } return s; }
   const src = key==="drv" ? vmLogs.filter(e=>["on_board","off_board"].includes(e.action)) : allLogs;
   const s=new Set(); for(const e of src){ if(e.timestamp) s.add(dateKey(new Date(e.timestamp))); } return s;
 }
-function calToggle(key){
-  const el=document.getElementById("cal-"+key);
+function calToggle(key,end){
+  const el=document.getElementById("cal-"+key+"-"+end);
   const wasOpen=el.classList.contains("open");
   document.querySelectorAll(".whcal.open").forEach(x=>x.classList.remove("open"));
   if(!wasOpen){
     const c=whCals[key];
-    c.pick=null;
-    const base=c.mode==="day"?keyToDate(c.day):(c.mode==="range"&&c.from?keyToDate(c.from):new Date());
+    const base=c.mode==="all"?new Date():keyToDate(c[end]);
     c.vy=base.getFullYear(); c.vm=base.getMonth();
-    calRender(key); el.classList.add("open"); calPlace(key);
+    calRender(key,end); el.classList.add("open"); calPlace(key,end);
   }
 }
 // Keep the popup on screen: it anchors to the chip's right edge, but in narrow
 // layouts the chip sits at the far left and a right-anchored popup runs off
 // screen. Flip to a left anchor when the left edge would clip.
-function calPlace(key){
-  const pop=document.getElementById("cal-"+key+"-pop"); if(!pop) return;
+function calPlace(key,end){
+  const pop=document.getElementById("cal-"+key+"-"+end+"-pop"); if(!pop) return;
   pop.style.left="auto"; pop.style.right="0";
   let r=pop.getBoundingClientRect();
   if(r.left<8){
@@ -1350,9 +1376,9 @@ function calPlace(key){
     if(r.right>window.innerWidth-8) pop.style.left=(window.innerWidth-8-r.right)+"px";
   }
 }
-function calNav(key,d){ const c=whCals[key]; c.vm+=d; if(c.vm<0){c.vm=11;c.vy--;} if(c.vm>11){c.vm=0;c.vy++;} calRender(key); }
-function calRender(key){
-  const c=whCals[key], pop=document.getElementById("cal-"+key+"-pop");
+function calNav(key,end,d){ const c=whCals[key]; c.vm+=d; if(c.vm<0){c.vm=11;c.vy--;} if(c.vm>11){c.vm=0;c.vy++;} calRender(key,end); }
+function calRender(key,end){
+  const c=whCals[key], pop=document.getElementById("cal-"+key+"-"+end+"-pop");
   if(!pop) return;
   const dots=calDotDays(key), tk=dateKey(new Date());
   const first=new Date(c.vy,c.vm,1);
@@ -1362,44 +1388,42 @@ function calRender(key){
   for(let i=0;i<lead;i++) cells+='<span class="whcal-d dim"></span>';
   for(let d=1;d<=dim;d++){
     const k=c.vy+"-"+String(c.vm+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
-    const cls=["whcal-d"]; if(dots.has(k))cls.push("dots"); if(c.mode==="day"&&c.day===k)cls.push("sel"); if(k===tk)cls.push("today");
-    if(c.mode==="range"&&!c.pick&&c.from&&c.to&&k>=c.from&&k<=c.to)cls.push(k===c.from||k===c.to?"sel":"in");
-    if(c.pick==="end"&&k===c.from)cls.push("sel");
-    cells+=`<span class="${cls.join(" ")}" onclick="calPick('${key}','${k}')">${d}</span>`;
+    const cls=["whcal-d"]; if(dots.has(k))cls.push("dots"); if(k===tk)cls.push("today");
+    if(c.mode==="range"){ if(k===c.from||k===c.to)cls.push("sel"); else if(k>c.from&&k<c.to)cls.push("in"); }
+    cells+=`<span class="${cls.join(" ")}" onclick="calPick('${key}','${end}','${k}')">${d}</span>`;
   }
-  pop.innerHTML=`<div class="whcal-head"><span class="whcal-m">${first.toLocaleDateString("en-AU",{month:"long",year:"numeric"})}</span><span class="whcal-nav"><button class="whcal-nb" onclick="calNav('${key}',-1)">‹</button><button class="whcal-nb" onclick="calNav('${key}',1)">›</button></span></div>
+  pop.innerHTML=`<div class="whcal-head"><span class="whcal-m">${first.toLocaleDateString("en-AU",{month:"long",year:"numeric"})}</span><span class="whcal-nav"><button class="whcal-nb" onclick="calNav('${key}','${end}',-1)">‹</button><button class="whcal-nb" onclick="calNav('${key}','${end}',1)">›</button></span></div>
     <div class="whcal-grid">${cells}</div>
-    <div class="whcal-quick">
-      <span class="whcal-q${c.mode==="day"&&c.day===tk?" on":""}" onclick="calQuick('${key}','today')">Today</span>
-      <span class="whcal-q${c.mode==="day"&&c.day===dateKey(new Date(Date.now()-86400000))?" on":""}" onclick="calQuick('${key}','yesterday')">Yesterday</span>
-      <span class="whcal-q${c.mode==="7d"?" on":""}" onclick="calQuick('${key}','7d')">Last 7 days</span>
-      <span class="whcal-q${c.mode==="range"||c.pick?" on":""}" onclick="calQuick('${key}','range')">${c.pick==="start"?"Pick start day…":c.pick==="end"?"Pick end day…":"Range"}</span>
-      ${c.all?`<span class="whcal-q${c.mode==="all"?" on":""}" onclick="calQuick('${key}','all')">All</span>`:""}
-    </div>`;
+    ${c.all?`<div class="whcal-quick"><span class="whcal-q${c.mode==="all"?" on":""}" onclick="calQuick('${key}','all')">All slips</span></div>`:""}`;
+}
+function calLabels(key){
+  const c=whCals[key];
+  for(const end of ["from","to"]){
+    const lbl=document.getElementById("cal-"+key+"-"+end+"-label");
+    if(lbl) lbl.textContent = c.mode==="all" ? "All" : calDayName(c[end]);
+  }
 }
 function calApply(key){
-  const lbl=document.getElementById("cal-"+key+"-label");
-  if(lbl) lbl.textContent=calLabel(whCals[key]);
-  const el=document.getElementById("cal-"+key);
-  if(el) el.classList.remove("open");
+  calLabels(key);
+  document.querySelectorAll("#cal-"+key+"-from, #cal-"+key+"-to").forEach(el=>el.classList.remove("open"));
   whCals[key].onChange();
 }
-function calPick(key,k){
+function calPick(key,end,k){
   const c=whCals[key];
-  if(c.pick==="start"){ c.from=k; c.pick="end"; calRender(key); return; }
-  if(c.pick==="end"){
-    c.to=k; if(c.to<c.from){ const t=c.from; c.from=c.to; c.to=t; }
-    c.mode="range"; c.pick=null; calApply(key); return;
-  }
-  c.mode="day"; c.day=k; calApply(key);
+  if(c.mode==="all"){ c.from=k; c.to=k; }   // slips leaving "All": start from a single day
+  c.mode="range";
+  c[end]=k;
+  if(c.from>c.to){ if(end==="from") c.to=c.from; else c.from=c.to; } // ends never cross — the other end follows
+  calApply(key);
 }
+// Also drives the Settings → default date range option (today / yesterday / 7d).
 function calQuick(key,q){
-  const c=whCals[key];
-  if(q==="range"){ c.pick="start"; calRender(key); return; } // stay open, wait for two day taps
-  c.pick=null;
-  if(q==="7d") c.mode="7d";
-  else if(q==="all") c.mode="all";
-  else { c.mode="day"; c.day = q==="today" ? dateKey(new Date()) : dateKey(new Date(Date.now()-86400000)); }
+  const c=whCals[key], tk=dateKey(new Date());
+  if(q==="all"){ c.mode="all"; calApply(key); return; }
+  c.mode="range";
+  if(q==="yesterday"){ const y=dateKey(new Date(Date.now()-86400000)); c.from=y; c.to=y; }
+  else if(q==="7d"){ c.from=dateKey(new Date(Date.now()-6*86400000)); c.to=tk; }
+  else { c.from=tk; c.to=tk; }
   calApply(key);
 }
 // Month nav (‹ ›) re-renders the popup, detaching the clicked button before this
@@ -2390,7 +2414,7 @@ function renderVanManifest(){
     .some(f => String(f==null?"":f).toLowerCase().includes(q));
 
   // Live badge only while viewing today
-  const isToday = cal.mode==="day" && cal.day===dateKey(new Date());
+  const isToday = cal.mode==="range" && cal.from===dateKey(new Date()) && cal.to===cal.from;
   const lb=document.getElementById("drv-live"); if(lb) lb.style.visibility = isToday ? "visible" : "hidden";
 
   // Day strip: real counts for the window, unaffected by the text filter.
