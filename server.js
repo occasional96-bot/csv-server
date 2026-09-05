@@ -25,7 +25,7 @@ const DATA_DIR  = fs.existsSync("/data") ? "/data" : __dirname;
 const SITES = {
   werribee: { key: "werribee", name: "Werribee", group: "Hopper Motor Group", code: "HMG",
               label: "Werribee · Hopper Motor Group",
-              brands: ["KIA", "HY", "BYD", "ISUZU", "NISSAN"],
+              brands: ["KIA", "HY", "BYD", "ISUZU"],
               files: ["kia", "hy", "inve"],          // Import CSV rows this site uses
               url: "https://csv-server-production-efc6.up.railway.app" },
   essendon: { key: "essendon", name: "Essendon", group: "Hopper Motor Group", code: "HMG",
